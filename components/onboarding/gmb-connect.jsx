@@ -1,36 +1,51 @@
 "use client"
 
 import { useState } from "react"
-import { CheckCircle2, ChevronRight, MapPin, Star, Zap, Bell, MessageSquareShare } from "lucide-react"
+import { CheckCircle2, ChevronRight, MapPin, Star, Zap, Bell, MessageSquareShare, AlertCircle } from "lucide-react"
+import Cookies from "js-cookie"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-const MOCK_LOCATIONS = [
-  {
-    id: 1,
-    name: "Retilo George St",
-    address: "123 George St, Sydney CBD NSW 2000",
-    rating: 4.2,
-    reviews: 247,
-    pendingReplies: 3,
-  },
-  {
-    id: 2,
-    name: "Retilo Newtown",
-    address: "45 King St, Newtown NSW 2042",
-    rating: 3.8,
-    reviews: 183,
-    pendingReplies: 5,
-  },
-  {
-    id: 3,
-    name: "Retilo Surry Hills",
-    address: "78 Crown St, Surry Hills NSW 2010",
-    rating: 4.6,
-    reviews: 312,
-    pendingReplies: 1,
-  },
-]
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+
+function buildGmbOAuthUrl() {
+  const idToken = Cookies.get("id_token")
+  if (!idToken) return null
+
+  const state = encodeURIComponent(
+    JSON.stringify({
+      token: idToken,
+      timestamp: Date.now(),
+      nonce: Math.random().toString(36).substring(2, 15),
+    })
+  )
+
+  const scope = encodeURIComponent(
+    [
+      "https://www.googleapis.com/auth/business.manage",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+    ].join(" ")
+  )
+
+  const redirectUri = encodeURIComponent(`${API_URL}/v1/gmb/oauth/callback`)
+
+  return (
+    `https://accounts.google.com/o/oauth2/v2/auth` +
+    `?client_id=${GOOGLE_CLIENT_ID}` +
+    `&redirect_uri=${redirectUri}` +
+    `&response_type=code` +
+    `&scope=${scope}` +
+    `&access_type=offline` +
+    `&state=${state}` +
+    `&prompt=consent`
+  )
+}
+
+// ─── Step indicator ────────────────────────────────────────────────────────────
 
 function StepIndicator({ current, total }) {
   return (
@@ -40,11 +55,7 @@ function StepIndicator({ current, total }) {
           key={i}
           className={cn(
             "h-1 rounded-full transition-all duration-300",
-            i < current
-              ? "w-5 bg-blue-600"
-              : i === current
-              ? "w-5 bg-blue-600"
-              : "w-2.5 bg-zinc-200"
+            i <= current ? "w-5 bg-blue-600" : "w-2.5 bg-zinc-200"
           )}
         />
       ))}
@@ -63,20 +74,31 @@ function GoogleIcon({ className }) {
   )
 }
 
-function ConnectStep({ onNext }) {
+// ─── Step 0: Connect ───────────────────────────────────────────────────────────
+
+function ConnectStep() {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleConnect = () => {
+    setError(null)
+
+    const authUrl = buildGmbOAuthUrl()
+
+    if (!authUrl) {
+      // No id_token cookie — redirect to backend auth first, return here after
+      const returnTo = encodeURIComponent(window.location.href)
+      window.location.href = `${API_URL}/v1/auth/google?return_to=${returnTo}`
+      return
+    }
+
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      onNext()
-    }, 1800)
+    // Full-page redirect to Google OAuth — no setTimeout
+    window.location.href = authUrl
   }
 
   return (
     <div className="flex flex-col items-center">
-      {/* Brand mark */}
       <div className="mb-6 flex size-12 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-200">
         <MessageSquareShare className="size-6 text-white" />
       </div>
@@ -88,31 +110,37 @@ function ConnectStep({ onNext }) {
         Link your Google Business Profile to start monitoring reviews and responding instantly.
       </p>
 
-      {/* Value props */}
       <div className="mt-6 w-full space-y-2">
         {[
-          { icon: Star, label: "See every review the moment it lands", color: "text-amber-500" },
-          { icon: Bell, label: "Instant alerts for 1 and 2-star reviews", color: "text-red-500" },
-          { icon: Zap, label: "AI reply drafts ready in under 5 seconds", color: "text-blue-500" },
+          { icon: Star,  label: "See every review the moment it lands",      color: "text-amber-500" },
+          { icon: Bell,  label: "Instant alerts for 1 and 2-star reviews",   color: "text-red-500" },
+          { icon: Zap,   label: "AI reply drafts ready in under 5 seconds",  color: "text-blue-500" },
         ].map(({ icon: Icon, label, color }) => (
-          <div key={label} className="flex items-center gap-3 rounded-lg bg-zinc-50 px-3.5 py-2.5 border border-zinc-100">
+          <div key={label} className="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3.5 py-2.5">
             <Icon className={cn("size-4 shrink-0", color)} />
             <span className="text-sm text-zinc-700">{label}</span>
           </div>
         ))}
       </div>
 
+      {error && (
+        <div className="mt-4 flex w-full items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3">
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-500" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
       <Button
         onClick={handleConnect}
         disabled={loading}
-        className="mt-6 w-full h-10 gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-medium"
+        className="mt-6 h-10 w-full gap-2.5 bg-zinc-900 font-medium text-white hover:bg-zinc-800"
       >
         {loading ? (
           <div className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
         ) : (
           <GoogleIcon className="size-4" />
         )}
-        {loading ? "Connecting to Google…" : "Continue with Google"}
+        {loading ? "Redirecting to Google…" : "Continue with Google"}
         {!loading && <ChevronRight className="size-3.5" />}
       </Button>
 
@@ -123,8 +151,19 @@ function ConnectStep({ onNext }) {
   )
 }
 
+// ─── Step 1: Locations ─────────────────────────────────────────────────────────
+
+// Locations are shown after returning from Google OAuth.
+// In production these come from GET /v1/gmb/locations —
+// using representative mock data until that fetch is wired up.
+const MOCK_LOCATIONS = [
+  { id: 1, name: "Retilo George St",    address: "123 George St, Sydney CBD NSW 2000", rating: 4.2, reviews: 247, pendingReplies: 3 },
+  { id: 2, name: "Retilo Newtown",      address: "45 King St, Newtown NSW 2042",        rating: 3.8, reviews: 183, pendingReplies: 5 },
+  { id: 3, name: "Retilo Surry Hills",  address: "78 Crown St, Surry Hills NSW 2010",   rating: 4.6, reviews: 312, pendingReplies: 1 },
+]
+
 function LocationsStep({ onNext }) {
-  const [selected, setSelected] = useState([1, 2, 3])
+  const [selected, setSelected] = useState(MOCK_LOCATIONS.map((l) => l.id))
   const [loading, setLoading] = useState(false)
 
   const toggle = (id) =>
@@ -132,17 +171,16 @@ function LocationsStep({ onNext }) {
 
   const handleContinue = () => {
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      onNext()
-    }, 1200)
+    // TODO: POST selected location IDs to backend to mark them as monitored
+    // await apiFetch("/v1/gmb/locations/sync", { method: "POST", body: JSON.stringify({ locationIds: selected }) })
+    setTimeout(() => { setLoading(false); onNext() }, 800)
   }
 
   return (
     <div className="flex flex-col">
       <h2 className="text-lg font-semibold text-zinc-900">Select locations</h2>
       <p className="mt-1 text-sm text-zinc-500">
-        We found {MOCK_LOCATIONS.length} locations linked to your account.
+        We found {MOCK_LOCATIONS.length} locations linked to your GMB account.
       </p>
 
       <div className="mt-4 space-y-2">
@@ -170,9 +208,7 @@ function LocationsStep({ onNext }) {
                 <div
                   className={cn(
                     "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                    isSelected
-                      ? "border-blue-600 bg-blue-600"
-                      : "border-zinc-300 bg-white"
+                    isSelected ? "border-blue-600 bg-blue-600" : "border-zinc-300 bg-white"
                   )}
                 >
                   {isSelected && (
@@ -182,7 +218,6 @@ function LocationsStep({ onNext }) {
                   )}
                 </div>
               </div>
-
               <div className="mt-2.5 flex items-center gap-3">
                 <div className="flex items-center gap-1">
                   <Star className="size-3 fill-amber-400 text-amber-400" />
@@ -203,19 +238,17 @@ function LocationsStep({ onNext }) {
       <Button
         onClick={handleContinue}
         disabled={selected.length === 0 || loading}
-        className="mt-5 w-full h-10 gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+        className="mt-5 h-10 w-full gap-2 bg-blue-600 font-medium text-white hover:bg-blue-700"
       >
-        {loading ? (
-          <div className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-        ) : null}
-        {loading
-          ? "Setting up your workspace…"
-          : `Monitor ${selected.length} location${selected.length !== 1 ? "s" : ""}`}
+        {loading && <div className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+        {loading ? "Setting up…" : `Monitor ${selected.length} location${selected.length !== 1 ? "s" : ""}`}
         {!loading && <ChevronRight className="size-3.5" />}
       </Button>
     </div>
   )
 }
+
+// ─── Step 2: Success ───────────────────────────────────────────────────────────
 
 function SuccessStep({ onComplete }) {
   return (
@@ -232,16 +265,12 @@ function SuccessStep({ onComplete }) {
       </div>
 
       <h2 className="text-xl font-semibold text-zinc-900">You&apos;re all set!</h2>
-      <p className="mt-2 text-sm text-zinc-500 max-w-[260px] leading-relaxed">
+      <p className="mt-2 max-w-[260px] text-sm leading-relaxed text-zinc-500">
         Your stores are connected. We&apos;re already pulling in reviews and monitoring for issues.
       </p>
 
       <div className="mt-6 w-full space-y-2 rounded-xl border border-green-100 bg-green-50 p-4">
-        {[
-          "3 store locations connected",
-          "742 reviews imported",
-          "9 pending replies found",
-        ].map((item) => (
+        {["3 store locations connected", "742 reviews imported", "9 pending replies found"].map((item) => (
           <div key={item} className="flex items-center gap-2.5">
             <CheckCircle2 className="size-4 shrink-0 text-green-600" />
             <span className="text-sm text-zinc-700">{item}</span>
@@ -251,7 +280,7 @@ function SuccessStep({ onComplete }) {
 
       <Button
         onClick={onComplete}
-        className="mt-6 w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+        className="mt-6 h-10 w-full bg-blue-600 font-medium text-white hover:bg-blue-700"
       >
         Open Dashboard
         <ChevronRight className="size-3.5" />
@@ -260,20 +289,19 @@ function SuccessStep({ onComplete }) {
   )
 }
 
-export function GmbConnect({ onComplete }) {
-  const [step, setStep] = useState(0)
+// ─── Root wizard ───────────────────────────────────────────────────────────────
+
+export function GmbConnect({ onComplete, initialStep = 0 }) {
+  const [step, setStep] = useState(initialStep)
 
   return (
     <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl shadow-zinc-200/60">
-      {/* Step indicator */}
       <div className="mb-5 flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-400 tabular-nums">
-          {step + 1} / 3
-        </span>
+        <span className="text-xs font-medium tabular-nums text-zinc-400">{step + 1} / 3</span>
         <StepIndicator current={step} total={3} />
       </div>
 
-      {step === 0 && <ConnectStep onNext={() => setStep(1)} />}
+      {step === 0 && <ConnectStep />}
       {step === 1 && <LocationsStep onNext={() => setStep(2)} />}
       {step === 2 && <SuccessStep onComplete={onComplete} />}
     </div>

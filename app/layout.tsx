@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Retilo — Operations Command Center",
-  description: "Retail operations dashboard for store managers",
+  title: "Retilo — GMB Automation Platform",
+  description: "AI-powered Google Business automation. Manage reviews, analytics, and automation workflows across all your locations.",
 };
 
 export default function RootLayout({
@@ -26,11 +27,19 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
           <TooltipProvider>{children}</TooltipProvider>
-        </body>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
