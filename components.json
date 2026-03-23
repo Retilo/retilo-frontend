@@ -25,7 +25,7 @@
     "@cult-ui-pro": {
       "url": "https://pro.cult-ui.com/api/registry/{name}",
       "headers": {
-        "X-API-Key": "${CULT_PRO_TOKEN}"
+        "X-API-Key": "cult_-HxOmUnCEPn6EgaIRIB4M4MWYT1Og8RU"
       }
     }
   }
