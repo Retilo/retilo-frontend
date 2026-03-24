@@ -104,7 +104,7 @@ export default function DashboardPage() {
       <SidebarInset className="min-h-screen overflow-hidden bg-[oklch(0.09_0.012_270)]">
         <div className="flex flex-col h-full">
           {/* Top bar */}
-          <div className="flex items-center justify-between border-b border-white/8 bg-[oklch(0.10_0.016_270)] px-8 py-4">
+          <div className="flex items-center justify-between border-b border-white/6 bg-[oklch(0.09_0.012_270)/80%] backdrop-blur-sm px-8 py-4 sticky top-0 z-10">
             <div>
               <h1 className="text-base font-semibold text-white">
                 {merchant?.name ? `Welcome back, ${merchant.name.split(" ")[0]}` : "Dashboard"}

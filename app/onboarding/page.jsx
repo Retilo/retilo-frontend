@@ -6,9 +6,9 @@ import { AuthStep } from "@/components/onboarding/AuthStep"
 import { ConnectGMBStep } from "@/components/onboarding/ConnectGMBStep"
 import { LocationSelectStep } from "@/components/onboarding/LocationSelectStep"
 import { ProcessingStep } from "@/components/onboarding/ProcessingStep"
+import { Zap, Check } from "lucide-react"
 
 const STEPS = ["auth", "connect", "locations", "processing"]
-
 const STEP_LABELS = {
   auth: "Account",
   connect: "Connect",
@@ -17,7 +17,7 @@ const STEP_LABELS = {
 }
 
 function StepIndicator({ current }) {
-  const visibleSteps = STEPS.slice(0, 3) // don't show "processing" in indicator
+  const visibleSteps = STEPS.slice(0, 3)
   return (
     <div className="flex items-center gap-2">
       {visibleSteps.map((s, i) => {
@@ -27,27 +27,21 @@ function StepIndicator({ current }) {
         const isActive = stepIndex === currentIndex
         return (
           <div key={s} className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <div
-                className={`flex size-5 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
+                className={`flex size-6 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
                   isComplete
-                    ? "bg-blue-600 text-white"
+                    ? "bg-[oklch(0.55_0.24_280)] text-white shadow-sm shadow-[oklch(0.55_0.24_280)/40%]"
                     : isActive
-                    ? "bg-blue-600/20 text-blue-600 ring-1 ring-blue-600/40"
-                    : "bg-zinc-100 text-zinc-400"
+                    ? "bg-[oklch(0.55_0.24_280)/15%] text-[oklch(0.75_0.20_280)] ring-1 ring-[oklch(0.55_0.24_280)/50%]"
+                    : "bg-white/6 text-white/30"
                 }`}
               >
-                {isComplete ? (
-                  <svg className="size-3" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                ) : (
-                  i + 1
-                )}
+                {isComplete ? <Check className="size-3" strokeWidth={2.5} /> : i + 1}
               </div>
               <span
-                className={`text-xs font-medium ${
-                  isActive ? "text-zinc-900" : isComplete ? "text-zinc-500" : "text-zinc-400"
+                className={`text-xs font-medium transition-colors ${
+                  isActive ? "text-white/80" : isComplete ? "text-white/50" : "text-white/25"
                 }`}
               >
                 {STEP_LABELS[s]}
@@ -56,7 +50,7 @@ function StepIndicator({ current }) {
             {i < visibleSteps.length - 1 && (
               <div
                 className={`h-px w-6 transition-colors ${
-                  isComplete ? "bg-blue-600" : "bg-zinc-200"
+                  isComplete ? "bg-[oklch(0.55_0.24_280)]" : "bg-white/10"
                 }`}
               />
             )}
@@ -68,23 +62,21 @@ function StepIndicator({ current }) {
 }
 
 const variants = {
-  enter: { opacity: 0, x: 20 },
-  center: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -20 },
+  enter: { opacity: 0, y: 12 },
+  center: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -12 },
 }
 
 export default function OnboardingPage() {
   const [step, setStep] = useState("auth")
   const [selectedLocations, setSelectedLocations] = useState([])
 
-  // Detect return from GMB OAuth: /onboarding?gmb_connected=true
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get("gmb_connected") === "true") {
       setStep("locations")
       window.history.replaceState({}, "", window.location.pathname)
     }
-    // If user already has a token, skip auth step
     if (localStorage.getItem("retilo_token")) {
       const current = new URLSearchParams(window.location.search).get("gmb_connected")
       if (!current) setStep("connect")
@@ -94,28 +86,45 @@ export default function OnboardingPage() {
   const isProcessing = step === "processing"
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
-      {/* Processing step is full-screen — render standalone */}
+    <div className="min-h-screen bg-[oklch(0.09_0.012_270)] flex flex-col">
+      {/* Background grid */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: "linear-gradient(oklch(1 0 0 / 100%) 1px, transparent 1px), linear-gradient(90deg, oklch(1 0 0 / 100%) 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
+        {/* Radial glow */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at center, oklch(0.55 0.24 280) 0%, transparent 70%)" }}
+        />
+      </div>
+
       {isProcessing && <ProcessingStep locations={selectedLocations} />}
 
       {!isProcessing && (
         <>
           {/* Top bar */}
-          <header className="flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-6">
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-blue-600 shadow-md shadow-blue-900/20">
-                <svg className="size-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
+          <header className="relative z-10 flex h-16 items-center justify-between border-b border-white/6 bg-[oklch(0.09_0.012_270)/80%] backdrop-blur-sm px-6">
+            <div className="flex items-center gap-3">
+              <div className="flex size-8 items-center justify-center rounded-xl bg-[oklch(0.55_0.24_280)] shadow-lg shadow-[oklch(0.55_0.24_280)/35%]">
+                <Zap className="size-4 text-white" strokeWidth={2.5} />
               </div>
-              <span className="text-sm font-semibold text-zinc-900">Retilo</span>
+              <div className="flex flex-col leading-none">
+                <span className="text-sm font-bold text-white tracking-tight">Retilo</span>
+                <span className="text-[9px] font-semibold uppercase tracking-widest text-[oklch(0.65_0.20_280)]">GMB Platform</span>
+              </div>
             </div>
             <StepIndicator current={step} />
           </header>
 
           {/* Card */}
-          <main className="flex flex-1 items-center justify-center px-4 py-12">
-            <div className="w-full max-w-sm">
+          <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
+            <div className="w-full max-w-[400px]">
+              {/* Card wrapper */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={step}
@@ -124,27 +133,23 @@ export default function OnboardingPage() {
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.2, ease: "easeInOut" }}
-                  className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl shadow-zinc-200/60"
+                  className="rounded-2xl border border-white/10 bg-[oklch(0.12_0.015_270)] p-7 shadow-2xl shadow-black/50"
                 >
-                  {step === "auth" && (
-                    <AuthStep onNext={() => setStep("connect")} />
-                  )}
-                  {step === "connect" && (
-                    <ConnectGMBStep />
-                  )}
+                  {step === "auth" && <AuthStep onNext={() => setStep("connect")} dark />}
+                  {step === "connect" && <ConnectGMBStep dark />}
                   {step === "locations" && (
                     <LocationSelectStep
                       onNext={(locs) => {
                         setSelectedLocations(locs)
                         setStep("processing")
                       }}
+                      dark
                     />
                   )}
                 </motion.div>
               </AnimatePresence>
 
-              {/* Footer note */}
-              <p className="mt-4 text-center text-xs text-zinc-400">
+              <p className="mt-5 text-center text-[11px] text-white/20 tracking-wide">
                 Retilo · Enterprise retail intelligence platform
               </p>
             </div>

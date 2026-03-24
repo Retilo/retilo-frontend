@@ -9,7 +9,6 @@ const API_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
 function buildGmbOAuthUrl() {
-  // State = the JWT — backend decodes it to extract merchantId from the payload
   const token = localStorage.getItem("retilo_token")
   if (!token) return null
 
@@ -46,63 +45,83 @@ function GoogleIcon({ className }) {
   )
 }
 
-export function ConnectGMBStep() {
+export function ConnectGMBStep({ dark = false }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const handleConnect = () => {
     setError(null)
-
     const authUrl = buildGmbOAuthUrl()
-
     if (!authUrl) {
       setError("Session not found — please sign in first.")
       return
     }
-
     setLoading(true)
     window.location.href = authUrl
   }
 
+  const benefits = [
+    { icon: Star,  label: "Every review captured the moment it lands",  color: dark ? "text-amber-400" : "text-amber-500" },
+    { icon: Bell,  label: "Instant alerts for 1 and 2-star reviews",    color: dark ? "text-red-400"   : "text-red-500"   },
+    { icon: Zap,   label: "AI reply drafts ready in under 5 seconds",   color: dark ? "text-[oklch(0.75_0.20_280)]" : "text-blue-500" },
+  ]
+
   return (
     <div className="flex flex-col items-center w-full">
-      {/* Google logo lockup */}
-      <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-white shadow-md shadow-zinc-200 border border-zinc-100">
+      {/* Google logo */}
+      <div className={cn(
+        "mb-5 flex size-14 items-center justify-center rounded-2xl",
+        dark
+          ? "bg-white/8 border border-white/10 shadow-lg shadow-black/30"
+          : "bg-white shadow-md shadow-zinc-200 border border-zinc-100"
+      )}>
         <GoogleIcon className="size-8" />
       </div>
 
-      <h2 className="text-xl font-semibold tracking-tight text-zinc-900">
+      <h2 className={cn("text-xl font-bold tracking-tight", dark ? "text-white" : "text-zinc-900")}>
         Connect Google Business
       </h2>
-      <p className="mt-1.5 text-center text-sm text-zinc-500 max-w-[290px] leading-relaxed">
+      <p className={cn("mt-1.5 text-center text-sm max-w-[280px] leading-relaxed", dark ? "text-white/40" : "text-zinc-500")}>
         Link your Google Business Profile so Retilo can monitor reviews across all your stores.
       </p>
 
       {/* Benefits */}
       <div className="mt-6 w-full space-y-2">
-        {[
-          { icon: Star,  label: "Every review captured the moment it lands",  color: "text-amber-500" },
-          { icon: Bell,  label: "Instant alerts for 1 and 2-star reviews",    color: "text-red-500"   },
-          { icon: Zap,   label: "AI reply drafts ready in under 5 seconds",   color: "text-blue-500"  },
-        ].map(({ icon: Icon, label, color }) => (
-          <div key={label} className="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3.5 py-2.5">
+        {benefits.map(({ icon: Icon, label, color }) => (
+          <div
+            key={label}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3.5 py-2.5",
+              dark
+                ? "border border-white/8 bg-white/4"
+                : "border border-zinc-100 bg-zinc-50"
+            )}
+          >
             <Icon className={cn("size-4 shrink-0", color)} />
-            <span className="text-sm text-zinc-700">{label}</span>
+            <span className={cn("text-sm", dark ? "text-white/60" : "text-zinc-700")}>{label}</span>
           </div>
         ))}
       </div>
 
       {error && (
-        <div className="mt-4 flex w-full items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3">
+        <div className={cn(
+          "mt-4 flex w-full items-start gap-2.5 rounded-xl px-3.5 py-3",
+          dark ? "border border-red-500/20 bg-red-500/10" : "border border-red-200 bg-red-50"
+        )}>
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-500" />
-          <p className="text-sm text-red-700">{error}</p>
+          <p className={cn("text-sm", dark ? "text-red-400" : "text-red-700")}>{error}</p>
         </div>
       )}
 
       <Button
         onClick={handleConnect}
         disabled={loading}
-        className="mt-6 h-10 w-full gap-2.5 bg-zinc-900 font-medium text-white hover:bg-zinc-800"
+        className={cn(
+          "mt-6 h-11 w-full gap-2.5 font-semibold text-white",
+          dark
+            ? "bg-[oklch(0.55_0.24_280)] hover:bg-[oklch(0.60_0.26_280)] shadow-lg shadow-[oklch(0.55_0.24_280)/30%]"
+            : "bg-zinc-900 hover:bg-zinc-800"
+        )}
       >
         {loading ? (
           <div className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -113,8 +132,8 @@ export function ConnectGMBStep() {
         {!loading && <ChevronRight className="size-3.5" />}
       </Button>
 
-      <div className="mt-3.5 flex items-center gap-1.5 text-zinc-400">
-        <Shield className="size-3.5" />
+      <div className={cn("mt-4 flex items-center gap-1.5", dark ? "text-white/25" : "text-zinc-400")}>
+        <Shield className="size-3.5 shrink-0" />
         <p className="text-xs">Read-only access · No posting without your approval</p>
       </div>
     </div>
