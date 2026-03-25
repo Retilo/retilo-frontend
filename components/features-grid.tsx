@@ -296,7 +296,7 @@ const FeatureCard = ({
   feature: Feature;
   cardStyle: React.CSSProperties;
 }) => {
-  const Icon = Icons[feature.icon] as LucideIcon;
+  const Icon = Icons[feature.icon as keyof typeof Icons] as LucideIcon;
 
   return (
     <MotionCard
