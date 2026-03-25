@@ -2,25 +2,40 @@
 
 // Top toolbar: run / save / status bar
 
-import { Play, Square, Save, Trash2, ChevronDown } from "lucide-react"
+import { Play, Square, Save, Trash2 } from "lucide-react"
 import { useWorkflowStore } from "../store/workflow-store"
+
+const PINK = "oklch(0.58 0.24 350)"
+const BORDER = "oklch(0.91 0.008 350)"
+const TEXT = "oklch(0.14 0.008 270)"
+const TEXT_MUTED = "oklch(0.55 0.008 270)"
+const TEXT_FAINT = "oklch(0.65 0.008 270)"
+const BTN_BG = "oklch(0.975 0.004 350)"
 
 export function WorkflowToolbar() {
   const { isRunning, runWorkflow, stopWorkflow, clearWorkflow, nodes, edges } = useWorkflowStore()
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 bg-[oklch(0.10_0.016_270)]">
+    <div
+      className="flex items-center gap-2 px-4 py-3"
+      style={{ borderBottom: `1px solid ${BORDER}`, background: "oklch(0.99 0.005 350)" }}
+    >
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-white/40 mr-4">
-        <span className="text-white/70 font-medium">Workflows</span>
+      <div className="flex items-center gap-1.5 text-sm mr-4" style={{ color: TEXT_FAINT }}>
+        <span className="font-medium" style={{ color: TEXT_MUTED }}>Workflows</span>
         <span>/</span>
-        <span className="text-white/50">Editor</span>
+        <span style={{ color: TEXT_MUTED }}>Editor</span>
       </div>
 
       {/* Status indicator */}
       <div className="flex items-center gap-1.5 text-xs">
-        <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-yellow-400 animate-pulse" : "bg-white/25"}`} />
-        <span className="text-white/40">{isRunning ? "Running…" : `${nodes.length} nodes · ${edges.length} edges`}</span>
+        <div
+          className={`w-1.5 h-1.5 rounded-full ${isRunning ? "animate-pulse" : ""}`}
+          style={{ background: isRunning ? "#F59E0B" : "oklch(0.80 0.005 270)" }}
+        />
+        <span style={{ color: TEXT_FAINT }}>
+          {isRunning ? "Running…" : `${nodes.length} nodes · ${edges.length} edges`}
+        </span>
       </div>
 
       <div className="flex-1" />
@@ -29,7 +44,8 @@ export function WorkflowToolbar() {
       <div className="flex items-center gap-2">
         <button
           onClick={clearWorkflow}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/3 hover:bg-white/6 text-white/50 hover:text-white/80 text-xs transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:opacity-75"
+          style={{ border: `1px solid ${BORDER}`, background: BTN_BG, color: TEXT_MUTED }}
           title="Clear canvas"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -37,8 +53,9 @@ export function WorkflowToolbar() {
         </button>
 
         <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/3 hover:bg-white/6 text-white/50 hover:text-white/80 text-xs transition-all"
-          title="Save workflow (not yet wired to backend)"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:opacity-75"
+          style={{ border: `1px solid ${BORDER}`, background: BTN_BG, color: TEXT_MUTED }}
+          title="Save workflow"
         >
           <Save className="w-3.5 h-3.5" />
           Save
@@ -47,7 +64,8 @@ export function WorkflowToolbar() {
         {isRunning ? (
           <button
             onClick={stopWorkflow}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white text-xs font-semibold transition-all"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all hover:opacity-90"
+            style={{ background: "oklch(0.58 0.22 25)" }}
           >
             <Square className="w-3.5 h-3.5" />
             Stop
@@ -55,7 +73,8 @@ export function WorkflowToolbar() {
         ) : (
           <button
             onClick={runWorkflow}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[oklch(0.55_0.24_280)] hover:bg-[oklch(0.60_0.26_280)] text-white text-xs font-semibold transition-all"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all hover:opacity-90"
+            style={{ background: PINK }}
           >
             <Play className="w-3.5 h-3.5 fill-white" />
             Run

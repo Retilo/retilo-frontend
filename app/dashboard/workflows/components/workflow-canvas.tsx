@@ -8,11 +8,12 @@ import {
   Background,
   Controls,
   BackgroundVariant,
-  type ColorMode,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { useWorkflowStore } from "../store/workflow-store"
 import { nodeTypes } from "./nodes/gmb-node"
+
+const PINK = "oklch(0.58 0.24 350)"
 
 export function WorkflowCanvas() {
   const {
@@ -50,12 +51,12 @@ export function WorkflowCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
-        colorMode="dark"
+        colorMode="light"
         fitView
         fitViewOptions={{ padding: 0.2 }}
         defaultEdgeOptions={{
           animated: true,
-          style: { stroke: "oklch(0.65 0.26 280 / 60%)", strokeWidth: 2 },
+          style: { stroke: `${PINK}80`, strokeWidth: 2 },
         }}
         proOptions={{ hideAttribution: true }}
       >
@@ -63,12 +64,9 @@ export function WorkflowCanvas() {
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1}
-          color="oklch(1 0 0 / 8%)"
+          color="oklch(0 0 0 / 10%)"
         />
-        <Controls
-          className="!bg-[oklch(0.15_0.018_270)] !border-white/10 !rounded-xl overflow-hidden"
-          showInteractive={false}
-        />
+        <Controls showInteractive={false} />
       </ReactFlow>
     </div>
   )

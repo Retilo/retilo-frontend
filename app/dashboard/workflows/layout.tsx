@@ -24,7 +24,7 @@ export default function WorkflowsLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="h-screen overflow-hidden bg-[oklch(0.09_0.012_270)]">
+      <SidebarInset className="h-screen overflow-hidden" style={{ background: "oklch(0.985 0.003 350)" }}>
         {children}
       </SidebarInset>
     </SidebarProvider>

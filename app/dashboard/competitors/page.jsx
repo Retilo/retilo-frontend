@@ -9,6 +9,15 @@ import { Users, Search, Star, Trash2, ChevronDown, TrendingUp, TrendingDown } fr
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { api } from "@/lib/api"
 
+const PINK = "oklch(0.58 0.24 350)"
+const CARD_BG = "oklch(1 0 0)"
+const CARD_BORDER = "oklch(0.91 0.008 350)"
+const TEXT = "oklch(0.14 0.008 270)"
+const TEXT_MUTED = "oklch(0.55 0.008 270)"
+const TEXT_FAINT = "oklch(0.65 0.008 270)"
+const INPUT_BG = "oklch(0.96 0.005 350)"
+const INPUT_BORDER = "oklch(0.90 0.008 350)"
+
 export default function CompetitorsPage() {
   const router = useRouter()
   const [locations, setLocations] = useState([])
@@ -55,7 +64,6 @@ export default function CompetitorsPage() {
         radiusMeters: Number(discoverForm.radiusMeters),
         limit: 10,
       })
-      // Reload competitors
       const res = await api.get("/v1/gmb/competitors", { params: { locationId: selectedLocation } })
       setCompetitors(res.data.data ?? [])
     } finally {
@@ -68,6 +76,8 @@ export default function CompetitorsPage() {
     setCompetitors(prev => prev.filter(c => c.id !== competitorId))
   }
 
+  const inputStyle = { background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }
+
   return (
     <DashboardPageLayout
       title="Competitors"
@@ -78,11 +88,12 @@ export default function CompetitorsPage() {
             <select
               value={selectedLocation}
               onChange={e => setSelectedLocation(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/70 text-xs outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-xs outline-none cursor-pointer"
+              style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT_MUTED }}
             >
               {locations.map(l => <option key={l.id} value={l.google_location_id}>{l.title}</option>)}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" style={{ color: TEXT_FAINT }} />
           </div>
         )
       }
@@ -90,33 +101,38 @@ export default function CompetitorsPage() {
       <div className="max-w-4xl mx-auto px-8 py-6 space-y-6">
 
         {/* Discover section */}
-        <div className="rounded-2xl border border-white/8 bg-[oklch(0.13_0.015_270)] p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Discover nearby competitors</h3>
+        <div className="rounded-2xl p-5" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <h3 className="text-sm font-semibold mb-4" style={{ color: TEXT }}>Discover nearby competitors</h3>
           <div className="flex items-center gap-3 flex-wrap">
             <input
               type="text"
               placeholder="Keyword (e.g. coffee shop)"
               value={discoverForm.keyword}
               onChange={e => setDiscoverForm(f => ({ ...f, keyword: e.target.value }))}
-              className="flex-1 min-w-40 rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)] placeholder:text-white/25"
+              className="flex-1 min-w-40 rounded-lg text-sm px-3 py-2 outline-none transition-colors"
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = PINK}
+              onBlur={e => e.target.style.borderColor = INPUT_BORDER}
             />
             <div className="relative">
               <select
                 value={discoverForm.radiusMeters}
                 onChange={e => setDiscoverForm(f => ({ ...f, radiusMeters: e.target.value }))}
-                className="appearance-none pl-3 pr-8 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none cursor-pointer"
+                className="appearance-none pl-3 pr-8 py-2 rounded-lg text-sm outline-none cursor-pointer"
+                style={inputStyle}
               >
                 <option value={500}>500m radius</option>
                 <option value={1000}>1km radius</option>
                 <option value={2000}>2km radius</option>
                 <option value={5000}>5km radius</option>
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/30 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" style={{ color: TEXT_FAINT }} />
             </div>
             <button
               onClick={handleDiscover}
               disabled={discovering || !selectedLocation}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[oklch(0.55_0.24_280)] hover:bg-[oklch(0.60_0.26_280)] text-white text-sm font-medium transition-all disabled:opacity-60"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-sm font-medium transition-all disabled:opacity-60 hover:opacity-90"
+              style={{ background: PINK }}
             >
               <Search className="w-3.5 h-3.5" />
               {discovering ? "Discovering…" : "Discover"}
@@ -126,33 +142,40 @@ export default function CompetitorsPage() {
 
         {/* Comparison table */}
         {comparison && (
-          <div className="rounded-2xl border border-white/8 bg-[oklch(0.13_0.015_270)] p-5">
-            <h3 className="text-sm font-semibold text-white mb-4">Comparison</h3>
+          <div className="rounded-2xl p-5" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: TEXT }}>Comparison</h3>
             <div className="space-y-2">
               {/* Your location */}
-              <div className="flex items-center gap-4 rounded-xl bg-[oklch(0.55_0.24_280)/10%] border border-[oklch(0.55_0.24_280)/25%] px-4 py-3">
-                <div className="w-2 h-2 rounded-full bg-[oklch(0.65_0.26_280)] flex-shrink-0" />
-                <span className="text-sm font-medium text-white flex-1">{comparison.yours?.name ?? "Your location"}</span>
+              <div
+                className="flex items-center gap-4 rounded-xl px-4 py-3"
+                style={{ background: `${PINK}08`, border: `1px solid ${PINK}25` }}
+              >
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PINK }} />
+                <span className="text-sm font-medium flex-1" style={{ color: TEXT }}>{comparison.yours?.name ?? "Your location"}</span>
                 <div className="flex items-center gap-1">
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-bold text-white">{comparison.yours?.rating?.toFixed(1)}</span>
+                  <span className="text-sm font-bold" style={{ color: TEXT }}>{comparison.yours?.rating?.toFixed(1)}</span>
                 </div>
-                <span className="text-xs text-white/40">{comparison.yours?.reviewCount} reviews</span>
-                <span className="px-2 py-0.5 rounded-full bg-[oklch(0.55_0.24_280)/20%] text-[oklch(0.80_0.18_280)] text-[10px] font-semibold">YOU</span>
+                <span className="text-xs" style={{ color: TEXT_FAINT }}>{comparison.yours?.reviewCount} reviews</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: `${PINK}18`, color: PINK }}>YOU</span>
               </div>
               {/* Competitors */}
               {(comparison.competitors ?? []).map((c, i) => {
                 const ratingDiff = (c.rating ?? 0) - (comparison.yours?.rating ?? 0)
                 return (
-                  <div key={i} className="flex items-center gap-4 rounded-xl bg-white/3 border border-white/8 px-4 py-3">
-                    <div className="w-2 h-2 rounded-full bg-white/20 flex-shrink-0" />
-                    <span className="text-sm text-white/70 flex-1">{c.name}</span>
+                  <div
+                    key={i}
+                    className="flex items-center gap-4 rounded-xl px-4 py-3 transition-all hover:shadow-sm"
+                    style={{ background: "oklch(0.975 0.003 350)", border: `1px solid ${CARD_BORDER}` }}
+                  >
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "oklch(0.80 0.005 270)" }} />
+                    <span className="text-sm flex-1" style={{ color: TEXT_MUTED }}>{c.name}</span>
                     <div className="flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 fill-yellow-400/60 text-yellow-400/60" />
-                      <span className="text-sm text-white/70">{c.rating?.toFixed(1)}</span>
+                      <Star className="w-3.5 h-3.5 fill-yellow-300 text-yellow-300" />
+                      <span className="text-sm" style={{ color: TEXT_MUTED }}>{c.rating?.toFixed(1)}</span>
                     </div>
-                    <span className="text-xs text-white/40">{c.reviewCount} reviews</span>
-                    <div className={`flex items-center gap-0.5 text-[10px] font-medium ${ratingDiff > 0 ? "text-red-400" : "text-green-400"}`}>
+                    <span className="text-xs" style={{ color: TEXT_FAINT }}>{c.reviewCount} reviews</span>
+                    <div className={`flex items-center gap-0.5 text-[10px] font-medium ${ratingDiff > 0 ? "text-red-500" : "text-emerald-600"}`}>
                       {ratingDiff > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                       {Math.abs(ratingDiff).toFixed(1)}
                     </div>
@@ -166,22 +189,27 @@ export default function CompetitorsPage() {
         {/* Tracked competitors list */}
         {competitors.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30">Tracked competitors</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>Tracked competitors</h3>
             {competitors.map(c => (
-              <div key={c.id} className="flex items-center gap-4 rounded-xl border border-white/8 bg-[oklch(0.13_0.015_270)] px-4 py-3 hover:border-white/12 transition-all">
+              <div
+                key={c.id}
+                className="flex items-center gap-4 rounded-xl px-4 py-3 transition-all hover:shadow-sm"
+                style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+              >
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-white">{c.name}</div>
-                  {c.address && <div className="text-xs text-white/35">{c.address}</div>}
+                  <div className="text-sm font-medium" style={{ color: TEXT }}>{c.name}</div>
+                  {c.address && <div className="text-xs" style={{ color: TEXT_FAINT }}>{c.address}</div>}
                 </div>
                 {c.rating != null && (
                   <div className="flex items-center gap-1">
                     <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm text-white">{c.rating?.toFixed(1)}</span>
+                    <span className="text-sm" style={{ color: TEXT }}>{c.rating?.toFixed(1)}</span>
                   </div>
                 )}
                 <button
                   onClick={() => handleDelete(c.id)}
-                  className="text-white/20 hover:text-red-400 transition-colors"
+                  className="transition-colors hover:text-red-500"
+                  style={{ color: TEXT_FAINT }}
                   title="Stop tracking"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -192,8 +220,8 @@ export default function CompetitorsPage() {
         )}
 
         {!loading && competitors.length === 0 && !comparison && (
-          <div className="text-center py-20 text-white/30">
-            <Users className="w-8 h-8 mx-auto mb-3 opacity-30" />
+          <div className="text-center py-20" style={{ color: TEXT_FAINT }}>
+            <Users className="w-8 h-8 mx-auto mb-3 opacity-40" />
             <p className="text-sm">No competitors tracked yet. Use Discover above to find nearby businesses.</p>
           </div>
         )}

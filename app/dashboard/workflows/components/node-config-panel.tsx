@@ -5,6 +5,18 @@
 import { X } from "lucide-react"
 import { useWorkflowStore } from "../store/workflow-store"
 
+const PINK = "oklch(0.58 0.24 350)"
+const BORDER = "oklch(0.91 0.008 350)"
+const TEXT = "oklch(0.14 0.008 270)"
+const TEXT_MUTED = "oklch(0.55 0.008 270)"
+const TEXT_FAINT = "oklch(0.65 0.008 270)"
+const PANEL_BG = "oklch(0.99 0.005 350)"
+const INPUT_BG = "oklch(0.96 0.005 350)"
+const INPUT_BORDER = "oklch(0.90 0.008 350)"
+
+const inputCls = "w-full rounded-lg text-sm px-3 py-2 outline-none transition-colors"
+const inputStyle = { background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }
+
 export function NodeConfigPanel() {
   const { nodes, selectedNodeId, updateNodeConfig, selectNode } = useWorkflowStore()
   const node = nodes.find((n) => n.id === selectedNodeId)
@@ -13,7 +25,6 @@ export function NodeConfigPanel() {
 
   const cfg = node.data.config ?? {}
 
-  // Per-node config fields
   const renderFields = () => {
     switch (node.data.type) {
       case "trigger-new-review":
@@ -21,7 +32,7 @@ export function NodeConfigPanel() {
           <div className="space-y-4">
             <Field label="Location">
               <select
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)]"
+                className={inputCls} style={inputStyle}
                 value={(cfg.locationId as string) ?? "all"}
                 onChange={(e) => updateNodeConfig(node.id, { locationId: e.target.value })}
               >
@@ -37,7 +48,7 @@ export function NodeConfigPanel() {
           <div className="space-y-4">
             <Field label="Condition">
               <select
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)]"
+                className={inputCls} style={inputStyle}
                 value={(cfg.operator as string) ?? "lte"}
                 onChange={(e) => updateNodeConfig(node.id, { operator: e.target.value })}
               >
@@ -52,9 +63,10 @@ export function NodeConfigPanel() {
                   type="range" min={1} max={5} step={1}
                   value={(cfg.value as number) ?? 2}
                   onChange={(e) => updateNodeConfig(node.id, { value: Number(e.target.value) })}
-                  className="flex-1 accent-[oklch(0.65_0.26_280)]"
+                  className="flex-1"
+                  style={{ accentColor: PINK }}
                 />
-                <span className="text-white/70 text-sm w-4">{(cfg.value as number) ?? 2}</span>
+                <span className="text-sm w-4" style={{ color: TEXT_MUTED }}>{(cfg.value as number) ?? 2}</span>
               </div>
             </Field>
           </div>
@@ -69,12 +81,15 @@ export function NodeConfigPanel() {
                 placeholder="e.g. wait, slow, rude"
                 value={(cfg.keywords as string) ?? ""}
                 onChange={(e) => updateNodeConfig(node.id, { keywords: e.target.value })}
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)] placeholder:text-white/25"
+                className={inputCls}
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = PINK)}
+                onBlur={e => (e.target.style.borderColor = INPUT_BORDER)}
               />
             </Field>
             <Field label="Match">
               <select
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)]"
+                className={inputCls} style={inputStyle}
                 value={(cfg.match as string) ?? "any"}
                 onChange={(e) => updateNodeConfig(node.id, { match: e.target.value })}
               >
@@ -90,7 +105,7 @@ export function NodeConfigPanel() {
           <div className="space-y-4">
             <Field label="Tone">
               <select
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)]"
+                className={inputCls} style={inputStyle}
                 value={(cfg.tone as string) ?? "empathetic"}
                 onChange={(e) => updateNodeConfig(node.id, { tone: e.target.value })}
               >
@@ -106,9 +121,9 @@ export function NodeConfigPanel() {
                   type="checkbox"
                   checked={(cfg.autoPost as boolean) ?? false}
                   onChange={(e) => updateNodeConfig(node.id, { autoPost: e.target.checked })}
-                  className="accent-[oklch(0.65_0.26_280)]"
+                  style={{ accentColor: PINK }}
                 />
-                <span className="text-sm text-white/60">Auto-post reply</span>
+                <span className="text-sm" style={{ color: TEXT_MUTED }}>Auto-post reply</span>
               </label>
             </Field>
             <Field label="Hint / context">
@@ -117,7 +132,10 @@ export function NodeConfigPanel() {
                 placeholder="Optional guidance for the AI…"
                 value={(cfg.hint as string) ?? ""}
                 onChange={(e) => updateNodeConfig(node.id, { hint: e.target.value })}
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)] placeholder:text-white/25 resize-none"
+                className={`${inputCls} resize-none`}
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = PINK)}
+                onBlur={e => (e.target.style.borderColor = INPUT_BORDER)}
               />
             </Field>
           </div>
@@ -128,7 +146,7 @@ export function NodeConfigPanel() {
           <div className="space-y-4">
             <Field label="Channel">
               <select
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)]"
+                className={inputCls} style={inputStyle}
                 value={(cfg.channel as string) ?? "slack"}
                 onChange={(e) => updateNodeConfig(node.id, { channel: e.target.value })}
               >
@@ -143,7 +161,10 @@ export function NodeConfigPanel() {
                 placeholder="Notification message… (supports {{reviewer}}, {{rating}})"
                 value={(cfg.message as string) ?? ""}
                 onChange={(e) => updateNodeConfig(node.id, { message: e.target.value })}
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)] placeholder:text-white/25 resize-none"
+                className={`${inputCls} resize-none`}
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = PINK)}
+                onBlur={e => (e.target.style.borderColor = INPUT_BORDER)}
               />
             </Field>
           </div>
@@ -158,10 +179,12 @@ export function NodeConfigPanel() {
                   type="number" min={1}
                   value={(cfg.amount as number) ?? 1}
                   onChange={(e) => updateNodeConfig(node.id, { amount: Number(e.target.value) })}
-                  className="w-20 rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)]"
+                  className="w-20 rounded-lg text-sm px-3 py-2 outline-none"
+                  style={inputStyle}
                 />
                 <select
-                  className="flex-1 rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)]"
+                  className="flex-1 rounded-lg text-sm px-3 py-2 outline-none"
+                  style={inputStyle}
                   value={(cfg.unit as string) ?? "minutes"}
                   onChange={(e) => updateNodeConfig(node.id, { unit: e.target.value })}
                 >
@@ -179,7 +202,7 @@ export function NodeConfigPanel() {
           <div className="space-y-4">
             <Field label="Frequency">
               <select
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white text-sm px-3 py-2 outline-none focus:border-[oklch(0.65_0.26_280)]"
+                className={inputCls} style={inputStyle}
                 value={(cfg.frequency as string) ?? "daily"}
                 onChange={(e) => updateNodeConfig(node.id, { frequency: e.target.value })}
               >
@@ -193,22 +216,26 @@ export function NodeConfigPanel() {
 
       default:
         return (
-          <p className="text-xs text-white/30 italic">No configuration for this node.</p>
+          <p className="text-xs italic" style={{ color: TEXT_FAINT }}>No configuration for this node.</p>
         )
     }
   }
 
   return (
-    <div className="w-72 flex-shrink-0 flex flex-col bg-[oklch(0.10_0.016_270)] border-l border-white/8 overflow-hidden">
+    <div
+      className="w-72 flex-shrink-0 flex flex-col overflow-hidden"
+      style={{ background: PANEL_BG, borderLeft: `1px solid ${BORDER}` }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-white/8">
+      <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
         <div>
-          <div className="text-xs text-white/40 uppercase tracking-widest mb-0.5">Configure node</div>
-          <div className="text-sm font-semibold text-white">{node.data.label}</div>
+          <div className="text-xs uppercase tracking-widest mb-0.5" style={{ color: TEXT_FAINT }}>Configure node</div>
+          <div className="text-sm font-semibold" style={{ color: TEXT }}>{node.data.label}</div>
         </div>
         <button
           onClick={() => selectNode(null)}
-          className="text-white/30 hover:text-white/70 transition-colors"
+          className="transition-colors hover:opacity-75"
+          style={{ color: TEXT_FAINT }}
         >
           <X className="w-4 h-4" />
         </button>
@@ -221,10 +248,13 @@ export function NodeConfigPanel() {
 
       {/* Debug info */}
       <details className="px-4 pb-4">
-        <summary className="text-[10px] text-white/25 cursor-pointer hover:text-white/40 transition-colors">
+        <summary className="text-[10px] cursor-pointer hover:opacity-75 transition-opacity" style={{ color: TEXT_FAINT }}>
           Debug: raw config
         </summary>
-        <pre className="mt-2 text-[10px] text-white/40 bg-black/30 rounded-lg p-3 overflow-auto max-h-40">
+        <pre
+          className="mt-2 text-[10px] rounded-lg p-3 overflow-auto max-h-40"
+          style={{ background: "oklch(0.96 0.005 350)", color: TEXT_MUTED }}
+        >
           {JSON.stringify({ id: node.id, type: node.data.type, config: node.data.config }, null, 2)}
         </pre>
       </details>
@@ -235,7 +265,7 @@ export function NodeConfigPanel() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-white/50 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>{label}</label>
       {children}
     </div>
   )

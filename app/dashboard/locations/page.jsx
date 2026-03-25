@@ -5,9 +5,40 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { MapPin, RefreshCw, ToggleLeft, ToggleRight, Sparkles, Star, MessageSquare, Bot } from "lucide-react"
+import { MapPin, RefreshCw, Sparkles, Star, Bot } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { api } from "@/lib/api"
+
+const PINK = "oklch(0.58 0.24 350)"
+const CARD_BG = "oklch(1 0 0)"
+const CARD_BORDER = "oklch(0.91 0.008 350)"
+const CARD_BORDER_HOVER = "oklch(0.86 0.012 350)"
+const TEXT = "oklch(0.14 0.008 270)"
+const TEXT_MUTED = "oklch(0.55 0.008 270)"
+const TEXT_FAINT = "oklch(0.65 0.008 270)"
+
+function ToggleSwitch({ label, icon, checked, onChange, disabled }) {
+  return (
+    <button
+      onClick={() => !disabled && onChange(!checked)}
+      disabled={disabled}
+      className="flex items-center gap-2 text-xs transition-colors disabled:opacity-60"
+      style={{ color: TEXT_MUTED }}
+    >
+      <span style={{ color: checked ? PINK : TEXT_FAINT }}>{icon}</span>
+      <span>{label}</span>
+      <div
+        className="w-8 h-4 rounded-full transition-colors relative"
+        style={{ background: checked ? PINK : "oklch(0.88 0.005 270)" }}
+      >
+        <div
+          className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform"
+          style={{ transform: checked ? "translateX(16px)" : "translateX(2px)" }}
+        />
+      </div>
+    </button>
+  )
+}
 
 function LocationCard({ location, onSettingsChange, onSync }) {
   const [settings, setSettings] = useState({
@@ -25,7 +56,6 @@ function LocationCard({ location, onSettingsChange, onSync }) {
     try {
       await onSettingsChange(location.id, { [key]: value })
     } catch {
-      // revert on error
       setSettings(settings)
     } finally {
       setSaving(false)
@@ -42,41 +72,44 @@ function LocationCard({ location, onSettingsChange, onSync }) {
   }
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-[oklch(0.13_0.015_270)] overflow-hidden hover:border-white/12 transition-all">
-      {/* Header */}
+    <div
+      className="rounded-2xl overflow-hidden transition-all hover:shadow-sm"
+      style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = CARD_BORDER_HOVER}
+      onMouseLeave={e => e.currentTarget.style.borderColor = CARD_BORDER}
+    >
       <div className="flex items-start gap-4 p-5">
-        <div className="w-10 h-10 rounded-xl bg-[oklch(0.55_0.24_280)/20%] flex items-center justify-center flex-shrink-0">
-          <MapPin className="w-5 h-5 text-[oklch(0.75_0.20_280)]" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${PINK}12` }}>
+          <MapPin className="w-5 h-5" style={{ color: PINK }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-white truncate">{location.title}</h3>
-            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${location.status ? "bg-green-400" : "bg-white/20"}`} />
+            <h3 className="text-sm font-semibold truncate" style={{ color: TEXT }}>{location.title}</h3>
+            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${location.status ? "bg-emerald-500" : "bg-[oklch(0.80_0.005_270)]"}`} />
           </div>
-          <p className="text-xs text-white/40 mt-0.5">{location.email}</p>
-          <p className="text-[10px] text-white/25 mt-0.5 font-mono">{location.google_location_id}</p>
+          <p className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>{location.email}</p>
+          <p className="text-[10px] mt-0.5 font-mono" style={{ color: TEXT_FAINT }}>{location.google_location_id}</p>
         </div>
         <div className="flex items-center gap-4 flex-shrink-0">
           {location.average_rating != null && (
             <div className="text-right">
               <div className="flex items-center gap-1 justify-end">
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-bold text-white">{location.average_rating?.toFixed(1)}</span>
+                <span className="text-sm font-bold" style={{ color: TEXT }}>{location.average_rating?.toFixed(1)}</span>
               </div>
-              <div className="text-[10px] text-white/30">{location.total_review_count} reviews</div>
+              <div className="text-[10px]" style={{ color: TEXT_FAINT }}>{location.total_review_count} reviews</div>
             </div>
           )}
           {location.response_rate != null && (
             <div className="text-right">
-              <div className="text-sm font-bold text-white">{location.response_rate}%</div>
-              <div className="text-[10px] text-white/30">reply rate</div>
+              <div className="text-sm font-bold" style={{ color: TEXT }}>{location.response_rate}%</div>
+              <div className="text-[10px]" style={{ color: TEXT_FAINT }}>reply rate</div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Settings toggles */}
-      <div className="border-t border-white/8 px-5 py-3 flex items-center gap-6">
+      <div className="px-5 py-3 flex items-center gap-6" style={{ borderTop: `1px solid ${CARD_BORDER}` }}>
         <ToggleSwitch
           label="AI Replies"
           icon={<Sparkles className="w-3 h-3" />}
@@ -95,7 +128,8 @@ function LocationCard({ location, onSettingsChange, onSync }) {
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/4 hover:bg-white/8 text-white/50 hover:text-white text-xs transition-all disabled:opacity-60"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-60 hover:opacity-75"
+            style={{ border: `1px solid ${CARD_BORDER}`, background: CARD_BG, color: TEXT_MUTED }}
           >
             <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} />
             Sync reviews
@@ -103,22 +137,6 @@ function LocationCard({ location, onSettingsChange, onSync }) {
         </div>
       </div>
     </div>
-  )
-}
-
-function ToggleSwitch({ label, icon, checked, onChange, disabled }) {
-  return (
-    <button
-      onClick={() => !disabled && onChange(!checked)}
-      disabled={disabled}
-      className="flex items-center gap-2 text-xs text-white/50 hover:text-white/80 transition-colors disabled:opacity-60"
-    >
-      <span className={`transition-colors ${checked ? "text-[oklch(0.75_0.20_280)]" : "text-white/30"}`}>{icon}</span>
-      <span>{label}</span>
-      <div className={`w-8 h-4 rounded-full transition-colors relative ${checked ? "bg-[oklch(0.55_0.24_280)]" : "bg-white/15"}`}>
-        <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-4" : "translate-x-0.5"}`} />
-      </div>
-    </button>
   )
 }
 
@@ -163,7 +181,8 @@ export default function LocationsPage() {
         <button
           onClick={handleConnectGMB}
           disabled={connectingGMB}
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[oklch(0.55_0.24_280)] hover:bg-[oklch(0.60_0.26_280)] text-white text-xs font-semibold transition-all disabled:opacity-60"
+          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all disabled:opacity-60 hover:opacity-90"
+          style={{ background: PINK }}
         >
           {connectingGMB ? "Redirecting…" : "+ Connect Google Business"}
         </button>
@@ -172,18 +191,19 @@ export default function LocationsPage() {
       <div className="max-w-3xl mx-auto px-8 py-6 space-y-4">
         {loading ? (
           [...Array(3)].map((_, i) => (
-            <div key={i} className="h-28 rounded-2xl bg-white/4 border border-white/8 animate-pulse" />
+            <div key={i} className="h-28 rounded-2xl animate-pulse" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }} />
           ))
         ) : locations.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-14 h-14 rounded-2xl bg-[oklch(0.55_0.24_280)/15%] flex items-center justify-center mx-auto mb-4">
-              <MapPin className="w-7 h-7 text-[oklch(0.75_0.20_280)]" />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: `${PINK}12` }}>
+              <MapPin className="w-7 h-7" style={{ color: PINK }} />
             </div>
-            <h3 className="text-base font-semibold text-white mb-2">No locations yet</h3>
-            <p className="text-sm text-white/40 mb-6">Connect your Google Business account to get started.</p>
+            <h3 className="text-base font-semibold mb-2" style={{ color: TEXT }}>No locations yet</h3>
+            <p className="text-sm mb-6" style={{ color: TEXT_MUTED }}>Connect your Google Business account to get started.</p>
             <button
               onClick={handleConnectGMB}
-              className="px-5 py-2.5 rounded-xl bg-[oklch(0.55_0.24_280)] hover:bg-[oklch(0.60_0.26_280)] text-white text-sm font-semibold transition-colors"
+              className="px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90"
+              style={{ background: PINK }}
             >
               Connect Google Business
             </button>
