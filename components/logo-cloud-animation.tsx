@@ -186,6 +186,8 @@ const RotatingButtonCloud: React.FC<RotatingButtonCloudProps> = ({
     };
   }, [debouncedUpdateContainerSize]);
 
+  const sequenceStarted = useRef(false);
+
   const runSequence = useCallback(async () => {
     const stages: ("initial" | "bloom" | "orbit" | "rotate")[] = [
       "initial",
@@ -200,11 +202,17 @@ const RotatingButtonCloud: React.FC<RotatingButtonCloudProps> = ({
   }, [controls]);
 
   useEffect(() => {
+    if (containerSize.width === 0 || containerSize.height === 0) return;
+    if (sequenceStarted.current) return;
+    sequenceStarted.current = true;
     runSequence();
+  }, [containerSize, runSequence]);
+
+  useEffect(() => {
     return () => {
       controls.stop();
     };
-  }, [runSequence]);
+  }, [controls]);
 
   const buttonVariants: Variants = useMemo(() => {
     const getBloomPositions = () => {
