@@ -1,22 +1,48 @@
 import Link from "next/link"
+import { Zap } from "lucide-react"
+
+const CALENDLY = "https://calendly.com/satwikloka321/retilo?month=2026-03"
 
 export function LandingFooter() {
   return (
-    <footer className="bg-[oklch(0.07_0.010_270)] border-t border-white/8 py-12 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-md bg-[oklch(0.55_0.24_280)] flex items-center justify-center">
-            <span className="text-white font-black text-xs">R</span>
+    <footer className="bg-gray-50 border-t border-gray-100 py-12 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row items-start justify-between gap-8 mb-10">
+          {/* Brand */}
+          <div className="flex flex-col gap-3 max-w-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-[oklch(0.58_0.24_350)] flex items-center justify-center">
+                <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="font-bold text-gray-800 text-sm">Retilo</span>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              AI-powered CX agent platform for modern retail. Built for multi-location businesses.
+            </p>
           </div>
-          <span className="font-bold text-white/70 text-sm">Retilo</span>
+
+          {/* Links */}
+          <div className="flex flex-wrap gap-x-10 gap-y-6 text-sm">
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Product</p>
+              <a href="#features" className="block text-gray-500 hover:text-gray-900 transition-colors">Features</a>
+              <a href="#how-it-works" className="block text-gray-500 hover:text-gray-900 transition-colors">How it works</a>
+              <a href="#integrations" className="block text-gray-500 hover:text-gray-900 transition-colors">Integrations</a>
+            </div>
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Company</p>
+              <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="block text-gray-500 hover:text-gray-900 transition-colors">Book a demo</a>
+              <Link href="/auth" className="block text-gray-500 hover:text-gray-900 transition-colors">Sign in</Link>
+              <Link href="/auth" className="block text-gray-500 hover:text-gray-900 transition-colors">Get started</Link>
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-white/30 text-center md:text-left">
-          AI-powered Google Business automation platform.
-          Built for multi-location businesses.
-        </p>
-        <div className="flex items-center gap-4 text-xs text-white/30">
-          <Link href="/auth" className="hover:text-white/60 transition-colors">Sign in</Link>
-          <Link href="/auth" className="hover:text-white/60 transition-colors">Get started</Link>
+
+        <div className="pt-6 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-gray-400">© 2026 Retilo. All rights reserved.</p>
+          <p className="text-xs text-gray-400">
+            Built for the future of retail CX. <span style={{ color: "oklch(0.58 0.24 350)" }}>app.retilo.io</span>
+          </p>
         </div>
       </div>
     </footer>

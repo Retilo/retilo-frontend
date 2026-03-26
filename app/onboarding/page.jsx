@@ -31,17 +31,24 @@ function StepIndicator({ current }) {
               <div
                 className={`flex size-6 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
                   isComplete
-                    ? "bg-[oklch(0.55_0.24_280)] text-white shadow-sm shadow-[oklch(0.55_0.24_280)/40%]"
+                    ? "text-white shadow-sm"
                     : isActive
-                    ? "bg-[oklch(0.55_0.24_280)/15%] text-[oklch(0.75_0.20_280)] ring-1 ring-[oklch(0.55_0.24_280)/50%]"
-                    : "bg-white/6 text-white/30"
+                    ? "ring-1 ring-[oklch(0.58_0.24_350)/50%]"
+                    : "text-gray-300"
                 }`}
+                style={
+                  isComplete
+                    ? { background: "oklch(0.58 0.24 350)", boxShadow: "0 2px 8px oklch(0.58 0.24 350 / 30%)" }
+                    : isActive
+                    ? { background: "oklch(0.58 0.24 350 / 12%)", color: "oklch(0.48 0.24 350)" }
+                    : { background: "#f3f4f6", color: "#d1d5db" }
+                }
               >
                 {isComplete ? <Check className="size-3" strokeWidth={2.5} /> : i + 1}
               </div>
               <span
                 className={`text-xs font-medium transition-colors ${
-                  isActive ? "text-white/80" : isComplete ? "text-white/50" : "text-white/25"
+                  isActive ? "text-gray-700" : isComplete ? "text-gray-400" : "text-gray-300"
                 }`}
               >
                 {STEP_LABELS[s]}
@@ -50,7 +57,7 @@ function StepIndicator({ current }) {
             {i < visibleSteps.length - 1 && (
               <div
                 className={`h-px w-6 transition-colors ${
-                  isComplete ? "bg-[oklch(0.55_0.24_280)]" : "bg-white/10"
+                  isComplete ? "bg-[oklch(0.70_0.20_350)]" : "bg-gray-200"
                 }`}
               />
             )}
@@ -86,20 +93,21 @@ export default function OnboardingPage() {
   const isProcessing = step === "processing"
 
   return (
-    <div className="min-h-screen bg-[oklch(0.09_0.012_270)] flex flex-col">
-      {/* Background grid */}
+    <div className="min-h-screen bg-[oklch(0.985_0.003_270)] flex flex-col">
+      {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
+        {/* Dot grid */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.035]"
           style={{
-            backgroundImage: "linear-gradient(oklch(1 0 0 / 100%) 1px, transparent 1px), linear-gradient(90deg, oklch(1 0 0 / 100%) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
+            backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
           }}
         />
-        {/* Radial glow */}
+        {/* Soft pink radial glow at top */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at center, oklch(0.55 0.24 280) 0%, transparent 70%)" }}
+          className="absolute -top-20 left-1/2 -translate-x-1/2 w-[700px] h-[400px] pointer-events-none"
+          style={{ background: "radial-gradient(ellipse 60% 55% at 50% 0%, oklch(0.58 0.24 350 / 7%) 0%, transparent 70%)" }}
         />
       </div>
 
@@ -108,14 +116,19 @@ export default function OnboardingPage() {
       {!isProcessing && (
         <>
           {/* Top bar */}
-          <header className="relative z-10 flex h-16 items-center justify-between border-b border-white/6 bg-[oklch(0.09_0.012_270)/80%] backdrop-blur-sm px-6">
+          <header className="relative z-10 flex h-16 items-center justify-between border-b border-gray-200/80 bg-white/80 backdrop-blur-sm px-6">
             <div className="flex items-center gap-3">
-              <div className="flex size-8 items-center justify-center rounded-xl bg-[oklch(0.55_0.24_280)] shadow-lg shadow-[oklch(0.55_0.24_280)/35%]">
+              <div
+                className="flex size-8 items-center justify-center rounded-xl shadow-lg"
+                style={{ background: "oklch(0.58 0.24 350)", boxShadow: "0 4px 14px oklch(0.58 0.24 350 / 35%)" }}
+              >
                 <Zap className="size-4 text-white" strokeWidth={2.5} />
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-sm font-bold text-white tracking-tight">Retilo</span>
-                <span className="text-[9px] font-semibold uppercase tracking-widest text-[oklch(0.65_0.20_280)]">GMB Platform</span>
+                <span className="text-sm font-bold text-gray-900 tracking-tight">Retilo</span>
+                <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: "oklch(0.55 0.20 350)" }}>
+                  Retail Intelligence
+                </span>
               </div>
             </div>
             <StepIndicator current={step} />
@@ -124,7 +137,6 @@ export default function OnboardingPage() {
           {/* Card */}
           <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
             <div className="w-full max-w-[400px]">
-              {/* Card wrapper */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={step}
@@ -133,24 +145,23 @@ export default function OnboardingPage() {
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.2, ease: "easeInOut" }}
-                  className="rounded-2xl border border-white/10 bg-[oklch(0.12_0.015_270)] p-7 shadow-2xl shadow-black/50"
+                  className="rounded-2xl border border-gray-200 bg-white p-7 shadow-lg shadow-gray-100/80"
                 >
-                  {step === "auth" && <AuthStep onNext={() => setStep("connect")} dark />}
-                  {step === "connect" && <ConnectGMBStep dark />}
+                  {step === "auth" && <AuthStep onNext={() => setStep("connect")} />}
+                  {step === "connect" && <ConnectGMBStep />}
                   {step === "locations" && (
                     <LocationSelectStep
                       onNext={(locs) => {
                         setSelectedLocations(locs)
                         setStep("processing")
                       }}
-                      dark
                     />
                   )}
                 </motion.div>
               </AnimatePresence>
 
-              <p className="mt-5 text-center text-[11px] text-white/20 tracking-wide">
-                Retilo · Enterprise retail intelligence platform
+              <p className="mt-5 text-center text-[11px] text-gray-400 tracking-wide">
+                Retilo · Retail intelligence platform
               </p>
             </div>
           </main>

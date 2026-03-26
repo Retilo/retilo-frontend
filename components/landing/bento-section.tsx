@@ -1,18 +1,83 @@
 "use client"
 
-import { motion, useInView } from "framer-motion"
+import { motion, useInView } from "motion/react"
 import { useRef } from "react"
-import {
-  Star, BarChart3, Workflow, MapPin, Send, ShieldCheck,
-  Sparkles, Bell, TrendingUp, Users
-} from "lucide-react"
+import { MapPin, Star, BarChart3, Workflow, Grid2X2, Zap, TrendingUp, Bell } from "lucide-react"
 
-// -----------------------------------------------------------------
-// BENTO GRID — "What Retilo does" marketing section
-// Inspired by cult-ui marketing-bento-database style
-// -----------------------------------------------------------------
+// ─── Mini widgets inside cards ────────────────────────────────────
 
-interface BentoCardProps {
+function RankGridMini() {
+  const grid = [1, 2, 4, 3, 5, 8, 6, 7, 12, 9, 11, 14, 10, 13, 15, 18, 20, 16, 22, 19, 17, 21, 24, 23, 25]
+  const color = (r: number) => r <= 3 ? "#22c55e" : r <= 10 ? "#eab308" : "#ef4444"
+  return (
+    <div className="mt-4 grid grid-cols-5 gap-1">
+      {grid.map((r, i) => (
+        <div key={i} className="h-7 rounded flex items-center justify-center text-[10px] font-bold text-white"
+          style={{ background: color(r) }}>
+          {r}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ReviewWidget() {
+  const reviews = [
+    { name: "Sarah M.", stars: 5, text: "Absolutely love this place!", replied: true },
+    { name: "James K.", stars: 2, text: "Disappointing experience...", replied: false },
+    { name: "Priya L.", stars: 5, text: "Best service ever!", replied: true },
+  ]
+  return (
+    <div className="mt-4 space-y-2">
+      {reviews.map((r) => (
+        <div key={r.name} className="flex items-start gap-2 p-2.5 rounded-xl" style={{ background: "oklch(0.97 0.003 270)" }}>
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+            style={{ background: "oklch(0.60 0.18 280)" }}>
+            {r.name[0]}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1">
+              {"★".repeat(r.stars).split("").map((s, i) => (
+                <span key={i} className="text-[10px] text-yellow-400">{s}</span>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-500 truncate">{r.text}</p>
+          </div>
+          {r.replied && (
+            <div className="flex-shrink-0 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-green-100 text-green-700">AI ✓</div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function WorkflowMini() {
+  const nodes = [
+    { label: "New review", color: "#4285F4" },
+    { label: "AI Draft", color: "oklch(0.58 0.24 350)" },
+    { label: "Approve", color: "#0A7D4B" },
+    { label: "Post", color: "#F59E0B" },
+  ]
+  return (
+    <div className="mt-4 flex items-center gap-1 overflow-hidden">
+      {nodes.map((n, i) => (
+        <div key={i} className="flex items-center gap-1">
+          <div className="px-2 py-1.5 rounded-lg text-[10px] font-semibold text-white whitespace-nowrap flex-shrink-0"
+            style={{ background: n.color }}>
+            {n.label}
+          </div>
+          {i < nodes.length - 1 && <div className="w-3 h-px flex-shrink-0" style={{ background: "#cbd5e1" }} />}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Bento card ────────────────────────────────────────────────────
+function BentoCard({
+  className = "", icon, title, description, accent = "#6366f1", delay = 0, children, badge
+}: {
   className?: string
   icon: React.ReactNode
   title: string
@@ -20,11 +85,10 @@ interface BentoCardProps {
   accent?: string
   delay?: number
   children?: React.ReactNode
-}
-
-function BentoCard({ className = "", icon, title, description, accent = "oklch(0.65_0.26_280)", delay = 0, children }: BentoCardProps) {
+  badge?: string
+}) {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: "-80px" })
+  const inView = useInView(ref, { once: true, margin: "-60px" })
 
   return (
     <motion.div
@@ -32,208 +96,138 @@ function BentoCard({ className = "", icon, title, description, accent = "oklch(0
       initial={{ opacity: 0, y: 24 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay }}
-      className={`relative group rounded-2xl border border-white/8 bg-[oklch(0.13_0.015_270)] overflow-hidden p-6 hover:border-white/15 transition-all duration-300 ${className}`}
+      className={`relative group rounded-2xl border bg-white overflow-hidden p-6 hover:shadow-md transition-all duration-300 ${className}`}
+      style={{ borderColor: "oklch(0.92 0.006 270)" }}
     >
-      {/* Hover glow */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: `radial-gradient(ellipse 60% 40% at 50% 100%, ${accent}18 0%, transparent 70%)` }}
-      />
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-        style={{ background: `${accent}18`, color: accent }}
-      >
+      {/* Hover accent glow */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{ background: `radial-gradient(ellipse 80% 60% at 50% 110%, ${accent}10 0%, transparent 70%)` }} />
+
+      {badge && (
+        <div className="absolute top-4 right-4 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+          style={{ background: accent }}>
+          {badge}
+        </div>
+      )}
+
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+        style={{ background: `${accent}15`, color: accent }}>
         {icon}
       </div>
-      <h3 className="font-semibold text-white text-base mb-2">{title}</h3>
-      <p className="text-sm text-white/50 leading-relaxed">{description}</p>
+      <h3 className="font-bold text-gray-900 text-base mb-1.5">{title}</h3>
+      <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
       {children}
     </motion.div>
   )
 }
 
-// Mini review reply preview widget
-function ReviewReplyWidget() {
-  return (
-    <div className="mt-4 rounded-xl bg-black/30 border border-white/8 p-3 space-y-2 text-xs">
-      <div className="flex items-start gap-2">
-        <div className="w-5 h-5 rounded-full bg-red-400/20 flex items-center justify-center text-[9px] font-bold text-red-400 flex-shrink-0">J</div>
-        <p className="text-white/50 leading-relaxed">"Terrible experience, waited 45 mins…"</p>
-      </div>
-      <div className="flex items-center gap-1.5 text-[oklch(0.80_0.18_280)]">
-        <Sparkles className="w-3 h-3" />
-        <span>Generating AI reply…</span>
-      </div>
-      <div className="rounded-lg bg-[oklch(0.55_0.24_280)/15%] border border-[oklch(0.55_0.24_280)/30%] p-2 text-white/60 leading-relaxed">
-        "Hi John, we sincerely apologize for the wait. This is not our standard…"
-      </div>
-    </div>
-  )
-}
-
-// Mini analytics sparkline
-function AnalyticsWidget() {
-  const bars = [30, 45, 38, 52, 48, 65, 70, 58, 75, 80, 72, 85]
-  return (
-    <div className="mt-4 flex items-end gap-1 h-12">
-      {bars.map((h, i) => (
-        <div
-          key={i}
-          className="flex-1 rounded-sm transition-all"
-          style={{
-            height: `${h}%`,
-            background: `oklch(0.65 0.26 280 / ${40 + i * 5}%)`,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-// Mini workflow nodes preview
-function WorkflowWidget() {
-  const nodes = ["New Review", "AI Filter", "Draft Reply", "Auto Post"]
-  return (
-    <div className="mt-4 flex items-center gap-1.5 flex-wrap">
-      {nodes.map((n, i) => (
-        <div key={n} className="flex items-center gap-1">
-          <div className="px-2.5 py-1 rounded-lg bg-white/6 border border-white/10 text-[10px] text-white/70 whitespace-nowrap">
-            {n}
-          </div>
-          {i < nodes.length - 1 && <div className="w-3 h-px bg-white/20" />}
-        </div>
-      ))}
-    </div>
-  )
-}
-
+// ─── Section ────────────────────────────────────────────────────────
 export function BentoSection() {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: "-80px" })
+
   return (
-    <section id="features" className="bg-[oklch(0.09_0.012_270)] py-24 px-4">
+    <section id="features" className="py-24 px-4 bg-[oklch(0.985_0.003_270)]">
       <div className="max-w-6xl mx-auto">
-        {/* Section header */}
+        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          ref={ref}
+          initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
           className="text-center mb-14"
         >
-          <p className="text-sm font-medium text-[oklch(0.75_0.20_280)] mb-3 uppercase tracking-widest">
-            Platform capabilities
-          </p>
-          <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-4">
-            Everything your GMB needs
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
+            style={{ background: "oklch(0.58 0.24 350 / 10%)", color: "oklch(0.48 0.24 350)", border: "1px solid oklch(0.58 0.24 350 / 20%)" }}>
+            <Zap className="w-3 h-3" /> Platform overview
+          </div>
+          <h2 className="text-3xl lg:text-4xl font-black text-gray-900 tracking-tight mb-4">
+            One platform. Every retail signal.
           </h2>
-          <p className="text-lg text-white/50 max-w-xl mx-auto">
-            One platform to manage reviews, analytics, automation, and campaigns
-            across every location.
+          <p className="text-gray-500 max-w-xl mx-auto">
+            From local ranking intelligence to AI-powered review management — Retilo gives retail teams the full picture, in real time.
           </p>
         </motion.div>
 
         {/* Bento grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Large: AI Reviews */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto">
+          {/* Large: GBP Ranking — spans 2 cols */}
           <BentoCard
-            className="sm:col-span-2"
-            icon={<Star className="w-5 h-5" />}
-            title="AI Review Replies"
-            description="Automatically generate and post personalised replies to every Google review — at any scale, in your brand voice."
-            accent="oklch(0.65_0.26_280)"
+            className="md:col-span-2"
+            icon={<Grid2X2 className="w-5 h-5" />}
+            title="GBP Local Ranking Grid"
+            description="Visualise exactly where your business appears on Google Maps for any keyword across a geographic grid. Scan, track, and improve."
+            accent="oklch(0.58 0.24 350)"
             delay={0}
+            badge="New"
           >
-            <ReviewReplyWidget />
-          </BentoCard>
-
-          {/* Analytics */}
-          <BentoCard
-            icon={<BarChart3 className="w-5 h-5" />}
-            title="Deep Analytics"
-            description="Rating trends, sentiment breakdowns, keyword insights, and health scores for every location."
-            accent="oklch(0.60_0.20_160)"
-            delay={0.05}
-          >
-            <AnalyticsWidget />
+            <RankGridMini />
           </BentoCard>
 
           {/* Workflows */}
           <BentoCard
             icon={<Workflow className="w-5 h-5" />}
-            title="Automation Workflows"
-            description="Build visual no-code workflows: trigger on new reviews, filter by rating, generate AI drafts, auto-post or notify your team."
-            accent="oklch(0.70_0.18_55)"
+            title="Visual Workflows"
+            description="Drag-and-drop automation editor. Connect triggers, AI nodes, and actions — no code required."
+            accent="#7C3AED"
+            delay={0.05}
+          >
+            <WorkflowMini />
+          </BentoCard>
+
+          {/* Review AI */}
+          <BentoCard
+            icon={<Star className="w-5 h-5" />}
+            title="AI Review Replies"
+            description="Auto-draft personalised responses for every review. Approve in one click or let AI post directly."
+            accent="#F59E0B"
             delay={0.1}
           >
-            <WorkflowWidget />
+            <ReviewWidget />
           </BentoCard>
+
+          {/* Analytics */}
+          <BentoCard
+            icon={<BarChart3 className="w-5 h-5" />}
+            title="CX Analytics"
+            description="Rating trends, response rates, sentiment scores, and business metrics across all locations."
+            accent="#4285F4"
+            delay={0.15}
+          />
 
           {/* Multi-location */}
           <BentoCard
             icon={<MapPin className="w-5 h-5" />}
             title="Multi-location"
-            description="Connect all your Google Business profiles in one workspace. Manage 1 or 100+ locations from a single dashboard."
-            accent="oklch(0.65_0.22_30)"
-            delay={0.15}
-          />
-
-          {/* Campaigns */}
-          <BentoCard
-            icon={<Send className="w-5 h-5" />}
-            title="Review Campaigns"
-            description="Send SMS, email, or WhatsApp review request campaigns to your customers and boost your review velocity."
-            accent="oklch(0.60_0.20_310)"
+            description="Manage 1 or 1,000 locations from a single dashboard. AI adapts tone per location."
+            accent="#0A7D4B"
             delay={0.2}
           />
 
-          {/* Health Score */}
+          {/* Alerts */}
           <BentoCard
-            icon={<TrendingUp className="w-5 h-5" />}
-            title="Health Score"
-            description="A 0–100 composite score per location — built from rating, response rate, review velocity, and recency."
-            accent="oklch(0.60_0.20_160)"
-            delay={0.25}
-          />
-
-          {/* Competitor Intel */}
-          <BentoCard
-            icon={<Users className="w-5 h-5" />}
-            title="Competitor Intelligence"
-            description="Discover nearby competitors via Google Places. Track their ratings, review counts, and compare side-by-side."
-            accent="oklch(0.65_0.26_280)"
-            delay={0.3}
-          />
-
-          {/* Large: Notifications */}
-          <BentoCard
-            className="sm:col-span-2"
+            className="md:col-span-2"
             icon={<Bell className="w-5 h-5" />}
-            title="Smart Alerts & Notifications"
-            description="Get instant alerts when a 1-star review drops, a location's health score dips, or a reply is waiting for approval. Route notifications to Slack, email, or in-app."
-            accent="oklch(0.65_0.22_30)"
-            delay={0.35}
+            title="Smart Alerts & Escalations"
+            description="Get notified the moment a negative review drops, a ranking slips, or a keyword opportunity appears. Route to the right team member automatically."
+            accent="#E1306C"
+            delay={0.25}
           >
-            <div className="mt-4 space-y-2">
-              {[
-                { icon: "🔴", text: "3 unanswered 1-star reviews — Store #4", time: "2m ago" },
-                { icon: "🟡", text: "Health score dropped below 70 — Store #9", time: "15m ago" },
-                { icon: "🟢", text: "12 AI reply drafts ready for approval", time: "1h ago" },
-              ].map((n) => (
-                <div key={n.text} className="flex items-center gap-3 rounded-lg bg-black/20 border border-white/8 px-3 py-2 text-xs">
-                  <span>{n.icon}</span>
-                  <span className="text-white/60 flex-1">{n.text}</span>
-                  <span className="text-white/30 flex-shrink-0">{n.time}</span>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {["1-star review", "Rank drop", "No reply 24h", "Competitor spike"].map((tag) => (
+                <div key={tag} className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-50 text-red-600 border border-red-100">
+                  {tag}
                 </div>
               ))}
             </div>
           </BentoCard>
 
-          {/* Security */}
+          {/* Customer Journey */}
           <BentoCard
-            icon={<ShieldCheck className="w-5 h-5" />}
-            title="Secure by default"
-            description="JWT auth, per-merchant data isolation, and OAuth-scoped Google tokens. Your data stays yours."
-            accent="oklch(0.60_0.20_160)"
-            delay={0.4}
+            icon={<TrendingUp className="w-5 h-5" />}
+            title="Customer Journey Insights"
+            description="Understand the full path from discovery to loyalty. See which touchpoints drive reviews, repeat visits, and revenue."
+            accent="#0A7D4B"
+            delay={0.3}
           />
         </div>
       </div>

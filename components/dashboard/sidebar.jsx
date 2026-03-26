@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard, Star, BarChart3, Workflow,
-  MapPin, Send, LogOut, Users, Zap,
+  MapPin, Send, LogOut, Users, Zap, Grid2X2,
 } from "lucide-react"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { label: "Locations",   icon: MapPin,          href: "/dashboard/locations" },
   { label: "Campaigns",   icon: Send,            href: "/dashboard/campaigns" },
   { label: "Competitors", icon: Users,           href: "/dashboard/competitors" },
+  { label: "Ranking",     icon: Grid2X2,         href: "/dashboard/ranking" },
 ]
 
 export function AppSidebar() {

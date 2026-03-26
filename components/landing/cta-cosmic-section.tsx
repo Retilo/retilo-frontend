@@ -1,167 +1,81 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import Link from "next/link"
-import { ArrowRight, Star } from "lucide-react"
+import { ArrowRight, Calendar } from "lucide-react"
 
-// -----------------------------------------------------------------
-// COSMIC CTA — inspired by cult-ui marketing-cta-cosmic
-// -----------------------------------------------------------------
-
-// Deterministic star positions (no Math.random to avoid hydration mismatch)
-const STARS = [
-  { x: 8, y: 15, size: 1, opacity: 0.6 }, { x: 15, y: 45, size: 1.5, opacity: 0.4 },
-  { x: 22, y: 72, size: 1, opacity: 0.7 }, { x: 30, y: 25, size: 2, opacity: 0.3 },
-  { x: 38, y: 60, size: 1, opacity: 0.5 }, { x: 45, y: 10, size: 1.5, opacity: 0.6 },
-  { x: 52, y: 80, size: 1, opacity: 0.4 }, { x: 60, y: 35, size: 2, opacity: 0.3 },
-  { x: 67, y: 68, size: 1, opacity: 0.7 }, { x: 73, y: 20, size: 1.5, opacity: 0.5 },
-  { x: 80, y: 55, size: 1, opacity: 0.4 }, { x: 88, y: 82, size: 2, opacity: 0.3 },
-  { x: 93, y: 30, size: 1, opacity: 0.6 }, { x: 5, y: 88, size: 1.5, opacity: 0.4 },
-  { x: 96, y: 65, size: 1, opacity: 0.5 }, { x: 42, y: 92, size: 1.5, opacity: 0.35 },
-  { x: 18, y: 5,  size: 1, opacity: 0.5 }, { x: 75, y: 90, size: 1, opacity: 0.4 },
-]
+const CALENDLY = "https://calendly.com/satwikloka321/retilo?month=2026-03"
 
 const SOCIAL_PROOF = [
-  { initials: "SM", color: "oklch(0.65_0.26_280)" },
-  { initials: "JK", color: "oklch(0.60_0.20_160)" },
-  { initials: "PL", color: "oklch(0.70_0.18_55)" },
-  { initials: "AW", color: "oklch(0.65_0.22_30)" },
-  { initials: "RC", color: "oklch(0.60_0.20_310)" },
+  { initials: "SM", bg: "oklch(0.65 0.26 280)" },
+  { initials: "JK", bg: "oklch(0.60 0.20 160)" },
+  { initials: "PL", bg: "oklch(0.70 0.18 55)" },
+  { initials: "AW", bg: "oklch(0.65 0.22 30)" },
+  { initials: "RC", bg: "oklch(0.60 0.20 310)" },
 ]
 
-export function CtaCosmicSection() {
+export function CtaSection() {
   return (
-    <section className="relative overflow-hidden bg-[oklch(0.07_0.010_270)] py-32 px-4">
-      {/* Stars */}
-      {STARS.map((s, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full bg-white pointer-events-none"
-          style={{
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            width: s.size,
-            height: s.size,
-            opacity: s.opacity,
-          }}
-          animate={{ opacity: [s.opacity, s.opacity * 0.3, s.opacity] }}
-          transition={{
-            duration: 2 + (i % 4),
-            repeat: Infinity,
-            delay: (i % 6) * 0.5,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
+    <section className="py-28 px-4 bg-white relative overflow-hidden">
+      {/* Soft gradient bg */}
+      <div aria-hidden className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, oklch(0.58 0.24 350 / 6%) 0%, transparent 70%)" }} />
+      <div aria-hidden className="pointer-events-none absolute top-0 left-0 right-0 h-px"
+        style={{ background: "linear-gradient(to right, transparent, oklch(0.58 0.24 350 / 20%), transparent)" }} />
 
-      {/* Cosmic orbs */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full"
-        style={{
-          background: "radial-gradient(ellipse at center, oklch(0.55 0.24 280 / 25%) 0%, oklch(0.45 0.20 310 / 15%) 40%, transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/4 w-64 h-64 rounded-full blur-[80px] opacity-20"
-        style={{ background: "oklch(0.55 0.24 280)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-0 right-1/4 w-48 h-48 rounded-full blur-[60px] opacity-15"
-        style={{ background: "oklch(0.60 0.20 310)" }}
-      />
-
-      {/* Content */}
-      <div className="relative z-10 max-w-3xl mx-auto text-center">
-        {/* Stars rating */}
+      <div className="max-w-2xl mx-auto text-center relative z-10">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="flex items-center justify-center gap-1 mb-6"
         >
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-          ))}
-        </motion.div>
-
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-5xl sm:text-6xl font-bold text-white tracking-tight leading-[1.05] mb-6"
-        >
-          Ready to automate
-          <br />
-          <span className="gradient-text">your reputation?</span>
-        </motion.h2>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-lg text-white/50 mb-10 leading-relaxed max-w-xl mx-auto"
-        >
-          Join hundreds of multi-location businesses that use Retilo to
-          automate Google Business replies, surface insights, and grow their
-          online reputation on autopilot.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12"
-        >
-          <Link
-            href="/auth"
-            className="group inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[oklch(0.55_0.24_280)] hover:bg-[oklch(0.60_0.26_280)] text-white font-semibold text-sm transition-all glow-purple hover:scale-[1.02]"
-          >
-            Start for free
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-          <Link
-            href="/auth"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl border border-white/12 bg-white/4 hover:bg-white/8 text-white/70 hover:text-white font-medium text-sm transition-all"
-          >
-            Book a demo
-          </Link>
-        </motion.div>
-
-        {/* Social proof avatars */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="flex items-center justify-center gap-3"
-        >
-          <div className="flex items-center">
-            {SOCIAL_PROOF.map((p, i) => (
-              <div
-                key={p.initials}
-                className="w-8 h-8 rounded-full border-2 border-[oklch(0.07_0.010_270)] flex items-center justify-center text-xs font-bold text-white"
-                style={{
-                  background: p.color,
-                  marginLeft: i > 0 ? "-8px" : 0,
-                  zIndex: SOCIAL_PROOF.length - i,
-                  position: "relative",
-                }}
-              >
-                {p.initials}
-              </div>
-            ))}
+          {/* Social proof avatars */}
+          <div className="flex items-center justify-center mb-6">
+            <div className="flex -space-x-2 mr-3">
+              {SOCIAL_PROOF.map(({ initials, bg }) => (
+                <div
+                  key={initials}
+                  className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold text-white"
+                  style={{ background: bg }}
+                >
+                  {initials}
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500">
+              Trusted by <span className="font-semibold text-gray-700">200+ retail brands</span>
+            </p>
           </div>
-          <p className="text-sm text-white/40">
-            <span className="text-white/70 font-medium">500+</span> locations managed on Retilo
+
+          <h2 className="text-4xl lg:text-5xl font-black text-gray-900 tracking-tight mb-5">
+            The future of retail<br />
+            <span style={{ color: "oklch(0.58 0.24 350)" }}>starts here</span>
+          </h2>
+          <p className="text-gray-500 mb-10 text-lg leading-relaxed">
+            Book a 30-minute demo and see why Retilo is becoming the intelligence layer retail teams can't operate without.
           </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href={CALENDLY}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-white text-sm transition-all hover:-translate-y-0.5"
+              style={{ background: "oklch(0.58 0.24 350)", boxShadow: "0 8px 24px oklch(0.58 0.24 350 / 30%)" }}
+            >
+              <Calendar className="w-4 h-4" />
+              Book a demo
+            </a>
+            <Link
+              href="/auth"
+              className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-gray-700 text-sm border border-gray-200 bg-white hover:bg-gray-50 transition-all"
+            >
+              Start free <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <p className="mt-6 text-xs text-gray-400">No credit card required · Setup in under 5 minutes</p>
         </motion.div>
       </div>
     </section>

@@ -1,7 +1,6 @@
 "use client"
 
 // Root page: show marketing landing. The app itself lives at /dashboard.
-// Users can click "Get Started" or "Sign In" to go to /auth.
 import LandingPage from "@/components/landing/landing-page"
 
 export default function RootPage() {
