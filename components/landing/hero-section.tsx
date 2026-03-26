@@ -61,7 +61,7 @@ export function HeroSection() {
   )
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white px-4 pt-16 pb-12">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-white px-4 pt-20 pb-10 sm:pt-16 sm:pb-12">
       {/* Soft radial glow */}
       <div aria-hidden className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[900px] h-[500px]"
         style={{ background: "radial-gradient(ellipse 60% 55% at 50% 0%, oklch(0.58 0.24 350 / 8%) 0%, transparent 70%)" }} />
@@ -85,7 +85,7 @@ export function HeroSection() {
 
             <motion.h1
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-[2rem] sm:text-4xl lg:text-5xl xl:text-[3.4rem] font-black tracking-tight text-gray-900 leading-[1.08] mb-5"
+              className="text-[1.8rem] sm:text-4xl lg:text-5xl xl:text-[3.4rem] font-black tracking-tight text-gray-900 leading-[1.1] mb-4"
             >
               Retail runs on<br />
               <span style={{ color: "oklch(0.58 0.24 350)" }}>intelligence,</span><br />
@@ -120,7 +120,7 @@ export function HeroSection() {
 
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-8 flex items-center gap-6 text-xs text-gray-400 justify-center lg:justify-start"
+              className="mt-6 flex items-center gap-4 sm:gap-6 text-xs text-gray-400 justify-center lg:justify-start flex-wrap"
             >
               {[{ value: "4.9★", label: "avg rating lift" }, { value: "10×", label: "ops efficiency" }, { value: "94%", label: "review response rate" }]
                 .map(({ value, label }) => (
@@ -134,7 +134,7 @@ export function HeroSection() {
           {/* ── Right: integration orbit cloud ───────────── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
-            className="flex-1 w-full lg:max-w-[500px] h-70 sm:h-90 lg:h-125"
+            className="flex-1 w-full lg:max-w-[500px] h-80 sm:h-96 lg:h-125"
           >
             <LogoCloudAnimation buttons={integrationButtons}>
               <div className="text-center px-6">

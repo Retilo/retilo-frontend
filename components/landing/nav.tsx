@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "motion/react"
-import { Menu, X, Zap } from "lucide-react"
+import { Menu, X } from "lucide-react"
 
 const NAV_LINKS = [
   { href: "#features", label: "Features" },
@@ -31,9 +31,8 @@ export function LandingNav() {
     >
       <nav className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[oklch(0.58_0.24_350)] flex items-center justify-center shadow-md shadow-[oklch(0.58_0.24_350)/25%]">
-            <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/retilo-fox.svg" className="w-8 h-8" alt="" />
           <span className="font-bold text-gray-900 text-[15px] tracking-tight">Retilo</span>
         </Link>
 

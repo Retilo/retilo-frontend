@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { Zap } from "lucide-react"
 
 const CALENDLY = "https://calendly.com/satwikloka321/retilo?month=2026-03"
 
@@ -11,9 +10,8 @@ export function LandingFooter() {
           {/* Brand */}
           <div className="flex flex-col gap-3 max-w-xs">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-[oklch(0.58_0.24_350)] flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/retilo-fox.svg" className="w-7 h-7" alt="" />
               <span className="font-bold text-gray-800 text-sm">Retilo</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
