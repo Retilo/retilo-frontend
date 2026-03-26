@@ -70,7 +70,7 @@ export function HeroSection() {
         style={{ backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
       <div className="relative z-10 max-w-6xl mx-auto w-full">
-        <div className="flex flex-col lg:flex-row items-center gap-16">
+        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
 
           {/* ── Left: copy ───────────────────────────────── */}
           <div className="flex-shrink-0 w-full lg:max-w-[480px] text-center lg:text-left">
@@ -85,7 +85,7 @@ export function HeroSection() {
 
             <motion.h1
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl lg:text-5xl xl:text-[3.4rem] font-black tracking-tight text-gray-900 leading-[1.08] mb-5"
+              className="text-[2rem] sm:text-4xl lg:text-5xl xl:text-[3.4rem] font-black tracking-tight text-gray-900 leading-[1.08] mb-5"
             >
               Retail runs on<br />
               <span style={{ color: "oklch(0.58 0.24 350)" }}>intelligence,</span><br />
@@ -134,8 +134,7 @@ export function HeroSection() {
           {/* ── Right: integration orbit cloud ───────────── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
-            className="flex-1 w-full lg:max-w-[500px]"
-            style={{ height: 500 }}
+            className="flex-1 w-full lg:max-w-[500px] h-70 sm:h-90 lg:h-125"
           >
             <LogoCloudAnimation buttons={integrationButtons}>
               <div className="text-center px-6">

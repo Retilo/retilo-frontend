@@ -413,7 +413,7 @@ export function LogoCloudAnimation({
   const buttons = externalButtons ?? defaultButtons;
 
   return (
-    <div className="h-full min-h-[400px] w-full">
+    <div className="h-full min-h-70 sm:min-h-90 lg:min-h-100 w-full">
       <RotatingButtonCloud buttons={buttons}>{children}</RotatingButtonCloud>
     </div>
   );

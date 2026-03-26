@@ -177,7 +177,7 @@ export function FeaturesDarkSection() {
                   initial={{ opacity: 0, y: 32 }}
                   animate={inView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.6 }}
-                  className={`flex flex-col ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-10 mb-12`}
+                  className={`flex flex-col ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-6 lg:gap-10 mb-12`}
                 >
                   {/* Text side */}
                   <div className="flex-1 space-y-5">
@@ -203,7 +203,7 @@ export function FeaturesDarkSection() {
                   </div>
 
                   {/* Preview side */}
-                  <div className="flex-1 w-full max-w-md">{step.preview}</div>
+                  <div className="flex-1 w-full lg:max-w-md">{step.preview}</div>
                 </motion.div>
               </div>
             )
