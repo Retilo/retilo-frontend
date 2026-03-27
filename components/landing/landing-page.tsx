@@ -6,6 +6,7 @@
 import { LandingNav } from "./nav"
 import { HeroSection } from "./hero-section"
 import { BentoSection } from "./bento-section"
+import { EmailAgentSection } from "./email-agent-section"
 import { FeaturesDarkSection } from "./features-dark-section"
 import { CtaSection } from "./cta-cosmic-section"
 import { LandingFooter } from "./footer"
@@ -18,6 +19,9 @@ export default function LandingPage() {
         <HeroSection />
         <div id="integrations">
           <BentoSection />
+        </div>
+        <div id="email-agent">
+          <EmailAgentSection />
         </div>
         <div id="how-it-works">
           <FeaturesDarkSection />

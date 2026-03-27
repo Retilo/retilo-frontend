@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard, Star, BarChart3, Workflow,
-  MapPin, Send, LogOut, Users, Zap, Grid2X2,
+  MapPin, Send, LogOut, Users, Zap, Grid2X2, Mail, Sparkles,
 } from "lucide-react"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -12,15 +12,20 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar"
 
-const NAV_ITEMS = [
-  { label: "Dashboard",   icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Reviews",     icon: Star,            href: "/dashboard/reviews",   badge: "5" },
-  { label: "Analytics",   icon: BarChart3,       href: "/dashboard/analytics" },
-  { label: "Workflows",   icon: Workflow,        href: "/dashboard/workflows" },
-  { label: "Locations",   icon: MapPin,          href: "/dashboard/locations" },
-  { label: "Campaigns",   icon: Send,            href: "/dashboard/campaigns" },
-  { label: "Competitors", icon: Users,           href: "/dashboard/competitors" },
-  { label: "Ranking",     icon: Grid2X2,         href: "/dashboard/ranking" },
+const GMB_NAV_ITEMS = [
+  { label: "Dashboard",         icon: LayoutDashboard, href: "/dashboard" },
+  { label: "Reviews",           icon: Star,            href: "/dashboard/reviews",   badge: "5" },
+  { label: "Analytics",         icon: BarChart3,       href: "/dashboard/analytics" },
+  { label: "Workflows",         icon: Workflow,        href: "/dashboard/workflows" },
+  { label: "Locations",         icon: MapPin,          href: "/dashboard/locations" },
+  { label: "Review Campaigns",  icon: Send,            href: "/dashboard/campaigns" },
+  { label: "Competitors",       icon: Users,           href: "/dashboard/competitors" },
+  { label: "Ranking",           icon: Grid2X2,         href: "/dashboard/ranking" },
+]
+
+const EMAIL_NAV_ITEMS = [
+  { label: "Email Agent",    icon: Mail,     href: "/email" },
+  { label: "Campaigns",      icon: Sparkles, href: "/email/campaigns" },
 ]
 
 export function AppSidebar() {
@@ -61,7 +66,7 @@ export function AppSidebar() {
               Retilo
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[oklch(0.58_0.24_350)]">
-              GMB Platform
+              CX Platform
             </span>
           </div>
           <span className="ml-auto rounded-md bg-[oklch(0.58_0.24_350)/12%] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[oklch(0.52_0.22_350)]">
@@ -72,13 +77,14 @@ export function AppSidebar() {
 
       {/* ── Nav ──────────────────────────────────────── */}
       <SidebarContent className="px-3 pt-4">
+        {/* GMB section */}
         <div className="mb-2 px-2">
           <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/40">
-            Workspace
+            Google Business
           </span>
         </div>
         <SidebarMenu className="gap-0.5">
-          {NAV_ITEMS.map((item) => {
+          {GMB_NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname?.startsWith(item.href))
             return (
               <SidebarMenuItem key={item.label}>
@@ -97,6 +103,37 @@ export function AppSidebar() {
                     {item.badge}
                   </SidebarMenuBadge>
                 )}
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+
+        <SidebarSeparator className="mx-2 my-3 bg-sidebar-border" />
+
+        {/* Email Agent section */}
+        <div className="mb-2 px-2 flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/40">
+            Email Agent
+          </span>
+          <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-violet-600">
+            AI
+          </span>
+        </div>
+        <SidebarMenu className="gap-0.5">
+          {EMAIL_NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.href || (item.href !== "/email" && pathname?.startsWith(item.href))
+            return (
+              <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  className="h-10 gap-3 text-[13.5px] font-medium rounded-xl px-3 transition-all data-[active=true]:bg-violet-50 data-[active=true]:text-violet-700"
+                >
+                  <Link href={item.href}>
+                    <item.icon className="size-[17px] shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             )
           })}

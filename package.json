@@ -9,10 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.48",
+    "@ai-sdk/react": "^3.0.142",
     "@deck.gl/mapbox": "^9.2.11",
     "@trigger.dev/react-hooks": "^4.4.3",
     "@trigger.dev/sdk": "^4.4.3",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "@xyflow/react": "^12.10.1",
+    "ai": "^6.0.140",
     "axios": "^1.13.6",
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",

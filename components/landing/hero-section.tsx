@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import Link from "next/link"
 import { motion } from "motion/react"
-import { ArrowRight, MapPin, Star, Phone, Webhook, MessageSquare, Bot } from "lucide-react"
+import { ArrowRight, MapPin, Star, Phone, Webhook, MessageSquare, Bot, Mail } from "lucide-react"
 import { LogoCloudAnimation } from "@/components/logo-cloud-animation"
 
 const CALENDLY = "https://calendly.com/satwikloka321/retilo?month=2026-03"

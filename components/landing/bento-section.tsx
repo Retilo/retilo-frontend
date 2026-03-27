@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "motion/react"
 import { useRef } from "react"
-import { MapPin, Star, BarChart3, Workflow, Grid2X2, Zap, TrendingUp, Bell } from "lucide-react"
+import { MapPin, Star, BarChart3, Workflow, Grid2X2, Zap, TrendingUp, Bell, Mail } from "lucide-react"
 
 // ─── Mini widgets inside cards ────────────────────────────────────
 
@@ -45,6 +45,38 @@ function ReviewWidget() {
           </div>
           {r.replied && (
             <div className="flex-shrink-0 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-green-100 text-green-700">AI ✓</div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function EmailAgentMini() {
+  const steps = [
+    { label: "Brief", done: true, color: "#7C3AED" },
+    { label: "AI Copy", done: true, color: "#4285F4" },
+    { label: "MJML Design", done: true, color: "#0A7D4B" },
+    { label: "Sent", done: false, color: "#F59E0B" },
+  ]
+  return (
+    <div className="mt-4 space-y-2">
+      {steps.map((s, i) => (
+        <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg" style={{ background: `${s.color}08` }}>
+          <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: s.done ? s.color : "transparent", border: `1.5px solid ${s.color}` }}>
+            {s.done && (
+              <svg className="size-3 text-white" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </div>
+          <span className="text-[11px] font-semibold" style={{ color: s.color }}>{s.label}</span>
+          {!s.done && (
+            <span className="ml-auto text-[9px] font-bold rounded-full px-1.5 py-0.5 text-white animate-pulse"
+              style={{ background: s.color }}>
+              AI
+            </span>
           )}
         </div>
       ))}
@@ -144,7 +176,7 @@ export function BentoSection() {
             One platform. Every retail signal.
           </h2>
           <p className="text-gray-500 max-w-xl mx-auto">
-            From local ranking intelligence to AI-powered review management — Retilo gives retail teams the full picture, in real time.
+            From local ranking intelligence and AI-powered review management to autonomous email campaigns — Retilo gives retail teams the full picture, in real time.
           </p>
         </motion.div>
 
@@ -221,13 +253,26 @@ export function BentoSection() {
             </div>
           </BentoCard>
 
+          {/* Email AI Campaign Agent — spans 2 cols */}
+          <BentoCard
+            className="md:col-span-2"
+            icon={<Mail className="w-5 h-5" />}
+            title="Email Campaign AI Agent"
+            description="Describe your campaign in plain English. The agent writes copy, builds a pixel-perfect MJML template, and delivers at scale — driving massive open rates for e-commerce."
+            accent="#7C3AED"
+            delay={0.3}
+            badge="AI Agent"
+          >
+            <EmailAgentMini />
+          </BentoCard>
+
           {/* Customer Journey */}
           <BentoCard
             icon={<TrendingUp className="w-5 h-5" />}
             title="Customer Journey Insights"
             description="Understand the full path from discovery to loyalty. See which touchpoints drive reviews, repeat visits, and revenue."
             accent="#0A7D4B"
-            delay={0.3}
+            delay={0.35}
           />
         </div>
       </div>
