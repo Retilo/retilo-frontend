@@ -54,35 +54,35 @@ export function ProcessingOverlay({ visible, locationCount = 0 }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white"
         >
           {/* Background grid */}
           <div
-            className="absolute inset-0 opacity-[0.03]"
+            className="absolute inset-0 opacity-[0.04]"
             style={{
-              backgroundImage: "linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)",
-              backgroundSize: "40px 40px",
+              backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
             }}
           />
 
           {/* Blue glow center */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-64 rounded-full bg-blue-600/10 blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-64 rounded-full bg-blue-400/12 blur-3xl" />
 
           {/* Pulse rings */}
           <div className="relative flex items-center justify-center">
-            <PulseRing delay={0}   size="size-40" color="border-blue-500/15" />
-            <PulseRing delay={0.8} size="size-40" color="border-blue-400/10" />
-            <PulseRing delay={1.6} size="size-40" color="border-indigo-500/10" />
+            <PulseRing delay={0}   size="size-40" color="border-blue-400/20" />
+            <PulseRing delay={0.8} size="size-40" color="border-blue-300/15" />
+            <PulseRing delay={1.6} size="size-40" color="border-indigo-400/12" />
 
             {/* Core spinner */}
-            <div className="relative flex size-20 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 shadow-2xl">
+            <div className="relative flex size-20 items-center justify-center rounded-full bg-white border border-zinc-200 shadow-lg shadow-blue-100/50">
               <motion.div
                 className="absolute inset-1 rounded-full border-2 border-transparent border-t-blue-500"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
               />
               <motion.div
-                className="absolute inset-3 rounded-full border border-transparent border-t-blue-400/50"
+                className="absolute inset-3 rounded-full border border-transparent border-t-blue-400/60"
                 animate={{ rotate: -360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               />
@@ -99,11 +99,11 @@ export function ProcessingOverlay({ visible, locationCount = 0 }) {
             <motion.h2
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-2xl font-semibold text-white tracking-tight"
+              className="text-2xl font-semibold text-zinc-900 tracking-tight"
             >
               Activating your intelligence
             </motion.h2>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-zinc-400">
               {locationCount > 0
                 ? `Processing ${locationCount} location${locationCount !== 1 ? "s" : ""}`
                 : "Analysing your business data"}
@@ -121,7 +121,7 @@ export function ProcessingOverlay({ visible, locationCount = 0 }) {
                   className="flex items-center gap-2.5"
                 >
                   <span className="text-base">{MESSAGES[msgIndex].icon}</span>
-                  <span className="text-sm text-zinc-300 font-medium">
+                  <span className="text-sm text-zinc-600 font-medium">
                     {MESSAGES[msgIndex].text}
                   </span>
                 </motion.div>
@@ -135,7 +135,7 @@ export function ProcessingOverlay({ visible, locationCount = 0 }) {
                   key={i}
                   animate={{
                     width: i === msgIndex ? 20 : 6,
-                    backgroundColor: i < msgIndex ? "#22c55e" : i === msgIndex ? "#3b82f6" : "#3f3f46",
+                    backgroundColor: i < msgIndex ? "#22c55e" : i === msgIndex ? "#3b82f6" : "#e4e4e7",
                   }}
                   transition={{ duration: 0.3 }}
                   className="h-1.5 rounded-full"
@@ -156,12 +156,12 @@ export function ProcessingOverlay({ visible, locationCount = 0 }) {
                     transition={{ duration: 0.25 }}
                     className="flex items-center gap-2"
                   >
-                    <div className="size-3.5 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <svg className="size-2.5 text-green-400" viewBox="0 0 12 12" fill="none">
+                    <div className="size-3.5 rounded-full bg-green-100 flex items-center justify-center">
+                      <svg className="size-2.5 text-green-600" viewBox="0 0 12 12" fill="none">
                         <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </div>
-                    <span className="text-[11px] text-zinc-500 line-through decoration-zinc-700">{msg.text}</span>
+                    <span className="text-[11px] text-zinc-400 line-through decoration-zinc-300">{msg.text}</span>
                   </motion.div>
                 ))}
               </AnimatePresence>
