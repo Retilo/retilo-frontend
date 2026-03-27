@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Mail, Sparkles, LayoutDashboard, ChevronRight } from "lucide-react"
+import { LayoutDashboard, ChevronRight } from "lucide-react"
 
 const NAV = [
   { label: "Agent", href: "/email/agent" },
@@ -18,10 +19,8 @@ export default function EmailLayout({ children }: { children: React.ReactNode })
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-6 h-14 flex items-center gap-6">
           {/* Brand */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-violet-600 shadow-sm">
-              <Mail className="size-3.5 text-white" strokeWidth={2} />
-            </div>
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <Image src="/retilo-fox.svg" alt="Retilo" width={28} height={28} />
             <span className="text-sm font-bold text-zinc-900 tracking-tight">Retilo</span>
             <ChevronRight className="size-3.5 text-zinc-300" />
             <span className="text-sm font-semibold text-violet-600">Email Agent</span>
