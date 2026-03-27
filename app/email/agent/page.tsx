@@ -167,7 +167,7 @@ export default function EmailAgentPage() {
   const [summary, setSummary] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const canSubmit = brief.trim().length > 10 && fromName.trim() && fromEmail.trim().includes("@") && recipients.length > 0
+  const canSubmit = brief.trim().length > 0 && fromName.trim() && fromEmail.trim().includes("@") && recipients.length > 0
 
   // Simulate step-by-step progress while request is in-flight
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -281,7 +281,7 @@ export default function EmailAgentPage() {
                 className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-100 transition-all"
               />
               <p className="mt-1.5 text-[11px] text-zinc-400">
-                {brief.length} chars — aim for 30+ for best results
+                {brief.length} chars{brief.length > 0 && brief.length < 30 ? " — more detail gives better results" : ""}
               </p>
             </div>
 
