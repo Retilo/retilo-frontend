@@ -21,7 +21,7 @@ export default function AuthPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" })
 
   useEffect(() => {
-    if (localStorage.getItem("retilo_token")) router.replace("/dashboard")
+    if (localStorage.getItem("retilo_token")) router.replace("/ops")
   }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +47,7 @@ export default function AuthPage() {
       if (res.data.data.merchant) {
         localStorage.setItem("retilo_merchant", JSON.stringify(res.data.data.merchant))
       }
-      router.replace("/dashboard")
+      router.replace("/ops")
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } }
       setError(e?.response?.data?.message ?? "Something went wrong. Try again.")

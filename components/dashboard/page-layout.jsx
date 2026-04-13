@@ -1,33 +1,29 @@
 "use client"
 
-// Reusable layout wrapper for all dashboard sub-pages
-import { AppSidebar } from "./sidebar"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { OpsNav } from "@/components/ops/ops-nav"
 
 export function DashboardPageLayout({ title, subtitle, actions, children }) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="min-h-screen overflow-hidden" style={{ background: "oklch(0.985 0.003 350)" }}>
-        <div className="flex flex-col h-full">
-          {/* Top bar */}
-          <div
-            className="flex items-center justify-between px-8 py-4 sticky top-0 z-10 backdrop-blur-sm"
-            style={{ background: "oklch(0.985 0.003 350 / 85%)", borderBottom: "1px solid oklch(0.91 0.008 350)" }}
-          >
-            <div>
-              <h1 className="text-[15px] font-bold text-[oklch(0.14_0.008_270)] tracking-tight">{title}</h1>
-              {subtitle && <p className="text-xs text-[oklch(0.55_0.008_270)] mt-0.5">{subtitle}</p>}
-            </div>
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
+    <div className="flex h-screen overflow-hidden" style={{ background: "oklch(0.97 0.003 270)" }}>
+      <OpsNav />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top bar */}
+        <div
+          className="flex items-center justify-between px-6 py-3.5 border-b shrink-0"
+          style={{ background: "oklch(1 0 0)", borderColor: "oklch(0.91 0.008 270)" }}
+        >
+          <div>
+            <h1 className="text-[14px] font-bold text-[oklch(0.14_0.008_270)] tracking-tight">{title}</h1>
+            {subtitle && <p className="text-[11px] text-[oklch(0.55_0.008_270)] mt-0.5">{subtitle}</p>}
           </div>
-
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto">
-            {children}
-          </div>
+          {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
+      </div>
+    </div>
   )
 }

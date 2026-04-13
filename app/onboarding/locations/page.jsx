@@ -90,7 +90,7 @@ export default function LocationsPage() {
     // Minimum display time so the animation feels intentional
     await new Promise((r) => setTimeout(r, MESSAGES_DURATION))
 
-    router.push("/dashboard")
+    router.push("/ops")
   }
 
   // Keep overlay up for the full message rotation

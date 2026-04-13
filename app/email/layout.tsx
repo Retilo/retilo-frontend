@@ -49,13 +49,13 @@ export default function EmailLayout({ children }: { children: React.ReactNode })
             })}
           </nav>
 
-          {/* Back to dashboard */}
+          {/* Back to ops */}
           <Link
-            href="/dashboard"
+            href="/ops"
             className="ml-auto flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
           >
             <LayoutDashboard className="size-3.5" />
-            GMB Dashboard
+            Ops Playground
           </Link>
         </div>
       </header>

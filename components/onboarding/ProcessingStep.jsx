@@ -58,7 +58,7 @@ export function ProcessingStep({ locations = [] }) {
       setDone(true)
 
       setTimeout(() => {
-        router.push("/dashboard")
+        router.push("/ops")
       }, 1200)
     }
 
