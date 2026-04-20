@@ -16,6 +16,8 @@ import Image, { type StaticImageData } from "next/image";
 import {
   createContext,
   forwardRef,
+  type HTMLAttributes,
+  type HTMLProps,
   type ReactNode,
   useContext,
   useEffect,
@@ -138,7 +140,7 @@ export class CameraModel {
     rotation: MotionValue<number>;
   };
   following: {
-    interval: NodeJS.Timer;
+    interval: ReturnType<typeof setInterval>;
     target: CameraTargetModel;
   } | null = null;
 
@@ -164,17 +166,21 @@ export class CameraModel {
   }
 
   panTo(position: Vector, transition: AnimationOptions = DEFAULT_PAN_TRANSITON) {
-    animate(this.motionValues.posX, position.x, transition);
-    animate(this.motionValues.posY, position.y, transition);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    animate(this.motionValues.posX, position.x as any, transition);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    animate(this.motionValues.posY, position.y as any, transition);
   }
 
   setZoom(zoom: number, transition: AnimationOptions = DEFAULT_ZOOM_TRANSITON) {
     console.log("zoom", zoom, transition);
-    animate(this.motionValues.zoom, zoom, transition);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    animate(this.motionValues.zoom, zoom as any, transition);
   }
 
   setRotation(rotation: number, transition: AnimationOptions = DEFAULT_ROTATE_TRANSITON) {
-    animate(this.motionValues.rotation, rotation, transition);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    animate(this.motionValues.rotation, rotation as any, transition);
   }
 
   follow(target: CameraTargetModel, transition: AnimationOptions = DEFAULT_PAN_TRANSITON) {
