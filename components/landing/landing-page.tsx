@@ -10,6 +10,7 @@ import { BentoSection } from "./bento-section"
 import { EmailAgentSection } from "./email-agent-section"
 import { FeaturesDarkSection } from "./features-dark-section"
 import { CtaSection } from "./cta-cosmic-section"
+import { AnalyticsSection } from "./analytics-section"
 import { LandingFooter } from "./footer"
 
 export default function LandingPage() {
@@ -21,6 +22,7 @@ export default function LandingPage() {
         <div id="ai-visibility">
           <BrandVisibilitySection />
         </div>
+        <AnalyticsSection />
         <div id="integrations">
           <BentoSection />
         </div>
