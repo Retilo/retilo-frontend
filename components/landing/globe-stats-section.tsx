@@ -127,7 +127,7 @@ export function GlobeStatsSection() {
     <StatsGlobeRoot className="bg-transparent" ref={ref as React.Ref<HTMLElement>}>
       <StatsGlobeBackground />
 
-      <StatsGlobeContainer className="gap-10 py-16 md:py-20">
+      <StatsGlobeContainer className="gap-10 py-16 md:py-20 overflow-x-hidden">
 
         {/* Heading */}
         <StatsGlobeHeading>
@@ -149,10 +149,12 @@ export function GlobeStatsSection() {
         </StatsGlobeHeading>
 
         {/* Globe + platform stats grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
 
           {/* Globe */}
-          <StatsGlobeVisual markers={MARKERS} arcs={ARCS} globeSize={480} />
+          <div className="w-full flex items-center justify-center min-w-0">
+            <StatsGlobeVisual markers={MARKERS} arcs={ARCS} globeSize={380} className="w-full max-w-[380px]" />
+          </div>
 
           {/* Platform stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" ref={ref}>
