@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 // OAuth callback — backend redirects here with:
 //   /auth/callback?token=<jwt>      on success
 //   /auth/callback?error=<message>  on failure
