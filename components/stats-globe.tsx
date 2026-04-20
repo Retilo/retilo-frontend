@@ -165,7 +165,7 @@ function AnimatedWords({ children, className }: { children: string; className?: 
 // Animated counter (useMotionValue for 0-rerender counting)
 // ---------------------------------------------------------------------------
 
-function AnimatedCounter({
+export function AnimatedCounter({
   target,
   suffix = "",
   prefix = "",

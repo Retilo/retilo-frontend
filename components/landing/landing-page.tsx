@@ -11,6 +11,7 @@ import { EmailAgentSection } from "./email-agent-section"
 import { FeaturesDarkSection } from "./features-dark-section"
 import { CtaSection } from "./cta-cosmic-section"
 import { AnalyticsSection } from "./analytics-section"
+import { GlobeStatsSection } from "./globe-stats-section"
 import { LandingFooter } from "./footer"
 
 export default function LandingPage() {
@@ -23,6 +24,7 @@ export default function LandingPage() {
           <BrandVisibilitySection />
         </div>
         <AnalyticsSection />
+        <GlobeStatsSection />
         <div id="integrations">
           <BentoSection />
         </div>
