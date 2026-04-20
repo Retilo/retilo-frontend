@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion } from "motion/react"
 import { AuthStep } from "@/components/onboarding/AuthStep"
 import { ConnectGMBStep } from "@/components/onboarding/ConnectGMBStep"
 import { LocationSelectStep } from "@/components/onboarding/LocationSelectStep"

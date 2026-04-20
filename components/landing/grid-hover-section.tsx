@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, useInView } from "framer-motion"
+import { motion, useInView } from "motion/react"
 import { useRef, useState } from "react"
 import { ArrowRight, Workflow } from "lucide-react"
 import Link from "next/link"
