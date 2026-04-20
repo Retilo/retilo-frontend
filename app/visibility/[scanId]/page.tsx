@@ -81,33 +81,60 @@ function toEngines(scores: ScanResult["scores"]) {
 // ── Score ring ─────────────────────────────────────────────────────────────────
 
 function ScoreRing({ score, label }: { score: number; label: string }) {
-  const R = 80, cx = 100, cy = 100;
+  // Arc: semi-circle, center at bottom of SVG
+  const R = 100, cx = 130, cy = 128;
   const arc = Math.PI * R;
   const offset = arc * (1 - Math.min(100, Math.max(0, score)) / 100);
   const color = score >= 70 ? "#22c55e" : score >= 40 ? "#f59e0b" : "#ef4444";
-  const glow  = score >= 70 ? "rgba(34,197,94,0.55)"  : score >= 40 ? "rgba(245,158,11,0.55)"  : "rgba(239,68,68,0.55)";
+  const glow  = score >= 70 ? "rgba(34,197,94,0.6)" : score >= 40 ? "rgba(245,158,11,0.6)" : "rgba(239,68,68,0.6)";
 
   return (
-    <div className="relative flex flex-col items-center select-none">
-      <svg width="200" height="125" viewBox="0 0 200 125">
-        <path d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
-          fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10" strokeLinecap="round" />
-        {/* glow copy */}
-        <path d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
-          fill="none" stroke={glow} strokeWidth="14" strokeLinecap="round"
-          strokeDasharray={`${arc} ${arc}`} strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 1.4s cubic-bezier(0.23,1,0.32,1)", filter: `blur(6px)` }} />
-        <path d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
-          fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
-          strokeDasharray={`${arc} ${arc}`} strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 1.4s cubic-bezier(0.23,1,0.32,1)" }} />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-4">
-        <span className="font-black tabular-nums leading-none" style={{ fontSize: 60, color, textShadow: `0 0 40px ${glow}` }}>{score}</span>
-        <span className="text-xs font-semibold mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>/ 100</span>
-        <span className="text-xs font-bold mt-2 px-3 py-0.5 rounded-full uppercase tracking-wide"
-          style={{ background: `${color}20`, color, border: `1px solid ${color}45` }}>{label}</span>
+    <div className="flex flex-col items-center select-none gap-3">
+      {/* SVG arc — number lives INSIDE via foreignObject for crisp HTML rendering */}
+      <div className="relative" style={{ width: 260, height: 148 }}>
+        <svg width="260" height="148" viewBox="0 0 260 148" style={{ position: "absolute", inset: 0 }}>
+          {/* track */}
+          <path d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
+            fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="12" strokeLinecap="round" />
+          {/* glow */}
+          <path d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
+            fill="none" stroke={glow} strokeWidth="18" strokeLinecap="round"
+            strokeDasharray={`${arc} ${arc}`} strokeDashoffset={offset}
+            style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.23,1,0.32,1)", filter: "blur(7px)" }} />
+          {/* arc */}
+          <path d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
+            fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
+            strokeDasharray={`${arc} ${arc}`} strokeDashoffset={offset}
+            style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.23,1,0.32,1)" }} />
+        </svg>
+
+        {/* Number — centered inside the arc's open area */}
+        <div style={{
+          position: "absolute",
+          left: "50%", top: "52%",
+          transform: "translate(-50%, -50%)",
+          textAlign: "center",
+          pointerEvents: "none",
+        }}>
+          <span
+            className="font-black tabular-nums block leading-none"
+            style={{ fontSize: 88, color, textShadow: `0 0 48px ${glow}, 0 0 16px ${glow}` }}
+          >
+            {score}
+          </span>
+          <span className="block text-sm font-semibold" style={{ color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
+            / 100
+          </span>
+        </div>
       </div>
+
+      {/* Label badge below */}
+      <span
+        className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide"
+        style={{ background: `${color}18`, color, border: `1px solid ${color}40` }}
+      >
+        {label}
+      </span>
     </div>
   );
 }

@@ -124,7 +124,7 @@ export function GlobeStatsSection() {
   const inView = useInView(ref, { once: true, margin: "-60px" })
 
   return (
-    <StatsGlobeRoot className="bg-white" ref={ref as React.Ref<HTMLElement>}>
+    <StatsGlobeRoot className="bg-transparent" ref={ref as React.Ref<HTMLElement>}>
       <StatsGlobeBackground />
 
       <StatsGlobeContainer className="gap-10 py-16 md:py-20">
@@ -132,17 +132,17 @@ export function GlobeStatsSection() {
         {/* Heading */}
         <StatsGlobeHeading>
           <div className="text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">AI Search is already happening</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "rgba(255,221,204,0.35)" }}>AI Search is already happening</p>
             <h2
-              className="font-black text-balance text-gray-900 mb-4"
-              style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.8rem)", letterSpacing: "-0.035em", lineHeight: 1.08 }}
+              className="font-black text-balance mb-4"
+              style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.8rem)", letterSpacing: "-0.035em", lineHeight: 1.08, color: "rgba(255,221,204,0.92)" }}
             >
               Millions of queries —{" "}
-              <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, #FD5BFF 0%, #7928ca 100%)" }}>
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, #FD5BFF 0%, #c96442 100%)" }}>
                 is your brand answering?
               </span>
             </h2>
-            <p className="text-gray-500 text-base max-w-xl mx-auto leading-relaxed">
+            <p className="text-base max-w-xl mx-auto leading-relaxed" style={{ color: "rgba(255,221,204,0.45)" }}>
               Every day, customers ask ChatGPT, Claude, Perplexity, and Google AI about businesses like yours. 67% of brands aren't showing up at all.
             </p>
           </div>
@@ -163,14 +163,15 @@ export function GlobeStatsSection() {
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.5, delay: 0.15 + i * 0.1 }}
                 className="rounded-2xl p-5"
-                style={{ background: p.bg, border: `1px solid ${p.border}` }}
+                style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${p.border}`, backdropFilter: "blur(12px)" }}
               >
                 {/* Platform header */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white shadow-sm">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.12)" }}>
                     {p.logo}
                   </div>
-                  <span className="text-xs font-semibold text-gray-700">{p.name}</span>
+                  <span className="text-xs font-semibold" style={{ color: "rgba(255,221,204,0.65)" }}>{p.name}</span>
                 </div>
 
                 {/* Animated counter */}
@@ -180,7 +181,7 @@ export function GlobeStatsSection() {
                 >
                   <AnimatedCounter target={p.metric} suffix={p.suffix} />
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">{p.label}</div>
+                <div className="text-xs mt-0.5" style={{ color: "rgba(255,221,204,0.35)" }}>{p.label}</div>
               </motion.div>
             ))}
           </div>
@@ -194,7 +195,7 @@ export function GlobeStatsSection() {
           transition={{ duration: 0.5, delay: 0.6 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2"
         >
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-center" style={{ color: "rgba(255,221,204,0.4)" }}>
             Find out which engines can see your brand —
           </p>
           <a
