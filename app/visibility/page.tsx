@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { ArrowRight, Zap, Globe, Search } from "lucide-react";
+import { Zap, Globe, Search } from "lucide-react";
 import { DitheringSimplexBackdrop } from "@/app/dithering-simplex-backdrop";
 import { AnimatedButton } from "@/components/ui/animated-button";
 import { api } from "@/lib/api";
@@ -21,26 +21,56 @@ const STATS = [
   { value: "60s", label: "to get your visibility score" },
 ];
 
+const PENDING_URL_KEY = "visibility_pending_url";
+
 export default function GeoSeoPage() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleScan(e: React.FormEvent) {
-    e.preventDefault();
-    if (!url.trim()) return;
+  // On mount: if user just returned from auth with a pending URL, auto-fire scan
+  useEffect(() => {
+    const pending = sessionStorage.getItem(PENDING_URL_KEY);
+    if (!pending) return;
+    const token = localStorage.getItem("retilo_token");
+    if (!token) return;
+    sessionStorage.removeItem(PENDING_URL_KEY);
+    setUrl(pending);
+    startScan(pending);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function startScan(targetUrl: string) {
     setError("");
     setIsLoading(true);
     try {
-      const normalized = url.startsWith("http") ? url : `https://${url}`;
+      const normalized = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
       const res = await api.post("/v1/geo-seo/scan", { url: normalized });
-      const { scanId } = res.data;
+      const scanId = res.data?.data?.scanId ?? res.data?.scanId;
+      if (!scanId || scanId === "undefined") {
+        setError("Scan failed to start. Please try again.");
+        setIsLoading(false);
+        return;
+      }
       router.push(`/visibility/${scanId}`);
     } catch {
       setError("Failed to start scan. Please try again.");
       setIsLoading(false);
     }
+  }
+
+  async function handleScan(e: React.FormEvent) {
+    e.preventDefault();
+    if (!url.trim()) return;
+    const token = typeof window !== "undefined" ? localStorage.getItem("retilo_token") : null;
+    if (!token) {
+      const normalized = url.startsWith("http") ? url : `https://${url}`;
+      sessionStorage.setItem(PENDING_URL_KEY, normalized);
+      router.push(`/auth?mode=register&redirect=${encodeURIComponent("/visibility")}`);
+      return;
+    }
+    await startScan(url);
   }
 
   return (
@@ -60,7 +90,9 @@ export default function GeoSeoPage() {
 
       {/* Hero */}
       <DitheringSimplexBackdrop className="min-h-screen" style={{ background: "#301c2a" }}>
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 pt-20 pb-12">
+        {/* Scrim: dark center so text stays readable against the shader */}
+        <div className="pointer-events-none absolute inset-0 z-10" style={{ background: "radial-gradient(ellipse 80% 85% at 50% 50%, rgba(48,28,42,0.78) 0%, rgba(48,28,42,0.35) 60%, transparent 100%)" }} />
+        <div className="relative z-20 flex flex-col items-center justify-center min-h-screen px-4 pt-20 pb-12">
 
           {/* Badge */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -74,7 +106,7 @@ export default function GeoSeoPage() {
           <motion.h1
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
             className="text-center font-bold text-[#f4f8e8] mb-4"
-            style={{ fontSize: "clamp(2.4rem, 6vw, 4.5rem)", lineHeight: 1.06, letterSpacing: "-0.035em", textShadow: "0 2px 32px rgba(0,0,0,0.6)", maxWidth: "14ch" }}
+            style={{ fontSize: "clamp(2.4rem, 6vw, 4.5rem)", lineHeight: 1.06, letterSpacing: "-0.035em", textShadow: "0 2px 8px rgba(0,0,0,0.9), 0 4px 48px rgba(0,0,0,0.7)", maxWidth: "14ch" }}
           >
             Is your brand{" "}
             <span style={{ color: "#FD5BFF", textShadow: "0 0 40px rgba(253,91,255,0.4)" }}>invisible</span>
@@ -84,7 +116,7 @@ export default function GeoSeoPage() {
           <motion.p
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
             className="text-center mb-10 font-medium"
-            style={{ fontSize: "clamp(1rem, 2vw, 1.25rem)", color: "rgba(244,248,232,0.65)", maxWidth: "38ch", lineHeight: 1.5, textShadow: "0 1px 12px rgba(0,0,0,0.5)" }}
+            style={{ fontSize: "clamp(1rem, 2vw, 1.25rem)", color: "rgba(244,248,232,0.85)", maxWidth: "38ch", lineHeight: 1.5, textShadow: "0 1px 6px rgba(0,0,0,0.8), 0 2px 20px rgba(0,0,0,0.6)" }}
           >
             We'll check ChatGPT, Claude, Perplexity & Google AI visibility in 60 seconds
           </motion.p>
@@ -117,7 +149,7 @@ export default function GeoSeoPage() {
               <AnimatedButton
                 isLoading={isLoading}
                 loadingText="Scanning…"
-                onClick={handleScan as unknown as React.MouseEventHandler}
+                type="submit"
                 translucent={false}
                 style={{
                   background: "#FD5BFF",
@@ -168,7 +200,7 @@ export default function GeoSeoPage() {
             className="mt-8 text-xs text-center"
             style={{ color: "rgba(244,248,232,0.3)" }}
           >
-            Free tier shows score + first 2 fixes. No account required.
+            Free scan. Sign up to unlock your full score + fix playbook.
           </motion.p>
         </div>
       </DitheringSimplexBackdrop>

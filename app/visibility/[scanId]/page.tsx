@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, Check, Loader2, Copy, CheckCheck, ChevronDown, ChevronUp, SkipForward, Globe, AlertTriangle, XCircle, TrendingUp } from "lucide-react";
+import { ArrowRight, Check, Loader2, Copy, CheckCheck, ChevronDown, ChevronUp, SkipForward, Globe, TrendingUp } from "lucide-react";
 import { api } from "@/lib/api";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -23,16 +23,23 @@ interface CategoryScore {
   status: "critical" | "warning" | "passing";
 }
 
+// Actual API shape from GET /v1/geo-seo/scan/:scanId
 interface ScanResult {
   url: string;
-  overallScore: number;
+  geoScore: number;
   scoreLabel: string;
-  categories: CategoryScore[];
-  fixCount: number;
-  estimatedScoreAfterFixes: number;
+  scores: {
+    eeat: number;
+    schema: number;
+    technical: number;
+    citability: number;
+    aiCrawlerAccess: number;
+  };
+  issues: Array<{ area: string; message: string; severity: string }>;
 }
 
-interface CodeBlock {
+// Actual API shape from GET /v1/geo-seo/scan/:scanId/fixes
+interface FixBlock {
   filename: string;
   language: string;
   instruction: string;
@@ -40,23 +47,39 @@ interface CodeBlock {
 }
 
 interface Fix {
+  id: string;
   order: number;
   priority: number;
   severity: "critical" | "high" | "medium" | "low";
   area: string;
   title: string;
+  description: string;
   effort: "low" | "medium" | "high";
   estimatedImpact: number;
-  codeBlock: CodeBlock;
+  fix: FixBlock;
   verification: string;
 }
 
 interface ScanFixes {
   currentScore: number;
-  estimatedScoreAfterFixes: number;
-  estimatedScoreGain: number;
+  scoreLabel: string;
   fixCount: number;
+  estimatedScoreGain: number;
+  estimatedScoreAfterFixes: number;
   fixes: Fix[];
+}
+
+// Derives CategoryScore[] from the flat scores object
+function toCategories(scores: ScanResult["scores"]): CategoryScore[] {
+  const toStatus = (s: number): "critical" | "warning" | "passing" =>
+    s >= 70 ? "passing" : s >= 35 ? "warning" : "critical";
+  return [
+    { name: "AI Crawlers", score: scores.aiCrawlerAccess, maxScore: 100, status: toStatus(scores.aiCrawlerAccess) },
+    { name: "Citability",  score: scores.citability,      maxScore: 100, status: toStatus(scores.citability) },
+    { name: "E-E-A-T",     score: scores.eeat,            maxScore: 100, status: toStatus(scores.eeat) },
+    { name: "Technical",   score: scores.technical,       maxScore: 100, status: toStatus(scores.technical) },
+    { name: "Schema",      score: scores.schema,          maxScore: 100, status: toStatus(scores.schema) },
+  ];
 }
 
 // ── Progress steps shown during scan ──────────────────────────────────────────
@@ -156,7 +179,7 @@ function FixCard({ fix, index, total, isFree, done, onDone, onSkip }: {
   const effortColor = fix.effort === "low" ? "#22c55e" : fix.effort === "medium" ? "#f59e0b" : "#ef4444";
 
   async function copyCode() {
-    await navigator.clipboard.writeText(fix.codeBlock.code);
+    await navigator.clipboard.writeText(fix.fix.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -217,12 +240,13 @@ function FixCard({ fix, index, total, isFree, done, onDone, onSkip }: {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
             <div className="px-5 pb-5 space-y-4">
               {/* Instruction */}
-              <p className="text-sm text-gray-600 leading-relaxed">{fix.codeBlock.instruction}</p>
+              <p className="text-sm text-gray-600 leading-relaxed">{fix.description}</p>
+              <p className="text-xs text-gray-500 leading-relaxed italic">{fix.fix.instruction}</p>
 
               {/* Code block */}
               <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div className="flex items-center justify-between px-4 py-2.5" style={{ background: "rgba(0,0,0,0.04)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-                  <span className="text-xs font-mono font-medium text-gray-500">{fix.codeBlock.filename}</span>
+                  <span className="text-xs font-mono font-medium text-gray-500">{fix.fix.filename}</span>
                   <button
                     type="button"
                     onClick={copyCode}
@@ -234,7 +258,7 @@ function FixCard({ fix, index, total, isFree, done, onDone, onSkip }: {
                   </button>
                 </div>
                 <pre className="overflow-x-auto p-4 text-xs leading-relaxed" style={{ background: "rgba(0,0,0,0.02)", fontFamily: "ui-monospace, SFMono-Regular, monospace", color: "#24292e", margin: 0 }}>
-                  <code>{fix.codeBlock.code}</code>
+                  <code>{fix.fix.code}</code>
                 </pre>
               </div>
 
@@ -293,15 +317,15 @@ export default function ScanPage() {
         api.get(`/v1/geo-seo/scan/${scanId}`),
         api.get(`/v1/geo-seo/scan/${scanId}/fixes`),
       ]);
-      setScanResult(resultRes.data);
-      setScanFixes(fixesRes.data);
-      setView("report");
+      const result = resultRes.data?.data ?? resultRes.data;
+      const fixes = fixesRes.data?.data ?? fixesRes.data;
+setScanResult(result);
+      setScanFixes(fixes);
     } catch {
-      // fallback: show mock data in dev
       setScanResult(MOCK_RESULT);
       setScanFixes(MOCK_FIXES);
-      setView("report");
     }
+    setView("report");
   }, [scanId]);
 
   useEffect(() => {
@@ -316,7 +340,7 @@ export default function ScanPage() {
     pollRef.current = setInterval(async () => {
       try {
         const res = await api.get(`/v1/geo-seo/status/${scanId}`);
-        const status: ScanStatus = res.data;
+        const status: ScanStatus = res.data?.data ?? res.data;
         if (status.status === "completed") {
           stopPolling();
           clearInterval(stepTimer);
@@ -413,10 +437,10 @@ export default function ScanPage() {
             {/* Score card */}
             <div className="rounded-2xl border p-8 text-center shadow-sm" style={{ background: "white", borderColor: "rgba(0,0,0,0.08)" }}>
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Your AI Visibility Score</p>
-              <ScoreGauge score={scanResult.overallScore} label={scanResult.scoreLabel} />
+              <ScoreGauge score={scanResult.geoScore} label={scanResult.scoreLabel} />
               <p className="text-sm text-gray-500 mt-6 max-w-sm mx-auto">
-                Fix these <strong>{scanResult.fixCount} issues</strong> → estimated score:{" "}
-                <strong style={{ color: "#22c55e" }}>{scanResult.estimatedScoreAfterFixes}/100</strong>
+                Fix these <strong>{scanFixes?.fixCount ?? scanResult.issues?.length ?? 0} issues</strong> → estimated score:{" "}
+                <strong style={{ color: "#22c55e" }}>{scanFixes?.estimatedScoreAfterFixes ?? "—"}/100</strong>
               </p>
             </div>
 
@@ -424,7 +448,7 @@ export default function ScanPage() {
             <div className="rounded-2xl border p-6 shadow-sm" style={{ background: "white", borderColor: "rgba(0,0,0,0.08)" }}>
               <h3 className="text-sm font-bold text-gray-800 mb-4">Score Breakdown</h3>
               <div className="space-y-2">
-                {scanResult.categories.map((cat) => <CategoryBar key={cat.name} {...cat} />)}
+                {toCategories(scanResult.scores).map((cat) => <CategoryBar key={cat.name} {...cat} />)}
               </div>
             </div>
 
@@ -517,54 +541,43 @@ export default function ScanPage() {
 
 const MOCK_RESULT: ScanResult = {
   url: "example.com",
-  overallScore: 34,
-  scoreLabel: "POOR",
-  fixCount: 8,
-  estimatedScoreAfterFixes: 89,
-  categories: [
-    { name: "AI Crawlers", score: 40, maxScore: 100, status: "warning" },
-    { name: "Citability", score: 22, maxScore: 100, status: "critical" },
-    { name: "E-E-A-T", score: 65, maxScore: 100, status: "warning" },
-    { name: "Technical", score: 48, maxScore: 100, status: "warning" },
-    { name: "Schema", score: 0, maxScore: 100, status: "critical" },
+  geoScore: 34,
+  scoreLabel: "Poor",
+  scores: { aiCrawlerAccess: 40, citability: 22, eeat: 30, technical: 48, schema: 0 },
+  issues: [
+    { area: "Schema", message: "No JSON-LD structured data found", severity: "high" },
+    { area: "E-E-A-T", message: "No author attribution found", severity: "medium" },
   ],
 };
 
 const MOCK_FIXES: ScanFixes = {
   currentScore: 34,
+  scoreLabel: "Poor",
   estimatedScoreAfterFixes: 89,
   estimatedScoreGain: 55,
-  fixCount: 8,
+  fixCount: 2,
   fixes: [
     {
-      order: 1, priority: 1, severity: "critical", area: "AI Crawlers", effort: "low", estimatedImpact: 15,
-      title: "Unblock 3 AI crawlers in robots.txt",
-      codeBlock: {
-        filename: "robots.txt", language: "text",
-        instruction: "Open your robots.txt file and add the following rules to allow GPTBot, ClaudeBot, and PerplexityBot to crawl your site.",
-        code: "User-agent: GPTBot\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /",
+      id: "mock-1", order: 1, priority: 1, severity: "high", area: "Schema", effort: "low", estimatedImpact: 20,
+      title: "Add Organization JSON-LD schema markup",
+      description: "Your site has no structured data. JSON-LD schema is the primary way AI systems understand your brand.",
+      fix: {
+        filename: "HTML <head>", language: "html",
+        instruction: "Paste this inside the <head>...</head> section of your homepage.",
+        code: `<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "Your Company",\n  "url": "https://yoursite.com"\n}\n</script>`,
       },
-      verification: "Re-run scan after 24 hours to confirm crawlers can access your site.",
+      verification: "Re-run scan. Schema score should jump from 0 to 35+.",
     },
     {
-      order: 2, priority: 2, severity: "critical", area: "Schema", effort: "medium", estimatedImpact: 12,
-      title: "Add Organization schema markup",
-      codeBlock: {
-        filename: "index.html", language: "html",
-        instruction: "Add the following JSON-LD script tag inside your <head> section to tell AI systems about your organization.",
-        code: `<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "Your Company",\n  "url": "https://yoursite.com",\n  "description": "Your company description"\n}\n</script>`,
+      id: "mock-2", order: 2, priority: 2, severity: "medium", area: "E-E-A-T", effort: "medium", estimatedImpact: 8,
+      title: "Add author bylines to content pages",
+      description: "AI systems look for named authors to assess expertise.",
+      fix: {
+        filename: "Content pages", language: "html",
+        instruction: "Add a visible author byline with credentials to your main content pages.",
+        code: `<div class="author-byline">\n  <span>Written by <a href="/about/author">Author Name</a></span>\n</div>`,
       },
-      verification: "Use Google's Rich Results Test to verify schema is detected.",
-    },
-    {
-      order: 3, priority: 3, severity: "high", area: "Citability", effort: "medium", estimatedImpact: 10,
-      title: "Add author bylines to key pages",
-      codeBlock: {
-        filename: "about.html", language: "html",
-        instruction: "Add visible author attribution with credentials to your main content pages.",
-        code: `<div class="author-bio">\n  <span class="author-name">Dr. Jane Smith</span>\n  <span class="credentials">PhD, 10+ years experience</span>\n</div>`,
-      },
-      verification: "AI systems should now cite your content with author attribution.",
+      verification: "Re-run scan. E-E-A-T author signals should improve.",
     },
   ],
 };
