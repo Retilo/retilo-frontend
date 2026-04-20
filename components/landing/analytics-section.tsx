@@ -75,8 +75,8 @@ export function AnalyticsSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="rounded-2xl bg-white overflow-hidden"
-            style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 24px rgba(0,0,0,0.06)" }}
+            className="rounded-2xl bg-white"
+            style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 24px rgba(0,0,0,0.06)", overflow: "visible" }}
           >
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
               <div>
@@ -89,7 +89,7 @@ export function AnalyticsSection() {
                 +73 pts
               </span>
             </div>
-            <div className="px-4 pt-6 pb-4">
+            <div className="pl-14 pr-5 pt-6 pb-4">
               {inView && (
                 <AnalyticsLineChart
                   data={SCORE_DATA}

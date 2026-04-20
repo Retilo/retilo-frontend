@@ -123,8 +123,8 @@ function AuthPageInner() {
                 key={t}
                 onClick={() => { setMode(t); setError("") }}
                 className={`flex-1 rounded-lg py-1.5 text-sm font-medium transition-all ${mode === t
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 {t === "login" ? "Sign in" : "Register"}
