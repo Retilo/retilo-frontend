@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { AccountInfo } from "@/components/onboarding/AccountInfo"
 import { LocationList } from "@/components/onboarding/LocationList"

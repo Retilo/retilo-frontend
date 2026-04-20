@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic"
 import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Zap } from "lucide-react"
 import { api } from "@/lib/api"
 
