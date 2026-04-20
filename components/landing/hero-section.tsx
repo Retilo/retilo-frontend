@@ -1,65 +1,153 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { motion } from "motion/react"
-import { ArrowRight, MapPin, Star, Phone, Webhook, MessageSquare, Bot, Mail } from "lucide-react"
-import { LogoCloudAnimation } from "@/components/logo-cloud-animation"
+import { ArrowRight, MapPin, Star, Phone, Webhook, MessageSquare, Bot, Mail, Check, Loader2, TrendingUp } from "lucide-react"
 
 const CALENDLY = "https://calendly.com/satwikloka321/retilo?month=2026-03"
 
-// Wrap icon in a colored circle matching LogoCloudAnimation button style
-function IntIcon({ Icon, color, bg }: { Icon: React.ElementType; color: string; bg: string }) {
+// ── Retilo-specific signal feed (replaces generic AppLogs) ────────────────────
+
+const SIGNAL_LOGS = [
+  { time: "00:12", type: "review",   badge: "★",   badgeColor: "#f59e0b", status: 5,    path: "New 5★ Google review" },
+  { time: "00:09", type: "reply",    badge: "AI",  badgeColor: "#7c3aed", status: 200,  path: "AI reply sent" },
+  { time: "00:07", type: "rank",     badge: "↑3",  badgeColor: "#22c55e", status: 200,  path: "/keyword/rank +3" },
+  { time: "00:02", type: "campaign", badge: "SMS", badgeColor: "#0ea5e9", status: 200,  path: "Review request sent" },
+]
+
+const TOP_TOUCHPOINTS = [
+  { name: "Google Business", visitors: 12_840, pct: 100, color: "#4285F4" },
+  { name: "WhatsApp",        visitors:  5_210, pct: 40,  color: "#25d366" },
+  { name: "Email",           visitors:  3_882, pct: 30,  color: "#7c3aed" },
+  { name: "SMS / Telephony", visitors:  2_140, pct: 17,  color: "#f59e0b" },
+  { name: "Social Media",    visitors:  1_090, pct: 8,   color: "#e1306c" },
+]
+
+const VISIBILITY_STATS = [
+  { label: "AI Score", value: "—/100", note: "Check yours →" },
+  { label: "ChatGPT", value: "✓", note: "crawling" },
+  { label: "Perplexity", value: "✗", note: "blocked" },
+]
+
+// ── Floating card: Signal feed ────────────────────────────────────────────────
+
+function SignalFeedCard() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 500); return () => clearTimeout(t) }, [])
   return (
-    <div className="flex h-full w-full items-center justify-center" style={{ background: bg }}>
-      <Icon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-10 lg:w-10" style={{ color }} strokeWidth={1.8} />
+    <div style={{
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateY(0)" : "translateY(14px)",
+      filter: visible ? "blur(0)" : "blur(4px)",
+      transition: "all 500ms cubic-bezier(0.23,1,0.32,1)",
+      background: "white",
+      borderRadius: 12,
+      border: "1px solid rgba(0,0,0,0.08)",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)",
+      overflow: "hidden",
+      width: 268,
+    }}>
+      <div style={{ padding: "10px 14px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#111", letterSpacing: "-0.01em" }}>Signal Feed</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, color: "#22c55e", fontWeight: 600 }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 2s infinite" }} />
+          Live
+        </span>
+      </div>
+      <div style={{ padding: "2px 8px 10px" }}>
+        {SIGNAL_LOGS.map((log) => (
+          <div key={`${log.time}-${log.path}`} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 6px", borderRadius: 6, fontSize: 11 }}>
+            <span style={{ fontFamily: "ui-monospace, monospace", color: "#9ca3af", width: 32, flexShrink: 0, fontSize: 10 }}>{log.time}</span>
+            <span style={{ width: 22, height: 22, borderRadius: 5, border: "1px solid rgba(0,0,0,0.08)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "white", flexShrink: 0, background: log.badgeColor }}>{log.badge}</span>
+            <span style={{ fontSize: 11, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.path}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-export function HeroSection() {
-  const integrationButtons = useMemo(
-    () => [
-      {
-        label: "Google Business",
-        description: "Sync all GMB locations, reviews, and rank data in real time.",
-        icon: <IntIcon Icon={MapPin} color="#4285F4" bg="#4285F418" />,
-        iconShape: <IntIcon Icon={MapPin} color="#4285F440" bg="#4285F408" />,
-      },
-      {
-        label: "Social Media",
-        description: "Instagram, Facebook, and WhatsApp in one AI-powered inbox.",
-        icon: <IntIcon Icon={MessageSquare} color="#E1306C" bg="#E1306C18" />,
-        iconShape: <IntIcon Icon={MessageSquare} color="#E1306C40" bg="#E1306C08" />,
-      },
-      {
-        label: "Telephony",
-        description: "Log calls, send post-call SMS review requests automatically.",
-        icon: <IntIcon Icon={Phone} color="#0A7D4B" bg="#0A7D4B18" />,
-        iconShape: <IntIcon Icon={Phone} color="#0A7D4B40" bg="#0A7D4B08" />,
-      },
-      {
-        label: "Webhooks",
-        description: "Connect any CRM, POS, or loyalty system via webhooks.",
-        icon: <IntIcon Icon={Webhook} color="#7C3AED" bg="#7C3AED18" />,
-        iconShape: <IntIcon Icon={Webhook} color="#7C3AED40" bg="#7C3AED08" />,
-      },
-      {
-        label: "Reviews",
-        description: "AI-generated review replies that match your brand voice.",
-        icon: <IntIcon Icon={Star} color="#F59E0B" bg="#F59E0B18" />,
-        iconShape: <IntIcon Icon={Star} color="#F59E0B40" bg="#F59E0B08" />,
-      },
-      {
-        label: "AI Agents",
-        description: "Autonomous agents that monitor and respond across all touchpoints.",
-        icon: <IntIcon Icon={Bot} color="oklch(0.55 0.24 350)" bg="oklch(0.58 0.24 350 / 12%)" />,
-        iconShape: <IntIcon Icon={Bot} color="oklch(0.58 0.24 350 / 40%)" bg="oklch(0.58 0.24 350 / 5%)" />,
-      },
-    ],
-    []
-  )
+// ── Floating card: Top touchpoints ────────────────────────────────────────────
 
+function TouchpointsCard() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 680); return () => clearTimeout(t) }, [])
+  return (
+    <div style={{
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateX(0)" : "translateX(16px)",
+      filter: visible ? "blur(0)" : "blur(4px)",
+      transition: "all 500ms cubic-bezier(0.23,1,0.32,1)",
+      background: "white",
+      borderRadius: 12,
+      border: "1px solid rgba(0,0,0,0.08)",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)",
+      overflow: "hidden",
+      width: 240,
+    }}>
+      <div style={{ padding: "10px 14px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#111", letterSpacing: "-0.01em" }}>Touchpoints</span>
+        <span style={{ fontSize: 11, color: "#9ca3af" }}>Signals</span>
+      </div>
+      <div style={{ padding: "2px 8px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
+        {TOP_TOUCHPOINTS.map((tp) => (
+          <div key={tp.name} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "5px 6px", borderRadius: 5 }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${tp.pct}%`, background: `${tp.color}10`, borderRadius: 5 }} />
+            <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: tp.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: "#4b5563", whiteSpace: "nowrap" }}>{tp.name}</span>
+            </div>
+            <span style={{ position: "relative", fontSize: 11, color: "#6b7280", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{tp.visitors.toLocaleString()}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Floating card: AI Visibility teaser ──────────────────────────────────────
+
+function VisibilityTeaserCard() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 300); return () => clearTimeout(t) }, [])
+  return (
+    <Link href="/visibility" style={{
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateY(0)" : "translateY(-12px)",
+      filter: visible ? "blur(0)" : "blur(4px)",
+      transition: "all 500ms cubic-bezier(0.23,1,0.32,1)",
+      background: "linear-gradient(135deg, #301c2a 0%, #1a0d22 100%)",
+      borderRadius: 12,
+      border: "1px solid rgba(253,91,255,0.25)",
+      boxShadow: "0 4px 24px rgba(253,91,255,0.15), 0 0 0 1px rgba(253,91,255,0.1)",
+      overflow: "hidden",
+      padding: "10px 14px",
+      display: "block",
+      width: 220,
+      cursor: "pointer",
+      textDecoration: "none",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "#FD5BFF", letterSpacing: "0.03em", textTransform: "uppercase" }}>AI Visibility</span>
+        <span style={{ fontSize: 9, color: "rgba(244,248,232,0.4)", fontWeight: 500 }}>Free scan →</span>
+      </div>
+      {VISIBILITY_STATS.map((s) => (
+        <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+          <span style={{ fontSize: 10, color: "rgba(244,248,232,0.5)" }}>{s.label}</span>
+          <div style={{ textAlign: "right" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: s.value === "✗" ? "#ef4444" : s.value === "✓" ? "#22c55e" : "#FD5BFF" }}>{s.value}</span>
+            <span style={{ fontSize: 9, color: "rgba(244,248,232,0.3)", marginLeft: 4 }}>{s.note}</span>
+          </div>
+        </div>
+      ))}
+    </Link>
+  )
+}
+
+// ── Main hero section ─────────────────────────────────────────────────────────
+
+export function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-white px-4 pt-20 pb-10 sm:pt-16 sm:pb-12">
       {/* Soft radial glow */}
@@ -96,7 +184,7 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
               className="text-[1.05rem] text-gray-500 leading-relaxed mb-8"
             >
-              Retilo is building the operating layer for modern retail — from warehouse ops to customer experience. Starting with CX: one platform to unify reviews, rankings, and every touchpoint at scale.
+              Retilo is building the operating layer for modern retail — from warehouse ops to customer experience. One platform to unify reviews, AI visibility, rankings, and every touchpoint at scale.
             </motion.p>
 
             <motion.div
@@ -131,21 +219,47 @@ export function HeroSection() {
             </motion.div>
           </div>
 
-          {/* ── Right: integration orbit cloud ───────────── */}
+          {/* ── Right: floating signal cards ─────────────────────── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
-            className="flex-1 w-full lg:max-w-[500px] h-80 sm:h-96 lg:h-125"
+            className="flex-1 w-full lg:max-w-[520px] relative"
+            style={{ minHeight: 380 }}
           >
-            <LogoCloudAnimation buttons={integrationButtons}>
-              <div className="text-center px-6">
-                <p className="font-black text-2xl text-gray-900 tracking-tight leading-snug mb-1">
-                  All your signals.<br />One brain.
-                </p>
-                <p className="text-sm text-gray-400">
-                  Click any channel to explore
-                </p>
-              </div>
-            </LogoCloudAnimation>
+            {/* Background glow */}
+            <div aria-hidden className="absolute inset-0 rounded-3xl pointer-events-none"
+              style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, oklch(0.58 0.24 350 / 6%) 0%, transparent 70%)" }} />
+
+            {/* Grid lines backdrop */}
+            <div aria-hidden className="absolute inset-0 rounded-3xl overflow-hidden opacity-40 pointer-events-none"
+              style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+
+            {/* AI Visibility teaser — top center */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+              <VisibilityTeaserCard />
+            </div>
+
+            {/* Signal feed — bottom left */}
+            <div className="absolute bottom-4 left-0 z-20">
+              <SignalFeedCard />
+            </div>
+
+            {/* Touchpoints — mid right */}
+            <div className="absolute top-1/2 -translate-y-1/2 right-0 z-20">
+              <TouchpointsCard />
+            </div>
+
+            {/* Center orb */}
+            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+              <motion.div
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-xl"
+                style={{ background: "white", border: "2px solid oklch(0.91 0.01 270)" }}
+              >
+                <Bot className="w-8 h-8 mb-0.5" style={{ color: "oklch(0.58 0.24 350)" }} />
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Retilo</span>
+              </motion.div>
+            </div>
           </motion.div>
         </div>
       </div>
