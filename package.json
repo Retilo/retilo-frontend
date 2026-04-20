@@ -13,6 +13,7 @@
     "@ai-sdk/react": "^3.0.142",
     "@deck.gl/mapbox": "^9.2.11",
     "@paper-design/shaders-react": "^0.0.76",
+    "@radix-ui/react-slot": "^1.2.4",
     "@trigger.dev/react-hooks": "^4.4.3",
     "@trigger.dev/sdk": "^4.4.3",
     "@upstash/ratelimit": "^2.0.8",

@@ -1,266 +1,243 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useReducedMotion, motion, type Variants } from "motion/react"
+import { ArrowRight, Zap } from "lucide-react"
 import Link from "next/link"
-import { motion } from "motion/react"
-import { ArrowRight, MapPin, Star, Phone, Webhook, MessageSquare, Bot, Mail, Check, Loader2, TrendingUp } from "lucide-react"
+import { cn } from "@/lib/utils"
+import MarqueeAlongSvgPath from "@/components/ribbon"
+import { OrganicShapeBadge } from "@/components/organic-shape-badge"
+import { OrganicButton } from "@/components/organic-button"
 
 const CALENDLY = "https://calendly.com/satwikloka321/retilo?month=2026-03"
 
-// ── Retilo-specific signal feed (replaces generic AppLogs) ────────────────────
+// ── Retilo platform tiles for the ribbon ──────────────────────────────────────
 
-const SIGNAL_LOGS = [
-  { time: "00:12", type: "review",   badge: "★",   badgeColor: "#f59e0b", status: 5,    path: "New 5★ Google review" },
-  { time: "00:09", type: "reply",    badge: "AI",  badgeColor: "#7c3aed", status: 200,  path: "AI reply sent" },
-  { time: "00:07", type: "rank",     badge: "↑3",  badgeColor: "#22c55e", status: 200,  path: "/keyword/rank +3" },
-  { time: "00:02", type: "campaign", badge: "SMS", badgeColor: "#0ea5e9", status: 200,  path: "Review request sent" },
-]
-
-const TOP_TOUCHPOINTS = [
-  { name: "Google Business", visitors: 12_840, pct: 100, color: "#4285F4" },
-  { name: "WhatsApp",        visitors:  5_210, pct: 40,  color: "#25d366" },
-  { name: "Email",           visitors:  3_882, pct: 30,  color: "#7c3aed" },
-  { name: "SMS / Telephony", visitors:  2_140, pct: 17,  color: "#f59e0b" },
-  { name: "Social Media",    visitors:  1_090, pct: 8,   color: "#e1306c" },
-]
-
-const VISIBILITY_STATS = [
-  { label: "AI Score", value: "—/100", note: "Check yours →" },
-  { label: "ChatGPT", value: "✓", note: "crawling" },
-  { label: "Perplexity", value: "✗", note: "blocked" },
-]
-
-// ── Floating card: Signal feed ────────────────────────────────────────────────
-
-function SignalFeedCard() {
-  const [visible, setVisible] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setVisible(true), 500); return () => clearTimeout(t) }, [])
-  return (
-    <div style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? "translateY(0)" : "translateY(14px)",
-      filter: visible ? "blur(0)" : "blur(4px)",
-      transition: "all 500ms cubic-bezier(0.23,1,0.32,1)",
-      background: "white",
-      borderRadius: 12,
-      border: "1px solid rgba(0,0,0,0.08)",
-      boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)",
-      overflow: "hidden",
-      width: 268,
-    }}>
-      <div style={{ padding: "10px 14px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#111", letterSpacing: "-0.01em" }}>Signal Feed</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, color: "#22c55e", fontWeight: 600 }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 2s infinite" }} />
-          Live
-        </span>
-      </div>
-      <div style={{ padding: "2px 8px 10px" }}>
-        {SIGNAL_LOGS.map((log) => (
-          <div key={`${log.time}-${log.path}`} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 6px", borderRadius: 6, fontSize: 11 }}>
-            <span style={{ fontFamily: "ui-monospace, monospace", color: "#9ca3af", width: 32, flexShrink: 0, fontSize: 10 }}>{log.time}</span>
-            <span style={{ width: 22, height: 22, borderRadius: 5, border: "1px solid rgba(0,0,0,0.08)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "white", flexShrink: 0, background: log.badgeColor }}>{log.badge}</span>
-            <span style={{ fontSize: 11, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.path}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+function tileSvg(inner: string): string {
+  const markup = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">${inner}</svg>`
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`
 }
 
-// ── Floating card: Top touchpoints ────────────────────────────────────────────
+const RETILO_TILES = [
+  {
+    alt: "Google Business",
+    src: tileSvg(`<rect width="128" height="128" fill="#4285F4"/><text x="64" y="84" text-anchor="middle" font-size="72" font-weight="800" fill="white" font-family="system-ui,sans-serif">G</text><text x="64" y="110" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.7)" font-family="system-ui,sans-serif">Business</text>`),
+  },
+  {
+    alt: "ChatGPT",
+    src: tileSvg(`<rect width="128" height="128" fill="#10a37f"/><text x="64" y="78" text-anchor="middle" font-size="28" font-weight="700" fill="white" font-family="ui-monospace,monospace">GPT-4</text><text x="64" y="104" text-anchor="middle" font-size="13" fill="rgba(255,255,255,0.65)" font-family="system-ui,sans-serif">ChatGPT</text>`),
+  },
+  {
+    alt: "WhatsApp",
+    src: tileSvg(`<rect width="128" height="128" fill="#25d366"/><text x="64" y="82" text-anchor="middle" font-size="52" font-weight="800" fill="white" font-family="system-ui,sans-serif">WA</text><text x="64" y="108" text-anchor="middle" font-size="13" fill="rgba(255,255,255,0.7)" font-family="system-ui,sans-serif">WhatsApp</text>`),
+  },
+  {
+    alt: "Claude AI",
+    src: tileSvg(`<rect width="128" height="128" fill="#c96442"/><text x="64" y="82" text-anchor="middle" font-size="64" font-weight="900" fill="#FFDDCC" font-family="Georgia,serif">C</text><text x="64" y="108" text-anchor="middle" font-size="13" fill="rgba(255,221,204,0.7)" font-family="system-ui,sans-serif">Claude</text>`),
+  },
+  {
+    alt: "AI Reply Engine",
+    src: tileSvg(`<rect width="128" height="128" fill="#1a0a2e"/><text x="64" y="72" text-anchor="middle" font-size="34" font-weight="800" fill="#FD5BFF" font-family="system-ui,sans-serif">AI</text><text x="64" y="98" text-anchor="middle" font-size="13" fill="rgba(253,91,255,0.7)" font-family="system-ui,sans-serif">Auto-Reply</text>`),
+  },
+  {
+    alt: "Perplexity",
+    src: tileSvg(`<rect width="128" height="128" fill="#20808d"/><text x="64" y="82" text-anchor="middle" font-size="64" font-weight="800" fill="white" font-family="system-ui,sans-serif">P</text><text x="64" y="108" text-anchor="middle" font-size="13" fill="rgba(255,255,255,0.65)" font-family="system-ui,sans-serif">Perplexity</text>`),
+  },
+  {
+    alt: "Star Reviews",
+    src: tileSvg(`<rect width="128" height="128" fill="#1c1917"/><text x="64" y="68" text-anchor="middle" font-size="26" fill="#f59e0b" font-family="system-ui,sans-serif">★★★★★</text><text x="64" y="92" text-anchor="middle" font-size="14" fill="rgba(245,158,11,0.8)" font-family="ui-monospace,monospace">4.9 avg</text><text x="64" y="112" text-anchor="middle" font-size="12" fill="rgba(255,255,255,0.3)" font-family="system-ui,sans-serif">Reviews</text>`),
+  },
+  {
+    alt: "Email",
+    src: tileSvg(`<rect width="128" height="128" fill="#7c3aed"/><text x="64" y="82" text-anchor="middle" font-size="64" font-weight="700" fill="white" font-family="system-ui,sans-serif">@</text><text x="64" y="108" text-anchor="middle" font-size="13" fill="rgba(255,255,255,0.65)" font-family="system-ui,sans-serif">Email</text>`),
+  },
+  {
+    alt: "SMS Campaigns",
+    src: tileSvg(`<rect width="128" height="128" fill="#0ea5e9"/><text x="64" y="78" text-anchor="middle" font-size="38" font-weight="800" fill="white" font-family="system-ui,sans-serif">SMS</text><text x="64" y="104" text-anchor="middle" font-size="13" fill="rgba(255,255,255,0.65)" font-family="system-ui,sans-serif">Campaigns</text>`),
+  },
+  {
+    alt: "Retilo Platform",
+    src: tileSvg(`<rect width="128" height="128" fill="#301c2a"/><circle cx="64" cy="55" r="24" fill="none" stroke="#FD5BFF" stroke-width="5"/><text x="64" y="102" text-anchor="middle" font-size="16" font-weight="700" fill="#FD5BFF" font-family="system-ui,sans-serif">Retilo</text><text x="64" y="62" text-anchor="middle" font-size="14" font-weight="700" fill="#FD5BFF" font-family="system-ui,sans-serif">R</text>`),
+  },
+  {
+    alt: "Google AI",
+    src: tileSvg(`<rect width="128" height="128" fill="#e8eaed"/><text x="64" y="60" text-anchor="middle" font-size="22" font-weight="700" fill="#4285F4" font-family="system-ui,sans-serif">Google</text><text x="64" y="88" text-anchor="middle" font-size="22" font-weight="700" fill="#ea4335" font-family="system-ui,sans-serif">AI</text><text x="64" y="112" text-anchor="middle" font-size="12" fill="#9aa0a6" font-family="system-ui,sans-serif">Search</text>`),
+  },
+  {
+    alt: "Instagram",
+    src: tileSvg(`<rect width="128" height="128" fill="#833ab4"/><text x="64" y="80" text-anchor="middle" font-size="50" font-weight="800" fill="white" font-family="system-ui,sans-serif">IG</text><text x="64" y="108" text-anchor="middle" font-size="13" fill="rgba(255,255,255,0.65)" font-family="system-ui,sans-serif">Instagram</text>`),
+  },
+] as const
 
-function TouchpointsCard() {
-  const [visible, setVisible] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setVisible(true), 680); return () => clearTimeout(t) }, [])
-  return (
-    <div style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? "translateX(0)" : "translateX(16px)",
-      filter: visible ? "blur(0)" : "blur(4px)",
-      transition: "all 500ms cubic-bezier(0.23,1,0.32,1)",
-      background: "white",
-      borderRadius: 12,
-      border: "1px solid rgba(0,0,0,0.08)",
-      boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)",
-      overflow: "hidden",
-      width: 240,
-    }}>
-      <div style={{ padding: "10px 14px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#111", letterSpacing: "-0.01em" }}>Touchpoints</span>
-        <span style={{ fontSize: 11, color: "#9ca3af" }}>Signals</span>
-      </div>
-      <div style={{ padding: "2px 8px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
-        {TOP_TOUCHPOINTS.map((tp) => (
-          <div key={tp.name} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "5px 6px", borderRadius: 5 }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${tp.pct}%`, background: `${tp.color}10`, borderRadius: 5 }} />
-            <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: tp.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: "#4b5563", whiteSpace: "nowrap" }}>{tp.name}</span>
-            </div>
-            <span style={{ position: "relative", fontSize: 11, color: "#6b7280", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{tp.visitors.toLocaleString()}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ── Floating card: AI Visibility teaser ──────────────────────────────────────
-
-function VisibilityTeaserCard() {
-  const [visible, setVisible] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setVisible(true), 300); return () => clearTimeout(t) }, [])
-  return (
-    <Link href="/visibility" style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? "translateY(0)" : "translateY(-12px)",
-      filter: visible ? "blur(0)" : "blur(4px)",
-      transition: "all 500ms cubic-bezier(0.23,1,0.32,1)",
-      background: "linear-gradient(135deg, #301c2a 0%, #1a0d22 100%)",
-      borderRadius: 12,
-      border: "1px solid rgba(253,91,255,0.25)",
-      boxShadow: "0 4px 24px rgba(253,91,255,0.15), 0 0 0 1px rgba(253,91,255,0.1)",
-      overflow: "hidden",
-      padding: "10px 14px",
-      display: "block",
-      width: 220,
-      cursor: "pointer",
-      textDecoration: "none",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "#FD5BFF", letterSpacing: "0.03em", textTransform: "uppercase" }}>AI Visibility</span>
-        <span style={{ fontSize: 9, color: "rgba(244,248,232,0.4)", fontWeight: 500 }}>Free scan →</span>
-      </div>
-      {VISIBILITY_STATS.map((s) => (
-        <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <span style={{ fontSize: 10, color: "rgba(244,248,232,0.5)" }}>{s.label}</span>
-          <div style={{ textAlign: "right" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: s.value === "✗" ? "#ef4444" : s.value === "✓" ? "#22c55e" : "#FD5BFF" }}>{s.value}</span>
-            <span style={{ fontSize: 9, color: "rgba(244,248,232,0.3)", marginLeft: 4 }}>{s.note}</span>
-          </div>
-        </div>
-      ))}
-    </Link>
-  )
-}
+/** Cubic Bézier ribbon path — same as marketing-hero-ribbon */
+const RIBBON_PATH =
+  "M1 209.434C58.5872 255.935 387.926 325.938 482.583 209.434C600.905 63.8051 525.516 -43.2211 427.332 19.9613C329.149 83.1436 352.902 242.723 515.041 267.302C644.752 286.966 943.56 181.94 995 156.5"
 
 // ── Main hero section ─────────────────────────────────────────────────────────
 
 export function HeroSection() {
+  const shouldReduceMotion = useReducedMotion()
+  const initial = shouldReduceMotion ? "visible" : "hidden"
+
+  const staggerContainer: Variants = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.07, delayChildren: 0.06 } },
+  }
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 18 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  }
+
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white px-4 pt-20 pb-10 sm:pt-16 sm:pb-12">
+    <section className="relative flex min-h-svh w-full flex-col bg-white overflow-hidden">
       {/* Soft radial glow */}
-      <div aria-hidden className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[900px] h-[500px]"
-        style={{ background: "radial-gradient(ellipse 60% 55% at 50% 0%, oklch(0.58 0.24 350 / 8%) 0%, transparent 70%)" }} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 85% 55% at 50% -18%, color-mix(in oklab, oklch(0.58 0.24 350) 12%, transparent), transparent 62%)",
+        }}
+      />
       {/* Dot grid */}
-      <div aria-hidden className="absolute inset-0 opacity-[0.035]"
-        style={{ backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
 
-      <div className="relative z-10 max-w-6xl mx-auto w-full">
-        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-16 sm:px-6 sm:py-20 lg:py-0">
+        <div className="grid flex-1 grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-10 lg:py-16 xl:gap-14">
 
-          {/* ── Left: copy ───────────────────────────────── */}
-          <div className="flex-shrink-0 w-full lg:max-w-[480px] text-center lg:text-left">
-            <motion.div
-              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6"
-              style={{ background: "oklch(0.58 0.24 350 / 10%)", color: "oklch(0.48 0.24 350)", border: "1px solid oklch(0.58 0.24 350 / 20%)" }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[oklch(0.58_0.24_350)] animate-pulse" />
-              The Retail Intelligence Platform
+          {/* ── Left: copy ─────────────────────────────────── */}
+          <motion.div
+            animate="visible"
+            className="mx-auto w-full max-w-2xl text-center lg:mx-0 lg:max-w-none lg:pr-4 lg:text-left"
+            initial={initial}
+            variants={staggerContainer}
+          >
+            <motion.div className="mb-6 lg:mx-0" variants={itemVariants}>
+              <OrganicShapeBadge
+                icon={<Zap aria-hidden className="organic-badge-icon stroke-[1.75]" />}
+                label="Retail Intelligence Platform"
+                size="sm"
+                variantColor="light"
+              />
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-[1.8rem] sm:text-4xl lg:text-5xl xl:text-[3.4rem] font-black tracking-tight text-gray-900 leading-[1.1] mb-4"
+              className="mb-4 text-balance font-black tracking-tight text-gray-900 leading-[1.08]"
+              style={{ fontSize: "clamp(2rem, 5vw, 3.4rem)", letterSpacing: "-0.035em" }}
+              variants={itemVariants}
             >
-              Retail runs on<br />
-              <span style={{ color: "oklch(0.58 0.24 350)" }}>intelligence,</span><br />
+              Retail runs on{" "}
+              <span
+                className="bg-clip-text text-transparent"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(135deg, oklch(0.58 0.24 350) 0%, oklch(0.52 0.30 350) 100%)",
+                }}
+              >
+                intelligence,
+              </span>
+              <br />
               not guesswork
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-[1.05rem] text-gray-500 leading-relaxed mb-8"
+              className="mx-auto mb-8 max-w-lg text-pretty text-gray-500 leading-relaxed sm:text-base lg:mx-0"
+              style={{ fontSize: "clamp(0.95rem, 1.5vw, 1.075rem)" }}
+              variants={itemVariants}
             >
-              Retilo is building the operating layer for modern retail — from warehouse ops to customer experience. One platform to unify reviews, AI visibility, rankings, and every touchpoint at scale.
+              Retilo is building the operating layer for modern retail — from warehouse ops to customer
+              experience. One platform to unify reviews, AI visibility, rankings, and every touchpoint at scale.
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-wrap gap-3 justify-center lg:justify-start"
+              className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-start"
+              variants={itemVariants}
             >
-              <a
-                href={CALENDLY} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-white text-sm shadow-lg transition-all hover:-translate-y-0.5"
-                style={{ background: "oklch(0.58 0.24 350)", boxShadow: "0 8px 24px oklch(0.58 0.24 350 / 30%)" }}
-              >
-                Book a demo <ArrowRight className="w-4 h-4" />
-              </a>
+              <OrganicButton
+                animationSpeed="fast"
+                href={CALENDLY}
+                icon={<ArrowRight className="organic-icon stroke-2 transition-transform duration-100 group-hover/organic:translate-x-0.5" />}
+                label="Book a demo"
+                size="lg"
+                variantColor="primary"
+              />
               <Link
                 href="/auth"
-                className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-gray-700 text-sm border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all"
+                className={cn(
+                  "inline-flex h-14 items-center justify-center px-6 text-base font-semibold",
+                  "rounded-full border border-gray-200 bg-white text-gray-700",
+                  "transition-all hover:border-gray-300 hover:bg-gray-50"
+                )}
               >
                 Start free
               </Link>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-6 flex items-center gap-4 sm:gap-6 text-xs text-gray-400 justify-center lg:justify-start flex-wrap"
+              className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs text-gray-400 lg:justify-start"
+              variants={itemVariants}
             >
-              {[{ value: "4.9★", label: "avg rating lift" }, { value: "10×", label: "ops efficiency" }, { value: "94%", label: "review response rate" }]
-                .map(({ value, label }) => (
-                  <div key={label}>
-                    <span className="font-bold text-gray-700 text-sm">{value}</span>{" "}<span>{label}</span>
-                  </div>
-                ))}
+              {[
+                { value: "4.9★", label: "avg rating lift" },
+                { value: "10×", label: "ops efficiency" },
+                { value: "94%", label: "review response rate" },
+              ].map(({ value, label }) => (
+                <div key={label}>
+                  <span className="font-bold text-gray-700 text-sm">{value}</span>{" "}
+                  <span>{label}</span>
+                </div>
+              ))}
             </motion.div>
+          </motion.div>
+
+          {/* ── Right: ribbon of platform tiles ──────────────── */}
+          <div
+            aria-hidden
+            className={cn(
+              "-translate-x-6 sm:-translate-x-8 lg:-translate-x-14 xl:-translate-x-20",
+              "relative z-5 min-h-[min(42vh,320px)] w-full shrink-0 rotate-45 select-none",
+              "sm:min-h-[min(40vh,360px)] lg:max-h-[min(72vh,600px)] lg:min-h-[min(64vh,520px)]"
+            )}
+          >
+            <MarqueeAlongSvgPath
+              baseVelocity={5.5}
+              className="h-full w-full text-muted-foreground/20"
+              path={RIBBON_PATH}
+              repeat={4}
+              responsive
+              slowDownFactor={0.28}
+              slowdownOnHover
+              viewBox="0 -50 1000 390"
+              zIndexBase={1}
+              zIndexRange={12}
+            >
+              {RETILO_TILES.map((tile) => (
+                <div
+                  className="size-15 shrink-0 overflow-hidden rounded-[2px] shadow-sm ring-1 ring-black/6 sm:size-16"
+                  key={tile.alt}
+                >
+                  <img
+                    alt={tile.alt}
+                    className="size-full object-cover"
+                    decoding="async"
+                    draggable={false}
+                    height={128}
+                    loading="lazy"
+                    src={tile.src}
+                    width={128}
+                  />
+                </div>
+              ))}
+            </MarqueeAlongSvgPath>
           </div>
 
-          {/* ── Right: floating signal cards ─────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
-            className="flex-1 w-full lg:max-w-[520px] relative"
-            style={{ minHeight: 380 }}
-          >
-            {/* Background glow */}
-            <div aria-hidden className="absolute inset-0 rounded-3xl pointer-events-none"
-              style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, oklch(0.58 0.24 350 / 6%) 0%, transparent 70%)" }} />
-
-            {/* Grid lines backdrop */}
-            <div aria-hidden className="absolute inset-0 rounded-3xl overflow-hidden opacity-40 pointer-events-none"
-              style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
-
-            {/* AI Visibility teaser — top center */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-              <VisibilityTeaserCard />
-            </div>
-
-            {/* Signal feed — bottom left */}
-            <div className="absolute bottom-4 left-0 z-20">
-              <SignalFeedCard />
-            </div>
-
-            {/* Touchpoints — mid right */}
-            <div className="absolute top-1/2 -translate-y-1/2 right-0 z-20">
-              <TouchpointsCard />
-            </div>
-
-            {/* Center orb */}
-            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-              <motion.div
-                animate={{ scale: [1, 1.04, 1] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-xl"
-                style={{ background: "white", border: "2px solid oklch(0.91 0.01 270)" }}
-              >
-                <Bot className="w-8 h-8 mb-0.5" style={{ color: "oklch(0.58 0.24 350)" }} />
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Retilo</span>
-              </motion.div>
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>
