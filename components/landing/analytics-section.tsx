@@ -1,12 +1,12 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { motion, useInView } from "motion/react"
 import { TrendingUp, Zap } from "lucide-react"
 import { AnalyticsLineChart, type AnalyticsDataPoint, type AnalyticsGradientStop } from "@/components/analytics-chart"
 import { OrganicShapeBadge } from "@/components/organic-shape-badge"
+import { AnimatedCounter } from "@/components/stats-globe"
 
-// Score improvement journey — a single brand going from invisible → fully cited
 const SCORE_DATA: AnalyticsDataPoint[] = [
   { date: "2024-08-01", label: "visibility score", value: 18 },
   { date: "2024-09-01", label: "visibility score", value: 24 },
@@ -25,9 +25,9 @@ const GRADIENT: AnalyticsGradientStop[] = [
 ]
 
 const STATS = [
-  { value: "18→91",  label: "avg score journey",    sub: "over 6 months" },
-  { value: "3.1×",   label: "more AI citations",     sub: "after full fix" },
-  { value: "60 sec", label: "to first visibility score", sub: "free, no card" },
+  { value: 73,   suffix: " pts", label: "avg score gain",          sub: "18 → 91 over 6 months" },
+  { value: 3.1,  suffix: "×",    label: "more AI citations",        sub: "after full fix playbook", decimals: 1 },
+  { value: 60,   suffix: "s",    label: "to first visibility score", sub: "free, no card needed" },
 ]
 
 export function AnalyticsSection() {
@@ -38,7 +38,6 @@ export function AnalyticsSection() {
     <section className="bg-white py-16 md:py-20 px-4 md:px-8 lg:px-10" ref={ref}>
       <div className="max-w-5xl mx-auto">
 
-        {/* Header */}
         <motion.div
           className="max-w-2xl mb-12"
           initial={{ opacity: 0, y: 16 }}
@@ -69,7 +68,6 @@ export function AnalyticsSection() {
           </p>
         </motion.div>
 
-        {/* Chart + stats grid */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-8 items-start">
 
           {/* Chart card */}
@@ -80,7 +78,6 @@ export function AnalyticsSection() {
             className="rounded-2xl bg-white overflow-hidden"
             style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 24px rgba(0,0,0,0.06)" }}
           >
-            {/* Chart header */}
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
               <div>
                 <p className="text-sm font-semibold text-gray-800">AI Visibility Score</p>
@@ -92,8 +89,6 @@ export function AnalyticsSection() {
                 +73 pts
               </span>
             </div>
-
-            {/* Chart — only mounts when in view so animation triggers on scroll */}
             <div className="px-4 pt-6 pb-4">
               {inView && (
                 <AnalyticsLineChart
@@ -109,7 +104,7 @@ export function AnalyticsSection() {
             </div>
           </motion.div>
 
-          {/* Stats column */}
+          {/* Stat cards with animated counters */}
           <div className="flex flex-col gap-3 lg:pt-2">
             {STATS.map((stat, i) => (
               <motion.div
@@ -121,23 +116,26 @@ export function AnalyticsSection() {
                 style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 1px 8px rgba(0,0,0,0.04)" }}
               >
                 <div
-                  className="font-black tabular-nums leading-none mb-1"
-                  style={{ fontSize: "clamp(1.6rem, 3vw, 2rem)", color: "#111827", letterSpacing: "-0.03em" }}
+                  className="font-black leading-none mb-1"
+                  style={{ fontSize: "clamp(1.8rem, 3vw, 2.2rem)", color: "#111827", letterSpacing: "-0.03em" }}
                 >
-                  {stat.value}
+                  <AnimatedCounter
+                    target={stat.value}
+                    suffix={stat.suffix}
+                    decimals={stat.decimals ?? 0}
+                  />
                 </div>
                 <div className="text-xs font-semibold text-gray-700 leading-tight">{stat.label}</div>
                 <div className="text-xs text-gray-400 mt-0.5">{stat.sub}</div>
               </motion.div>
             ))}
 
-            {/* Mini CTA */}
             <motion.a
               href="/visibility"
               initial={{ opacity: 0, x: 16 }}
               animate={inView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.55 }}
-              className="rounded-2xl p-5 flex items-center gap-3 transition-all hover:-translate-y-0.5 group"
+              className="rounded-2xl p-5 flex items-center gap-3 transition-all hover:-translate-y-0.5"
               style={{ background: "linear-gradient(135deg, #1a0a2e, #2d1055)", border: "1px solid rgba(253,91,255,0.2)", boxShadow: "0 4px 20px rgba(26,10,46,0.25)" }}
             >
               <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
