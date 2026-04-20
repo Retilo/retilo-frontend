@@ -5,6 +5,7 @@
 
 import { LandingNav } from "./nav"
 import { HeroSection } from "./hero-section"
+import { BrandVisibilitySection } from "./brand-visibility-section"
 import { BentoSection } from "./bento-section"
 import { EmailAgentSection } from "./email-agent-section"
 import { FeaturesDarkSection } from "./features-dark-section"
@@ -17,6 +18,9 @@ export default function LandingPage() {
       <LandingNav />
       <main>
         <HeroSection />
+        <div id="ai-visibility">
+          <BrandVisibilitySection />
+        </div>
         <div id="integrations">
           <BentoSection />
         </div>

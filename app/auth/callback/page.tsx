@@ -18,8 +18,8 @@ function CallbackHandler() {
 
     if (token) {
       localStorage.setItem("retilo_token", token)
-      // Check if user has completed onboarding (has locations)
-      router.replace("/dashboard")
+      const redirect = params.get("state") || "/dashboard"
+      router.replace(redirect)
     } else {
       console.error("OAuth callback error:", error)
       router.replace(`/auth?error=${error ?? "oauth_failed"}`)

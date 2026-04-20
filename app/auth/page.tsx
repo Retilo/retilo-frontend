@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Zap } from "lucide-react"
@@ -14,15 +14,17 @@ type Mode = "login" | "register"
 
 export default function AuthPage() {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>("login")
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") || "/dashboard"
+  const [mode, setMode] = useState<Mode>((searchParams.get("mode") as Mode) ?? "login")
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [form, setForm] = useState({ name: "", email: "", password: "" })
 
   useEffect(() => {
-    if (localStorage.getItem("retilo_token")) router.replace("/dashboard")
-  }, [router])
+    if (localStorage.getItem("retilo_token")) router.replace(redirectTo)
+  }, [router, redirectTo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,7 +49,7 @@ export default function AuthPage() {
       if (res.data.data.merchant) {
         localStorage.setItem("retilo_merchant", JSON.stringify(res.data.data.merchant))
       }
-      router.replace("/dashboard")
+      router.replace(redirectTo)
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } }
       setError(e?.response?.data?.message ?? "Something went wrong. Try again.")
@@ -58,7 +60,8 @@ export default function AuthPage() {
 
   const handleGoogleAuth = () => {
     const base = process.env.NEXT_PUBLIC_SERVER_BASE_URL ?? "https://api.retilo.io"
-    window.location.href = `${base}/v1/auth/google`
+    const state = redirectTo !== "/dashboard" ? `?state=${encodeURIComponent(redirectTo)}` : ""
+    window.location.href = `${base}/v1/auth/google${state}`
   }
 
   return (
