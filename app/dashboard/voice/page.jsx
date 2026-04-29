@@ -196,7 +196,7 @@ function ProvisionModal({ locations, onClose, onProvision }) {
         <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
           <div>
             <h2 className="text-base font-semibold" style={{ color: TEXT }}>Provision Voice Agent</h2>
-            <p className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>Sets up an ElevenLabs AI receptionist for your restaurant</p>
+            <p className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>Sets up an ElevenLabs AI receptionist for your store</p>
           </div>
           <button onClick={onClose} style={{ color: TEXT_FAINT }}><X className="w-4 h-4" /></button>
         </div>
@@ -215,11 +215,11 @@ function ProvisionModal({ locations, onClose, onProvision }) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Restaurant name *</label>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Store name *</label>
             <input
               required value={form.restaurantName}
               onChange={e => set("restaurantName", e.target.value)}
-              placeholder="Sharma Ji Ka Dhaba"
+              placeholder="Reliance Digital – Koramangala"
               className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
               style={inputStyle}
               onFocus={e => Object.assign(e.target.style, focusStyle)}
@@ -229,11 +229,11 @@ function ProvisionModal({ locations, onClose, onProvision }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Cuisine</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Store category</label>
               <input
                 value={form.restaurantCuisine}
                 onChange={e => set("restaurantCuisine", e.target.value)}
-                placeholder="North Indian"
+                placeholder="Electronics, Fashion, Pharmacy…"
                 className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
                 style={inputStyle}
                 onFocus={e => Object.assign(e.target.style, focusStyle)}
@@ -298,12 +298,12 @@ function ProvisionModal({ locations, onClose, onProvision }) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Menu (optional)</label>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Product catalogue / FAQs (optional)</label>
             <textarea
               rows={4}
               value={form.menuText}
               onChange={e => set("menuText", e.target.value)}
-              placeholder="Butter Chicken – ₹320&#10;Dal Makhani – ₹260&#10;…"
+              placeholder="Samsung Galaxy S24 – ₹74,999&#10;Return policy: 7 days&#10;EMI available on all products&#10;…"
               className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={e => Object.assign(e.target.style, focusStyle)}
@@ -319,7 +319,7 @@ function ProvisionModal({ locations, onClose, onProvision }) {
           )}
 
           <p className="text-[10px]" style={{ color: TEXT_FAINT }}>
-            This provisions an ElevenLabs agent — may take 5–10 seconds. Don't close this dialog.
+            Provisions an ElevenLabs AI agent and loads your knowledge base — takes 5–10 s. Don't close this dialog.
           </p>
 
           <button
@@ -343,7 +343,7 @@ function AnalyticsBar({ analytics }) {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <StatTile icon={PhoneCall} label="Total calls" value={analytics.totalCalls} accent={BLUE} />
       <StatTile icon={TrendingUp} label="Answer rate" value={`${analytics.answerRate}%`} sub={`${analytics.missedCalls} missed`} accent={GREEN} />
-      <StatTile icon={Hash} label="Orders placed" value={analytics.ordersPlaced} accent="oklch(0.62 0.20 50)" />
+      <StatTile icon={Hash} label="Enquiries resolved" value={analytics.ordersPlaced} accent="oklch(0.62 0.20 50)" />
       <StatTile icon={Clock} label="Avg duration" value={`${analytics.avgDuration}s`} accent={PINK} />
     </div>
   )
@@ -402,7 +402,7 @@ export default function VoicePage() {
   return (
     <DashboardPageLayout
       title="Voice AI"
-      subtitle="AI phone receptionist — takes orders, answers queries, books tables"
+      subtitle="AI phone receptionist for your stores — handles product queries, hours, directions and stock checks"
       actions={
         <button
           onClick={() => setShowProvision(true)}
@@ -443,7 +443,7 @@ export default function VoicePage() {
                   </div>
                   <h3 className="text-sm font-semibold mb-2" style={{ color: TEXT }}>No voice agents yet</h3>
                   <p className="text-xs mb-6 max-w-xs mx-auto" style={{ color: TEXT_MUTED }}>
-                    Provision an AI receptionist for your restaurant — it answers calls in Hindi, takes Swiggy orders, and handles reservations.
+                    Provision an AI receptionist for your store — it answers calls 24/7, handles product queries, gives directions, and checks store hours.
                   </p>
                   <button
                     onClick={() => setShowProvision(true)}
