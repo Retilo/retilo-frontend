@@ -1,92 +1,110 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
-import { MapPin, Star, TrendingUp, Utensils, BarChart2, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Search, TrendingUp, Utensils, BarChart2, ShieldCheck, MapPin } from "lucide-react";
 import { api } from "@/lib/api";
 import AnalyticsHero from "@/components/marketing-hero-analytics";
 import { MarketingBentoCoreCapabilities } from "@/components/marketing-bento-core-capabilities";
 
-interface GPlacesAutocomplete {
-  addListener: (event: string, cb: () => void) => void;
-  getPlace: () => { place_id?: string; name?: string };
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface PlacePrediction {
+  place_id: string;
+  name: string;
+  address: string;
 }
 
-declare global {
-  interface Window {
-    google?: {
-      maps: {
-        places: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Autocomplete: new (input: HTMLInputElement, options?: any) => GPlacesAutocomplete;
-        };
-      };
-    };
-    initGooglePlacesGrader?: () => void;
-  }
-}
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATS = [
-  { icon: Utensils, value: "2.3B+", label: "restaurant searches / month" },
-  { icon: BarChart2, value: "10+", label: "growth signals analyzed" },
-  { icon: ShieldCheck, value: "60s", label: "to get your full score" },
+  { icon: Utensils,    value: "50K+", label: "restaurants in India" },
+  { icon: BarChart2,   value: "10+",  label: "growth signals analyzed" },
+  { icon: ShieldCheck, value: "60s",  label: "to get your full score" },
 ];
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function GraderLandingPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const acRef = useRef<GPlacesAutocomplete | null>(null);
-  const [query, setQuery] = useState("");
-  const [placeId, setPlaceId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [mapsReady, setMapsReady] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) return;
-    if (window.google?.maps?.places) { setMapsReady(true); return; }
-    window.initGooglePlacesGrader = () => setMapsReady(true);
-    const s = document.createElement("script");
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGooglePlacesGrader`;
-    s.async = true;
-    s.defer = true;
-    document.head.appendChild(s);
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<PlacePrediction[]>([]);
+  const [selected, setSelected] = useState<PlacePrediction | null>(null);
+  const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  // Call backend — it holds the Google API key
+  const fetchSuggestions = useCallback(async (input: string) => {
+    if (input.length < 2) { setSuggestions([]); setOpen(false); return; }
+    setSearching(true);
+    try {
+      const res = await api.get("/v1/places/autocomplete", {
+        params: { input, country: "in" },
+      });
+      const results: PlacePrediction[] = res.data?.predictions ?? res.data ?? [];
+      setSuggestions(results.slice(0, 5));
+      setOpen(results.length > 0);
+    } catch {
+      setSuggestions([]);
+      setOpen(false);
+    } finally {
+      setSearching(false);
+    }
   }, []);
 
+  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setQuery(val);
+    setSelected(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+  }
+
+  function handleSelect(place: PlacePrediction) {
+    setSelected(place);
+    setQuery(place.name);
+    setSuggestions([]);
+    setOpen(false);
+    inputRef.current?.blur();
+  }
+
+  // Close on outside click
   useEffect(() => {
-    if (!mapsReady || !inputRef.current || acRef.current) return;
-    acRef.current = new window.google!.maps.places.Autocomplete(inputRef.current, {
-      types: ["establishment"],
-    });
-    acRef.current.addListener("place_changed", () => {
-      const p = acRef.current!.getPlace();
-      if (p?.place_id) {
-        setPlaceId(p.place_id);
-        setQuery(p.name ?? "");
-      }
-    });
-  }, [mapsReady]);
+    function handler(e: MouseEvent) {
+      if (
+        dropdownRef.current?.contains(e.target as Node) ||
+        inputRef.current?.contains(e.target as Node)
+      ) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const id = placeId ?? query.trim();
-    if (!id) return;
+    if (!selected) return;
     setError("");
-    setLoading(true);
+    setSubmitting(true);
     try {
       const res = await api.post("/v1/pipelines", {
         type: "brand-from-place-id",
-        params: { googlePlaceId: id, source: "grader" },
+        params: { googlePlaceId: selected.place_id, source: "grader" },
       });
       const pipelineId = res.data?.id ?? res.data?.data?.id;
       if (!pipelineId) throw new Error("No pipeline ID returned");
       router.push(`/grader/${pipelineId}`);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? "Failed to start scan. Please try again.");
-      setLoading(false);
+      setError(msg ?? "Something went wrong. Please try again.");
+      setSubmitting(false);
     }
   }
 
@@ -114,44 +132,87 @@ export default function GraderLandingPage() {
           className="flex flex-col items-center text-center w-full max-w-2xl mx-auto"
         >
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 mb-6">
-            <Star className="w-3 h-3 fill-current" />
-            Free Restaurant Growth Report
+            <MapPin className="w-3 h-3" />
+            Free Restaurant Growth Report · India
           </span>
 
           <h1
             className="font-bold tracking-tight text-foreground mb-4"
-            style={{ fontSize: "clamp(2.5rem, 6vw, 4rem)", lineHeight: 1.08, letterSpacing: "-0.03em" }}
+            style={{ fontSize: "clamp(2.4rem, 6vw, 4rem)", lineHeight: 1.08, letterSpacing: "-0.03em" }}
           >
             How does your<br />
             restaurant <span className="text-primary">really score?</span>
           </h1>
 
           <p className="text-lg text-muted-foreground mb-10 max-w-md leading-relaxed">
-            Get a free scored report — guest experience, reputation, and search visibility — in 60 seconds. No sign-up required.
+            Search your restaurant the same way your customers do — get a free growth report in 60 seconds.
           </p>
 
           {/* Search */}
           <form onSubmit={handleSubmit} className="w-full max-w-xl">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <div className="relative">
+              <div className="relative flex items-center">
+                <Search className="absolute left-4 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                   ref={inputRef}
                   type="text"
                   value={query}
-                  onChange={(e) => { setQuery(e.target.value); setPlaceId(null); }}
-                  placeholder={mapsReady ? "Search your restaurant name…" : "Paste your Google Place ID…"}
-                  className="w-full h-12 pl-10 pr-4 rounded-xl border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+                  onChange={handleInput}
+                  onFocus={() => suggestions.length > 0 && setOpen(true)}
+                  placeholder="e.g. Barbeque Nation, Connaught Place…"
+                  autoComplete="off"
+                  className="w-full h-14 pl-11 pr-10 rounded-2xl border-2 bg-background text-foreground placeholder:text-muted-foreground text-base focus:outline-none focus:border-primary transition-colors shadow-sm"
                 />
+                {searching && (
+                  <div className="absolute right-4 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                )}
               </div>
-              <button
-                type="submit"
-                disabled={loading || (!placeId && !query.trim())}
-                className="h-12 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap shadow-sm"
-              >
-                {loading ? "Starting…" : "Get Free Report →"}
-              </button>
+
+              {/* Dropdown */}
+              <AnimatePresence>
+                {open && suggestions.length > 0 && (
+                  <motion.div
+                    ref={dropdownRef}
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.13 }}
+                    className="absolute top-full left-0 right-0 mt-2 rounded-2xl border bg-card shadow-2xl z-50 overflow-hidden"
+                  >
+                    {suggestions.map((place, i) => (
+                      <button
+                        key={place.place_id}
+                        type="button"
+                        onMouseDown={() => handleSelect(place)}
+                        className={`w-full text-left px-4 py-3.5 flex items-start gap-3 hover:bg-muted/60 transition-colors ${i > 0 ? "border-t" : ""}`}
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <MapPin className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm text-foreground truncate">{place.name}</div>
+                          <div className="text-xs text-muted-foreground truncate mt-0.5">{place.address}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+
+            {/* CTA */}
+            <button
+              type="submit"
+              disabled={submitting || !selected}
+              className="mt-4 w-full py-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-base hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+            >
+              {submitting
+                ? "Starting your report…"
+                : selected
+                ? `Get Report for "${query}" →`
+                : "Select your restaurant above"}
+            </button>
+
             {error && <p className="mt-2.5 text-sm text-red-500 text-center">{error}</p>}
           </form>
 
@@ -168,7 +229,7 @@ export default function GraderLandingPage() {
         </motion.div>
       </section>
 
-      {/* Analytics preview — "here's what your data looks like" */}
+      {/* Analytics preview */}
       <AnalyticsHero
         title="Your restaurant, fully visible"
         description="Real-time scores across guest experience, reputation, and local search — everything a growing restaurant needs to track."
