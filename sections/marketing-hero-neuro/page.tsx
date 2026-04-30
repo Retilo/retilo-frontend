@@ -5,7 +5,7 @@ import type { Variants } from "motion/react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { NeuroBackdrop } from "./neuro-backdrop";
+import { NeuroBackdrop } from "@/app/neuro-backdrop";
 
 const HEADING_TEXT = "Signals Worth Following";
 const DESCRIPTION =

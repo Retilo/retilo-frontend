@@ -4,7 +4,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import type { Variants } from "motion/react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { HyperspaceTunnel } from "./hyperspace-tunnel";
+import { HyperspaceTunnel } from "@/app/hyperspace-tunnel";
 
 const HEADING_TEXT = "Travel Beyond the Edge of Light";
 const DESCRIPTION =

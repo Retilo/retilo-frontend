@@ -1,15 +1,20 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, Mic2, Lock, Eye, Search, Phone, Zap } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Mic2, Lock, Eye, Search, Phone, Zap, X } from "lucide-react";
 import type { Variants } from "motion/react";
 import { motion, useReducedMotion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import Image from "next/image";
+import Script from "next/script";
 import { NeuroNoise, GodRays } from "@paper-design/shaders-react";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MarketingWaitlistMinimal } from "@/components/marketing-waitlist-minimal";
+
+// ElevenLabs web component — rendered via createElement to bypass JSX type limits
+const ElevenLabsWidget = () =>
+  React.createElement("elevenlabs-convai", { "agent-id": "agent_4101kqefg6fffqnrv8mv7j5fntrn" });
 import {
   OrganicCard,
   OrganicCardBody,
@@ -46,6 +51,91 @@ const HERO_PAGE_GUTTER   = "pt-6 pb-6 pl-6 md:pt-8 md:pb-8 md:pl-8 lg:pt-10 lg:p
 const HERO_PAGE_GUTTER_R = "pr-4 md:pr-6 lg:pr-8";
 
 const FOOTER_LINK_EASE = [0.23, 1, 0.32, 1] as const;
+
+// ── Demo call modal ───────────────────────────────────────────────
+function DemoCallModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            key="backdrop"
+            className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+
+          {/* Modal */}
+          <motion.div
+            key="modal"
+            className="fixed inset-0 z-[101] flex items-center justify-center p-4"
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+            transition={{ type: "spring", bounce: 0.18, duration: 0.45 }}
+          >
+            <div
+              className="relative w-full max-w-sm rounded-3xl overflow-hidden"
+              style={{ background: FIELD_BACK, border: `1px solid ${SWIGGY}30` }}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-6 py-4 border-b"
+                style={{ borderColor: `${SWIGGY}18` }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="size-2 rounded-full animate-pulse"
+                    style={{ background: SWIGGY }}
+                  />
+                  <span className="text-sm font-semibold" style={{ color: CREAM }}>
+                    Live demo call
+                  </span>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="size-7 flex items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                  style={{ color: `${CREAM}60` }}
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex flex-col items-center gap-5 px-6 py-8">
+                <div className="text-center">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: `${AMBER}80` }}>
+                    Retilo Voice · ElevenLabs Agent
+                  </p>
+                  <p className="text-sm" style={{ color: `${CREAM}70` }}>
+                    Click the button below to start a live AI ordering call
+                  </p>
+                </div>
+
+                {/* ElevenLabs widget */}
+                <div className="flex items-center justify-center w-full py-2">
+                  <ElevenLabsWidget />
+                </div>
+
+                <div className="flex items-center gap-2 text-[10px]" style={{ color: `${CREAM}35` }}>
+                  <a href={EL_HREF} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 hover:opacity-70 transition-opacity"
+                  >
+                    Powered by
+                    <Image src={EL_LOGO_LIGHT} alt="ElevenLabs" width={60} height={14} className="h-3 w-auto object-contain opacity-50" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
 
 const PIPELINE_LINKS = [
   { href: "#gmb",      label: "GMB call intent" },
@@ -149,9 +239,9 @@ function HeroTopBar({ itemVariants, shouldReduceMotion }: { itemVariants: Varian
 
 // ── Copy column ───────────────────────────────────────────────────
 function HeroCopyColumn({
-  containerVariants, itemVariants, wordVariants, shouldReduceMotion,
+  containerVariants, itemVariants, wordVariants, shouldReduceMotion, onDemoCall,
 }: {
-  containerVariants: Variants; itemVariants: Variants; wordVariants: Variants; shouldReduceMotion: boolean | null;
+  containerVariants: Variants; itemVariants: Variants; wordVariants: Variants; shouldReduceMotion: boolean | null; onDemoCall: () => void;
 }) {
   const words = ["Restaurants", "get", "orders", "from", "phone", "calls."];
 
@@ -230,6 +320,7 @@ function HeroCopyColumn({
             whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}
           >
             <Button
+              onClick={onDemoCall}
               className="rounded-full px-7 font-medium backdrop-blur-sm"
               size="lg"
               variant="outline"
@@ -564,6 +655,7 @@ const CARDS = [
 // ══════════════════════════════════════════════════════════════════
 export default function SwiggyPromoPage() {
   const shouldReduceMotion = useReducedMotion();
+  const [demoOpen, setDemoOpen] = useState(false);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -596,6 +688,12 @@ export default function SwiggyPromoPage() {
   return (
     <div className={cn("box-border flex min-h-dvh flex-col overflow-hidden bg-white antialiased", HERO_PAGE_GUTTER, HERO_PAGE_GUTTER_R)}>
 
+      {/* ElevenLabs widget script — loaded once, lazily */}
+      <Script src="https://unpkg.com/@elevenlabs/convai-widget-embed" strategy="lazyOnload" />
+
+      {/* Demo call modal */}
+      <DemoCallModal open={demoOpen} onClose={() => setDemoOpen(false)} />
+
       {/* ── Neuro Hero ── */}
       <div className={cn("relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#080300]", HERO_SHELL_RADIUS)}>
         <SwiggyNeuroBackdrop className={cn("w-full", HERO_SHELL_RADIUS)}>
@@ -607,6 +705,7 @@ export default function SwiggyPromoPage() {
                 itemVariants={itemVariants}
                 wordVariants={wordVariants}
                 shouldReduceMotion={shouldReduceMotion}
+                onDemoCall={() => setDemoOpen(true)}
               />
               <HeroFooterPanel footerListVariants={footerListVariants} footerLinkVariants={footerLinkVariants} />
             </div>
