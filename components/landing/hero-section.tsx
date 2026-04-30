@@ -66,6 +66,10 @@ const RETILO_TILES = [
     alt: "Instagram",
     src: tileSvg(`<rect width="128" height="128" fill="#833ab4"/><text x="64" y="80" text-anchor="middle" font-size="50" font-weight="800" fill="white" font-family="system-ui,sans-serif">IG</text><text x="64" y="108" text-anchor="middle" font-size="13" fill="rgba(255,255,255,0.65)" font-family="system-ui,sans-serif">Instagram</text>`),
   },
+  {
+    alt: "Swiggy",
+    src: tileSvg(`<rect width="128" height="128" fill="#FC8019"/><text x="64" y="72" text-anchor="middle" font-size="44" font-weight="900" fill="white" font-family="system-ui,sans-serif">S</text><text x="64" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="rgba(255,255,255,0.85)" font-family="system-ui,sans-serif">Swiggy</text>`),
+  },
 ] as const
 
 /** Cubic Bézier ribbon path — same as marketing-hero-ribbon */

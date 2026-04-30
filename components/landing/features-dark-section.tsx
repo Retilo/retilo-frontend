@@ -112,7 +112,7 @@ const STEPS = [
       <div className="rounded-xl bg-white/5 border border-white/10 p-5 space-y-2">
         {[
           { msg: "⭐ Replied to 3 new reviews", time: "2m ago", dot: "#22c55e" },
-          { msg: "📍 Rank improved: #4 → #2 for 'pizza'", time: "1h ago", dot: "#818cf8" },
+          { msg: "📍 Rank improved: #4 → #2 for 'electronics store'", time: "1h ago", dot: "#818cf8" },
           { msg: "🔔 Competitor got 8 new reviews today", time: "3h ago", dot: "#fbbf24" },
         ].map((n, i) => (
           <div key={i} className="flex items-start gap-2.5 px-3 py-2 rounded-lg bg-white/4">
