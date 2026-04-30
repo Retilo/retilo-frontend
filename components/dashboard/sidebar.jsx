@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard, Star, BarChart3, Workflow,
   MapPin, Send, LogOut, Users, Zap, Grid2X2, Mail, Sparkles,
-  Phone,
+  ShoppingBag, Phone,
 } from "lucide-react"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -111,25 +111,33 @@ export function AppSidebar() {
 
         <SidebarSeparator className="mx-2 my-3 bg-sidebar-border" />
 
-        {/* Voice AI section */}
+        {/* Swiggy + Voice section */}
         <div className="mb-2 px-2 flex items-center gap-2">
           <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/40">
             Integrations
           </span>
         </div>
         <SidebarMenu className="gap-0.5">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname?.startsWith("/dashboard/voice")}
-              className="h-10 gap-3 text-[13.5px] font-medium rounded-xl px-3 transition-all data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700"
-            >
-              <Link href="/dashboard/voice">
-                <Phone className="size-[17px] shrink-0" />
-                <span>Voice AI</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {[
+            { label: "Swiggy",   icon: ShoppingBag, href: "/dashboard/swiggy" },
+            { label: "Voice AI", icon: Phone,        href: "/dashboard/voice"  },
+          ].map((item) => {
+            const isActive = pathname?.startsWith(item.href)
+            return (
+              <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  className="h-10 gap-3 text-[13.5px] font-medium rounded-xl px-3 transition-all data-[active=true]:bg-orange-50 data-[active=true]:text-orange-700"
+                >
+                  <Link href={item.href}>
+                    <item.icon className="size-[17px] shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
 
         <SidebarSeparator className="mx-2 my-3 bg-sidebar-border" />
