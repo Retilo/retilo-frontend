@@ -43,3 +43,5 @@ next-env.d.ts
 *.mcp.json
 .mcp.json
 components.json
+# Grader mindmap
+GRADER_MINDMAP.md

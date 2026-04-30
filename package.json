@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.48",
     "@ai-sdk/react": "^3.0.142",
+    "@base-ui/react": "^1.4.1",
     "@deck.gl/mapbox": "^9.2.11",
     "@paper-design/shaders-react": "^0.0.76",
     "@radix-ui/react-slot": "^1.2.4",
@@ -37,6 +38,7 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-use-measure": "^2.1.7",
     "recharts": "^3.8.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",

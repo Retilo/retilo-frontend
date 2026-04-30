@@ -2,9 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
-import { Check, Loader2, MapPin, Star, TrendingUp, Globe, AlertTriangle } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { AlertTriangle, Globe, MapPin, Star, TrendingUp } from "lucide-react";
 import { api } from "@/lib/api";
+import {
+  AnimatedCard,
+  AnimatedCardContent,
+  AnimatedCardHeader,
+  AnimatedCardTitle,
+  AnimatedCardDescription,
+} from "@/components/animated-card";
+import { AnimatedProgress } from "@/components/animated-progress";
+import { AnimatedBadge } from "@/components/animated-badge";
 
 const PHASE_ORDER = ["ingestion", "enrichment", "analysis", "scoring"] as const;
 type Phase = (typeof PHASE_ORDER)[number];
@@ -82,7 +91,6 @@ export default function GraderScanPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Nav */}
       <nav className="h-14 flex items-center px-6 border-b bg-background">
         <a href="/grader" className="font-semibold text-sm text-foreground flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center">
@@ -92,45 +100,47 @@ export default function GraderScanPage() {
         </a>
       </nav>
 
-      {/* Two-column layout on lg+ */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0">
-
         {/* Left: progress */}
         <div className="flex flex-col items-center justify-center px-6 py-16 border-r">
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm space-y-5">
 
             {/* Business card */}
             <AnimatePresence>
               {pipeline?.brand && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-8 p-4 rounded-2xl border bg-card flex items-start gap-4 shadow-sm"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <MapPin className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-semibold text-foreground truncate">{pipeline.brand.name}</div>
-                    {pipeline.brand.rating > 0 && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm text-muted-foreground">{pipeline.brand.rating}</span>
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+                  <AnimatedCard padding="md" aria-label={pipeline.brand.name}>
+                    <AnimatedCardHeader>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <MapPin className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <AnimatedCardTitle className="text-base">{pipeline.brand.name}</AnimatedCardTitle>
+                          {pipeline.brand.rating > 0 && (
+                            <AnimatedCardDescription className="flex items-center gap-1 mt-0.5">
+                              <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                              {pipeline.brand.rating}
+                            </AnimatedCardDescription>
+                          )}
+                          {pipeline.brand.website && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <Globe className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground truncate">
+                                {pipeline.brand.website.replace(/^https?:\/\//, "")}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {pipeline.brand.website && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Globe className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground truncate">{pipeline.brand.website.replace(/^https?:\/\//, "")}</span>
-                      </div>
-                    )}
-                  </div>
+                    </AnimatedCardHeader>
+                  </AnimatedCard>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Scan message */}
-            <div className="text-center mb-6 h-7">
+            {/* Rotating scan copy */}
+            <div className="text-center h-7">
               <AnimatePresence mode="wait">
                 <motion.p
                   key={failed ? "failed" : copyIdx}
@@ -138,7 +148,7 @@ export default function GraderScanPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.3 }}
-                  className={`text-base font-medium ${failed ? "text-red-500" : "text-foreground"}`}
+                  className={`text-base font-medium ${failed ? "text-destructive" : "text-foreground"}`}
                 >
                   {failed ? "Scan failed. Please try again." : SCAN_COPY[copyIdx]}
                 </motion.p>
@@ -146,67 +156,64 @@ export default function GraderScanPage() {
             </div>
 
             {/* Progress bar */}
-            <div className="w-full h-2 rounded-full bg-muted mb-8 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-primary"
-                initial={{ width: "4%" }}
-                animate={{ width: `${displayProgress}%` }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-              />
-            </div>
+            <AnimatedProgress value={displayProgress} label="Scan progress" showValue />
 
             {/* Phase steps */}
-            <div className="space-y-4">
-              {PHASE_ORDER.map((phase, i) => {
-                const status = phaseStatus(pipeline?.tasks, phase);
-                const isDone = status === "complete";
-                const isActive = status === "processing";
-                return (
-                  <motion.div
-                    key={phase}
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: isDone || isActive ? 1 : 0.4, x: 0 }}
-                    transition={{ delay: i * 0.07, duration: 0.4 }}
-                    className="flex items-center gap-3"
-                  >
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${isDone ? "bg-primary" : isActive ? "border-2 border-primary bg-primary/10" : "bg-muted"}`}>
-                      {isDone ? <Check className="w-3.5 h-3.5 text-primary-foreground" />
-                        : isActive ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
-                        : <span className="w-2 h-2 rounded-full bg-muted-foreground/30" />}
-                    </div>
-                    <span className={`text-sm font-medium flex-1 ${isDone || isActive ? "text-foreground" : "text-muted-foreground"}`}>
-                      {PHASE_LABELS[phase]}
-                    </span>
-                    {isDone && <span className="text-xs text-green-500 font-medium">Done</span>}
-                    {isActive && <span className="text-xs text-primary font-medium animate-pulse">Running…</span>}
-                  </motion.div>
-                );
-              })}
-            </div>
+            <AnimatedCard padding="md" aria-label="Scan phases">
+              <AnimatedCardContent>
+                {PHASE_ORDER.map((phase, i) => {
+                  const status = phaseStatus(pipeline?.tasks, phase);
+                  const isDone = status === "complete";
+                  const isActive = status === "processing";
+                  return (
+                    <motion.div
+                      key={phase}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: isDone || isActive ? 1 : 0.4, x: 0 }}
+                      transition={{ delay: i * 0.07, duration: 0.4 }}
+                      className="flex items-center gap-3 py-1"
+                    >
+                      <span className="text-sm font-medium flex-1 text-foreground">
+                        {PHASE_LABELS[phase]}
+                      </span>
+                      {isDone && <AnimatedBadge variant="outline">Done</AnimatedBadge>}
+                      {isActive && <AnimatedBadge variant="default" live>Running</AnimatedBadge>}
+                    </motion.div>
+                  );
+                })}
+              </AnimatedCardContent>
+            </AnimatedCard>
 
+            {/* Error state */}
             {failed && (
-              <div className="mt-8 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-red-700 dark:text-red-400">Something went wrong</p>
-                  <a href="/grader" className="text-xs text-red-500 underline mt-0.5 inline-block">Try a different business →</a>
-                </div>
-              </div>
+              <AnimatedCard padding="md" aria-label="Scan error" interactive={false}>
+                <AnimatedCardHeader>
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+                    <div>
+                      <AnimatedCardTitle className="text-destructive text-sm">Something went wrong</AnimatedCardTitle>
+                      <a href="/grader" className="text-xs text-destructive underline mt-0.5 inline-block">
+                        Try a different business →
+                      </a>
+                    </div>
+                  </div>
+                </AnimatedCardHeader>
+              </AnimatedCard>
             )}
           </div>
         </div>
 
-        {/* Right: radar scanning animation */}
+        {/* Right: radar animation */}
         <div className="hidden lg:flex items-center justify-center bg-muted/30 relative overflow-hidden">
-          {/* Grid lines */}
-          <div className="absolute inset-0 opacity-10"
+          <div
+            className="absolute inset-0 opacity-10"
             style={{
-              backgroundImage: "linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)",
+              backgroundImage:
+                "linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)",
               backgroundSize: "40px 40px",
             }}
           />
 
-          {/* Radar rings */}
           <div className="relative flex items-center justify-center">
             {[1, 2, 3].map((i) => (
               <div
@@ -216,24 +223,22 @@ export default function GraderScanPage() {
               />
             ))}
 
-            {/* Sweep line */}
-            <div className="absolute w-40 h-0.5 origin-left"
+            <div
+              className="absolute w-40 h-0.5 origin-left"
               style={{
                 background: "linear-gradient(to right, hsl(var(--primary)/0.6), transparent)",
                 animation: "spin 3s linear infinite",
               }}
             />
 
-            {/* Center pin */}
             <div className="relative z-10 w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
               <MapPin className="w-5 h-5 text-primary-foreground" />
             </div>
 
-            {/* Simulated competitor dots */}
             {[
-              { top: "20%", left: "65%", delay: "0.5s" },
-              { top: "60%", left: "72%", delay: "1.2s" },
-              { top: "75%", left: "30%", delay: "0.8s" },
+              { top: "20%", left: "65%", delay: 1.5 },
+              { top: "60%", left: "72%", delay: 2.2 },
+              { top: "75%", left: "30%", delay: 1.8 },
             ].map((pos, i) => (
               <motion.div
                 key={i}
@@ -241,14 +246,13 @@ export default function GraderScanPage() {
                 style={{ top: pos.top, left: pos.left }}
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: parseFloat(pos.delay) + 1, duration: 0.4 }}
+                transition={{ delay: pos.delay, duration: 0.4 }}
               />
             ))}
 
-            {/* Competitor labels */}
             {[
-              { top: "18%", left: "73%", delay: "0.7s" },
-              { top: "58%", left: "79%", delay: "1.5s" },
+              { top: "18%", left: "73%", delay: 1.7 },
+              { top: "58%", left: "79%", delay: 2.5 },
             ].map((pos, i) => (
               <motion.div
                 key={i}
@@ -256,16 +260,15 @@ export default function GraderScanPage() {
                 style={{ top: pos.top, left: pos.left }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: parseFloat(pos.delay) + 1.2 }}
+                transition={{ delay: pos.delay + 0.2 }}
               >
                 Competitor
               </motion.div>
             ))}
           </div>
 
-          {/* Status label */}
-          <div className="absolute bottom-8 left-0 right-0 text-center">
-            <span className="text-xs text-muted-foreground font-medium">Scanning nearby competitors…</span>
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+            <AnimatedBadge variant="secondary" live>Scanning nearby competitors…</AnimatedBadge>
           </div>
         </div>
       </div>

@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 const inter = Inter_Tight({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Marketing Bento Vercel",
-  description: "Vercel-inspired bento grid section with variable-span cards, gradient accents, and spring animations.",
+  title: "Social Proof Vite",
+  description: "Vite-inspired social proof section with logo marquee, animated metrics, and developer testimonial cards.",
 };
 
 export default function Layout({ children }: { children: ReactNode }) {

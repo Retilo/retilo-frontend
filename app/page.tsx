@@ -1,7 +1,11 @@
-"use client"
+import { MarketingBentoVercelDemo } from "./demo";
 
-import LandingPage from "@/components/landing/landing-page"
-
-export default function Page() {
-  return <LandingPage />
+export default function MarketingBentoVercelPage() {
+  return (
+    <main className="mx-auto w-screen">
+      <div className="flex flex-col items-center">
+        <MarketingBentoVercelDemo />
+      </div>
+    </main>
+  );
 }
