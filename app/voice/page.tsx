@@ -806,9 +806,7 @@ export default function SwiggyPromoPage() {
           <div className="rounded-3xl border border-gray-100 bg-gray-50/60 p-10">
             <MarketingWaitlistMinimal
               headline="Get early access"
-              subtext="We're onboarding restaurants in batches. Drop your email — we'll reach out when your slot opens."
-              placeholder="hello@yourrestaurant.com"
-              buttonLabel="Request access"
+              subtext="We're onboarding restaurants in batches. Drop your details — we'll reach out when your slot opens."
               successMessage="You're in — we'll be in touch soon!"
               accentColor={SWIGGY}
               count={89}
