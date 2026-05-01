@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle2, Clock, AlertCircle, Zap } from "lucide-react";
 import { api } from "@/lib/api";
-import GenerateAnything from "@/components/tabs-illustration-vercel";
+import RetailInsightsWidget from "@/components/retail-insights-widget";
 
 type TaskStatus = "complete" | "processing" | "pending" | "failed";
 type Task = { name: string; phase: string; status: TaskStatus };
@@ -206,7 +206,7 @@ export default function GraderScanPage() {
         >
           <div className="w-full max-w-xl">
             <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm bg-white">
-              <GenerateAnything />
+              <RetailInsightsWidget brandName={brandName} />
             </div>
             <p className="text-center text-gray-400 text-xs mt-4">
               We check SEO, UX, reviews & website performance
