@@ -3,6 +3,10 @@
 @import "shadcn/tailwind.css";
 @import "maplibre-gl/dist/maplibre-gl.css";
 
+@source "./**/*.{ts,tsx,js,jsx}";
+@source "../components/**/*.{ts,tsx,js,jsx}";
+@source "../sections/**/*.{ts,tsx,js,jsx}";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -258,6 +262,24 @@
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+/* Bento grid layout — bypasses Tailwind scanning issues */
+.bento-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .bento-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bento-border-r {
+    border-right-width: 1px;
+    border-right-color: var(--color-border);
+    border-bottom-width: 0;
+  }
 }
 
 /* React Flow overrides */

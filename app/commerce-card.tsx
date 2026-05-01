@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { InfiniteSlider } from "../infinite-slider";
+import { InfiniteSlider } from "./infinite-slider";
 import { ArrowButton, FeatureCardHeader } from "./shared";
 
 const products = [

@@ -2,7 +2,7 @@
 
 import { Send } from "lucide-react";
 import { useState } from "react";
-import { TextScramble } from "../text-scramble";
+import { TextScramble } from "./text-scramble";
 import { ArrowButton, FeatureCardHeader } from "./shared";
 
 const thinkingMessages = [

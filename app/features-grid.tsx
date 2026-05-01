@@ -1,16 +1,16 @@
-import { AgentsCard } from "./feature-cards/agents-card";
-import { AIAppsCard } from "./feature-cards/ai-apps-card";
-import { CommerceCard } from "./feature-cards/commerce-card";
-import { PlatformCard } from "./feature-cards/platform-card";
-import { WebAppsCard } from "./feature-cards/web-apps-card";
+import { AgentsCard } from "./agents-card";
+import { AIAppsCard } from "./ai-apps-card";
+import { CommerceCard } from "./commerce-card";
+import { PlatformCard } from "./platform-card";
+import { WebAppsCard } from "./web-apps-card";
 
 export function FeaturesGrid() {
   return (
     <section className="w-full border-border border-y">
       {/* Top row */}
-      <div className="grid grid-cols-1 border-border border-b md:grid-cols-3">
+      <div className="bento-grid border-border border-b">
         {/* Hero heading */}
-        <div className="flex flex-col justify-center border-border border-b p-8 md:border-r md:border-b-0 md:p-12">
+        <div className="flex flex-col justify-center border-border border-b p-8 bento-border-r md:p-12">
           <h1 className="mb-4 font-bold text-3xl text-foreground tracking-tight md:text-4xl">
             Your product,
             <br />
@@ -22,25 +22,25 @@ export function FeaturesGrid() {
         </div>
 
         {/* Agents card */}
-        <div className="border-border border-b md:border-r md:border-b-0">
+        <div className="border-border border-b bento-border-r">
           <AgentsCard />
         </div>
 
         {/* AI Apps card */}
-        <div className="border-border border-b md:border-b-0">
+        <div className="border-border border-b">
           <AIAppsCard />
         </div>
       </div>
 
       {/* Bottom row */}
-      <div className="grid grid-cols-1 md:grid-cols-3">
+      <div className="bento-grid">
         {/* Web Apps card */}
-        <div className="border-border border-b md:border-r md:border-b-0">
+        <div className="border-border border-b bento-border-r">
           <WebAppsCard />
         </div>
 
         {/* Composable Commerce card */}
-        <div className="border-border border-b md:border-r md:border-b-0">
+        <div className="border-border border-b bento-border-r">
           <CommerceCard />
         </div>
 

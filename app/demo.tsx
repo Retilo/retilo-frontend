@@ -1,8 +1,8 @@
 "use client";
 
-import { EnterpriseBanner } from "../vercel-bento/enterprise-banner";
-import { FeaturesGrid } from "../vercel-bento/features-grid";
-import { FrameworkInfrastructure } from "../vercel-bento/framework-infrastructure";
+import { EnterpriseBanner } from "./enterprise-banner";
+import { FeaturesGrid } from "./features-grid";
+import { FrameworkInfrastructure } from "./framework-infrastructure";
 
 export function MarketingBentoVercelDemo() {
   return (
