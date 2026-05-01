@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard, Star, BarChart3, Workflow,
   MapPin, Send, LogOut, Users, Zap, Grid2X2, Mail, Sparkles,
-  ShoppingBag, Phone,
+  ShoppingBag, Phone, TrendingUp, Globe,
 } from "lucide-react"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -104,6 +104,40 @@ export function AppSidebar() {
                     {item.badge}
                   </SidebarMenuBadge>
                 )}
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+
+        <SidebarSeparator className="mx-2 my-3 bg-sidebar-border" />
+
+        {/* Restaurant Grader */}
+        <div className="mb-2 px-2 flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/40">
+            Growth
+          </span>
+          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-emerald-700">
+            Free
+          </span>
+        </div>
+        <SidebarMenu className="gap-0.5">
+          {[
+            { label: "Restaurant Grader", icon: TrendingUp, href: "/dashboard/grader" },
+            { label: "AI Visibility",     icon: Globe,      href: "/visibility" },
+          ].map((item) => {
+            const isActive = pathname?.startsWith(item.href)
+            return (
+              <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  className="h-10 gap-3 text-[13.5px] font-medium rounded-xl px-3 transition-all data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-700"
+                >
+                  <Link href={item.href}>
+                    <item.icon className="size-[17px] shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             )
           })}
