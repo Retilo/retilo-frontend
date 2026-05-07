@@ -11,7 +11,11 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.48",
     "@ai-sdk/react": "^3.0.142",
+    "@base-ui/react": "^1.4.1",
     "@deck.gl/mapbox": "^9.2.11",
+    "@hugeicons/core-free-icons": "^4.1.1",
+    "@hugeicons/react": "^1.1.6",
+    "@number-flow/react": "^0.6.0",
     "@paper-design/shaders-react": "^0.0.76",
     "@radix-ui/react-slot": "^1.2.4",
     "@trigger.dev/react-hooks": "^4.4.3",

@@ -15,6 +15,7 @@ import {
   Search, Map, Smartphone, Monitor,
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
+import { ModuleHelper } from "@/components/module-helper"
 import { api } from "@/lib/api"
 
 const PINK = "oklch(0.58 0.24 350)"
@@ -204,6 +205,12 @@ export default function AnalyticsPage() {
       }
     >
       <div className="max-w-5xl mx-auto px-6 py-7 space-y-6">
+        <ModuleHelper
+          moduleKey="analytics-v1"
+          title="Your online health score explained"
+          description="The health score aggregates your Google rating, review velocity, response rate, and profile completeness into a single 0–100 signal. Track it weekly to spot reputation shifts early."
+          rimVariant="default"
+        />
 
         {/* ── Hero: Health score + key stats ── */}
         {loading ? (

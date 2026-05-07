@@ -12,6 +12,7 @@ import {
   AlertCircle, Clock, RefreshCw, ExternalLink, ChevronRight,
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { ModuleHelper } from "@/components/module-helper"
 
 // ── Endpoint health card ──────────────────────────────────────────────────────
 
@@ -180,6 +181,12 @@ export default function DashboardPage() {
           {/* Content */}
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-5xl mx-auto px-8 py-8 space-y-8">
+              <ModuleHelper
+                moduleKey="dashboard-home-v1"
+                title="Welcome to Retilo Control Center"
+                description="This is your command centre — connect a Google Business location via the sidebar to activate reviews, analytics, voice AI, ranking intel, and demand forecasting for your business."
+                rimVariant="default"
+              />
 
               {/* Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

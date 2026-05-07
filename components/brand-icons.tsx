@@ -215,8 +215,15 @@ const NextjsIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const CursorIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M4 4l7.07 18 2.51-7.39L21 12.07z" />
+  </svg>
+);
+
 export {
   ClaudeAIIcon,
+  CursorIcon,
   NextjsIcon,
   OpenAIIcon,
   StripeIcon,

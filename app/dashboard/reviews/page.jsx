@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Star, Sparkles, Send, RefreshCw, ChevronDown } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
+import { ModuleHelper } from "@/components/module-helper"
 import { api } from "@/lib/api"
 
 const PINK = "oklch(0.58 0.24 350)"
@@ -252,6 +253,12 @@ export default function ReviewsPage() {
       }
     >
       <div className="max-w-3xl mx-auto px-8 py-6 space-y-5">
+        <ModuleHelper
+          moduleKey="reviews-v1"
+          title="AI-powered review management"
+          description="Retilo auto-drafts replies for every new review using your brand voice. Click 'AI reply' on any review to generate a response — edit if needed, then post directly to Google."
+          rimVariant="default"
+        />
 
         {/* Filters */}
         <div className="flex items-center gap-3 flex-wrap">

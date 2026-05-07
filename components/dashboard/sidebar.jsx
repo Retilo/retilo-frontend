@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard, Star, BarChart3, Workflow,
   MapPin, Send, LogOut, Users, Zap, Grid2X2, Mail, Sparkles,
-  ShoppingBag, Phone, TrendingUp, Globe,
+  ShoppingBag, Phone, TrendingUp, Globe, Scan, Activity,
 } from "lucide-react"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -14,19 +14,19 @@ import {
 } from "@/components/ui/sidebar"
 
 const GMB_NAV_ITEMS = [
-  { label: "Dashboard",         icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Reviews",           icon: Star,            href: "/dashboard/reviews",   badge: "5" },
-  { label: "Analytics",         icon: BarChart3,       href: "/dashboard/analytics" },
-  { label: "Workflows",         icon: Workflow,        href: "/dashboard/workflows" },
-  { label: "Locations",         icon: MapPin,          href: "/dashboard/locations" },
-  { label: "Review Campaigns",  icon: Send,            href: "/dashboard/campaigns" },
-  { label: "Competitors",       icon: Users,           href: "/dashboard/competitors" },
-  { label: "Ranking",           icon: Grid2X2,         href: "/dashboard/ranking" },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { label: "Reviews", icon: Star, href: "/dashboard/reviews", badge: "5" },
+  { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
+  { label: "Workflows", icon: Workflow, href: "/dashboard/workflows" },
+  { label: "Locations", icon: MapPin, href: "/dashboard/locations" },
+  { label: "Review Campaigns", icon: Send, href: "/dashboard/campaigns" },
+  { label: "Competitors", icon: Users, href: "/dashboard/competitors" },
+  { label: "Ranking", icon: Grid2X2, href: "/dashboard/ranking" },
 ]
 
 const EMAIL_NAV_ITEMS = [
-  { label: "Email Agent",    icon: Mail,     href: "/email" },
-  { label: "Campaigns",      icon: Sparkles, href: "/email/campaigns" },
+  { label: "Email Agent", icon: Mail, href: "/email" },
+  { label: "Campaigns", icon: Sparkles, href: "/email/campaigns" },
 ]
 
 export function AppSidebar() {
@@ -50,7 +50,7 @@ export function AppSidebar() {
         merchantName = m.name
       }
       if (m.email) merchantEmail = m.email
-    } catch {}
+    } catch { }
   }
 
   return (
@@ -122,8 +122,8 @@ export function AppSidebar() {
         </div>
         <SidebarMenu className="gap-0.5">
           {[
-            { label: "Restaurant Grader", icon: TrendingUp, href: "/dashboard/grader" },
-            { label: "AI Visibility",     icon: Globe,      href: "/visibility" },
+            { label: "Business Grader", icon: TrendingUp, href: "/dashboard/grader" },
+            { label: "AI Visibility", icon: Globe, href: "/visibility" },
           ].map((item) => {
             const isActive = pathname?.startsWith(item.href)
             return (
@@ -145,6 +145,42 @@ export function AppSidebar() {
 
         <SidebarSeparator className="mx-2 my-3 bg-sidebar-border" />
 
+        <SidebarSeparator className="mx-2 my-3 bg-sidebar-border" />
+
+        {/* Intelligence section */}
+        <div className="mb-2 px-2 flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/40">
+            Intelligence
+          </span>
+          <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-blue-600">
+            New
+          </span>
+        </div>
+        <SidebarMenu className="gap-0.5">
+          {[
+            { label: "Location Intel", icon: Scan, href: "/dashboard/location-intelligence" },
+            { label: "Demand Signals", icon: Activity, href: "/dashboard/demand" },
+          ].map((item) => {
+            const isActive = pathname?.startsWith(item.href)
+            return (
+              <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  className="h-10 gap-3 text-[13.5px] font-medium rounded-xl px-3 transition-all data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700"
+                >
+                  <Link href={item.href}>
+                    <item.icon className="size-[17px] shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+
+        <SidebarSeparator className="mx-2 my-3 bg-sidebar-border" />
+
         {/* Swiggy + Voice section */}
         <div className="mb-2 px-2 flex items-center gap-2">
           <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/40">
@@ -153,8 +189,8 @@ export function AppSidebar() {
         </div>
         <SidebarMenu className="gap-0.5">
           {[
-            { label: "Swiggy",   icon: ShoppingBag, href: "/dashboard/swiggy" },
-            { label: "Voice AI", icon: Phone,        href: "/dashboard/voice"  },
+            { label: "Swiggy", icon: ShoppingBag, href: "/dashboard/swiggy" },
+            { label: "Voice AI", icon: Phone, href: "/dashboard/voice" },
           ].map((item) => {
             const isActive = pathname?.startsWith(item.href)
             return (
