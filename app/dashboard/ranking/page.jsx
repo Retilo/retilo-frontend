@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import dynamic from "next/dynamic"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
+import { ModuleHelper } from "@/components/module-helper"
 import { api } from "@/lib/api"
 import { useRankScan } from "@/hooks/use-rank-scan"
 
@@ -279,6 +280,12 @@ export default function RankingPage() {
       subtitle="See how your business ranks across a geographic grid for any keyword"
     >
       <div className="p-6 space-y-5">
+        <ModuleHelper
+          moduleKey="ranking-v1"
+          title="GBP Ranking — how it works"
+          description="Enter a keyword (e.g. 'biryani near me') and Retilo checks your Google Maps rank across a geographic grid centred on your store. Green = top 3. Yellow = 4–10. Red = beyond page one."
+          rimVariant="default"
+        />
 
         {/* ── Search bar ──────────────────────────── */}
         <div

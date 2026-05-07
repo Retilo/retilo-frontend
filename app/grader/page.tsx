@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { MapPin, ChevronRight, Star, Zap, CheckCircle2, TrendingUp, Shield, Search } from "lucide-react";
@@ -18,6 +18,38 @@ const CHECKS = [
   { icon: Shield, label: "Reputation score" },
   { icon: Search, label: "Website UX audit" },
 ];
+
+const INDUSTRIES = ["restaurant", "clinic", "hotel", "spa", "gym", "salon", "cafe", "bakery"];
+
+function CyclingIndustry() {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIndex(i => (i + 1) % INDUSTRIES.length), 2200);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span className="relative inline-block overflow-hidden align-bottom" style={{ minWidth: "5.5ch" }}>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={INDUSTRIES[index]}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -20, opacity: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="inline-block"
+          style={{
+            backgroundImage: "linear-gradient(135deg, oklch(0.55 0.24 280) 0%, oklch(0.58 0.24 350) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          {INDUSTRIES[index]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
 
 type Prediction = { place_id: string; name: string; address: string };
 
@@ -95,7 +127,7 @@ export default function GraderPage() {
             style={{ background: "#ede9fe", color: "#6d28d9", border: "1px solid #ddd6fe" }}
           >
             <Star className="w-3 h-3 fill-violet-600 text-violet-600" />
-            Free Restaurant Growth Report
+            Free Business Growth Report
           </span>
         </motion.div>
 
@@ -105,13 +137,9 @@ export default function GraderPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.08 }}
           className="text-center font-bold text-gray-900 mb-4"
-          style={{ fontSize: "clamp(2.2rem, 6vw, 4rem)", lineHeight: 1.06, letterSpacing: "-0.035em", maxWidth: "18ch" }}
+          style={{ fontSize: "clamp(2.2rem, 6vw, 4rem)", lineHeight: 1.06, letterSpacing: "-0.035em", maxWidth: "22ch" }}
         >
-          How does your{" "}
-          <span style={{ backgroundImage: "linear-gradient(135deg, oklch(0.55 0.24 280) 0%, oklch(0.58 0.24 350) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            restaurant
-          </span>{" "}
-          score online?
+          How does your <CyclingIndustry /> score online?
         </motion.h1>
 
         <motion.p
@@ -121,7 +149,7 @@ export default function GraderPage() {
           className="text-center mb-10 text-gray-500 text-lg max-w-[42ch]"
           style={{ lineHeight: 1.55 }}
         >
-          Search your restaurant — we'll audit your SEO, website UX, reputation and guest experience in 60 seconds.
+          Search your business — we'll audit your SEO, website UX, reputation and guest experience in 60 seconds.
         </motion.p>
 
         {/* Search + Autocomplete */}
@@ -132,7 +160,7 @@ export default function GraderPage() {
           className="relative w-full max-w-2xl"
         >
           <AnimatedSearchInput
-            placeholder="Search your restaurant name…"
+            placeholder="Search your business name…"
             value={query}
             onChange={handleChange}
             onClear={() => { setQuery(""); setPredictions([]); }}

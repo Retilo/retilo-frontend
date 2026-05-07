@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Users, Search, Star, Trash2, ChevronDown, TrendingUp, TrendingDown } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
+import { ModuleHelper } from "@/components/module-helper"
 import { api } from "@/lib/api"
 
 const PINK = "oklch(0.58 0.24 350)"
@@ -99,6 +100,12 @@ export default function CompetitorsPage() {
       }
     >
       <div className="max-w-4xl mx-auto px-8 py-6 space-y-6">
+        <ModuleHelper
+          moduleKey="competitors-v1"
+          title="Tracking your local competition"
+          description="Discover and track nearby competitors by category. Retilo pulls their Google rating, review count, and trend data so you always know where you stand relative to your neighbourhood."
+          rimVariant="default"
+        />
 
         {/* Discover section */}
         <div className="rounded-2xl p-5" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>

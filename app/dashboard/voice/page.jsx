@@ -13,6 +13,7 @@ import {
   CheckCircle2, AlertCircle, Loader2, Radio,
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
+import { ModuleHelper } from "@/components/module-helper"
 import { api } from "@/lib/api"
 
 const PINK = "oklch(0.58 0.24 350)"
@@ -416,6 +417,12 @@ export default function VoicePage() {
       }
     >
       <div className="max-w-3xl mx-auto px-8 py-6 space-y-8">
+        <ModuleHelper
+          moduleKey="voice-ai-v1"
+          title="AI Phone Receptionist — getting started"
+          description="Provision a phone number for each location and the AI answers 100% of calls — handling menu questions, store hours, directions, and order placement. Missed calls become revenue."
+          rimVariant="default"
+        />
         {loading ? (
           <div className="space-y-4">
             {[...Array(4)].map((_, i) => (

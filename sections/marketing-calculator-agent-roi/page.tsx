@@ -1,0 +1,9 @@
+import { ROICalculator } from "@/app/roi-calculator";
+
+export default function Page() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <ROICalculator />
+    </div>
+  );
+}

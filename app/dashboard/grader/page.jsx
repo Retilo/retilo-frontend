@@ -169,13 +169,47 @@ function ScoreRing({ score, max, size = 84 }) {
   )
 }
 
+// ── Cycling industry text ─────────────────────────────────────────────────────
+
+const INDUSTRIES = ["restaurant", "clinic", "hotel", "spa", "gym", "salon", "cafe", "bakery"]
+
+function CyclingIndustry() {
+  const [index, setIndex] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setIndex(i => (i + 1) % INDUSTRIES.length), 2200)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <span className="relative inline-block overflow-hidden align-bottom" style={{ minWidth: "5.5ch" }}>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={INDUSTRIES[index]}
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -16, opacity: 0 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          className="inline-block"
+          style={{
+            backgroundImage: "linear-gradient(135deg, oklch(0.55 0.24 280) 0%, oklch(0.58 0.24 350) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          {INDUSTRIES[index]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  )
+}
+
 // ── States ────────────────────────────────────────────────────────────────────
 
 const PHASES = [
   { key: "ingestion",   label: "Collecting your Google Business data",  detail: "Business profile, photos, address & contact details" },
-  { key: "enrichment",  label: "Building your restaurant profile",       detail: "Screenshots, reviews, logo & location mapping" },
+  { key: "enrichment",  label: "Building your business profile",        detail: "Screenshots, reviews, logo & location mapping" },
   { key: "analysis",    label: "Running 16 checks on your business",    detail: "Website UX, SEO keywords, reputation & performance" },
-  { key: "scoring",     label: "Writing your personalised report",       detail: "Calculating growth scores & finding opportunities" },
+  { key: "scoring",     label: "Writing your personalised report",      detail: "Calculating growth scores & finding opportunities" },
 ]
 
 function getPhaseStatus(phaseKey, tasks) {
@@ -250,6 +284,7 @@ function PresenceCard({ report }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function DashboardGraderPage() {
+  const router = useRouter()
   const [view, setView] = useState("search") // search | scanning | report
   const [query, setQuery] = useState("")
   const [predictions, setPredictions] = useState([])
@@ -355,12 +390,12 @@ export default function DashboardGraderPage() {
 
   // Share helpers
   const reportUrl = typeof window !== "undefined" ? `${window.location.origin}/grader/${pipelineId}/report` : ""
-  const shareWhatsApp = () => window.open(`https://wa.me/?text=${encodeURIComponent(`Restaurant growth report for ${report?.metadata?.name}: ${reportUrl}`)}`, "_blank")
-  const shareEmail = () => window.open(`mailto:?subject=Restaurant Report: ${report?.metadata?.name}&body=${encodeURIComponent(`Here's the growth report:\n\n${reportUrl}`)}`, "_blank")
+  const shareWhatsApp = () => window.open(`https://wa.me/?text=${encodeURIComponent(`Business growth report for ${report?.metadata?.name}: ${reportUrl}`)}`, "_blank")
+  const shareEmail = () => window.open(`mailto:?subject=Growth Report: ${report?.metadata?.name}&body=${encodeURIComponent(`Here's the growth report:\n\n${reportUrl}`)}`, "_blank")
 
   const tasks = pipeline?.tasks ?? []
   const percentage = pipeline?.progress?.percentage ?? 0
-  const brandName = pipeline?.brand?.name ?? query ?? "your restaurant"
+  const brandName = pipeline?.brand?.name ?? query ?? "your business"
   const isFailed = pipeline?.status === "failed"
 
   return (
@@ -372,12 +407,19 @@ export default function DashboardGraderPage() {
           {/* ── Header bar ───────────────────────────────────── */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.back()}
+                className="flex items-center justify-center w-7 h-7 rounded-lg transition-all hover:bg-gray-100 active:scale-95 shrink-0"
+                style={{ color: "#9ca3af" }}
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-4 h-4" strokeWidth={2.5} />
+              </button>
               {view !== "search" && (
                 <button
                   onClick={resetSearch}
-                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors mr-2"
+                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4" />
                   New search
                 </button>
               )}
@@ -385,8 +427,8 @@ export default function DashboardGraderPage() {
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
-                <h1 className="text-[15px] font-bold text-gray-900 leading-none">Restaurant Grader</h1>
-                <p className="text-[11px] text-gray-400 mt-0.5">Free growth report for any restaurant</p>
+                <h1 className="text-[15px] font-bold text-gray-900 leading-none">Business Grader</h1>
+                <p className="text-[11px] text-gray-400 mt-0.5">Free growth report for any business</p>
               </div>
             </div>
             {view === "report" && report && (
@@ -425,13 +467,15 @@ export default function DashboardGraderPage() {
                 >
                   <div className="w-full max-w-xl">
                     <div className="text-center mb-8">
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Grade any restaurant in 60 seconds</h2>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                        Grade any <CyclingIndustry /> in 60 seconds
+                      </h2>
                       <p className="text-gray-500 text-sm">Search below — we'll check their Google presence, website, reputation and SEO across 16 points.</p>
                     </div>
 
                     <div className="relative">
                       <AnimatedSearchInput
-                        placeholder="Search restaurant name…"
+                        placeholder="Search your business name…"
                         value={query}
                         onChange={handleChange}
                         onClear={() => { setQuery(""); setPredictions([]) }}

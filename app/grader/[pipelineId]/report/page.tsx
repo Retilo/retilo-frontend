@@ -88,13 +88,33 @@ interface Report {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function gradeLabel(score: number, max: number): { letter: string; color: string; bg: string; border: string } {
+function gradeLabel(score: number, max: number): { letter: string; label: string; color: string; bg: string; border: string; track: string } {
   const pct = max > 0 ? (score / max) * 100 : 0;
-  if (pct >= 85) return { letter: "A", color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0" };
-  if (pct >= 70) return { letter: "B", color: "#2563eb", bg: "#dbeafe", border: "#bfdbfe" };
-  if (pct >= 55) return { letter: "C", color: "#ca8a04", bg: "#fef9c3", border: "#fef08a" };
-  if (pct >= 40) return { letter: "D", color: "#ea580c", bg: "#ffedd5", border: "#fed7aa" };
-  return { letter: "F", color: "#dc2626", bg: "#fee2e2", border: "#fecaca" };
+  if (pct >= 85) return { letter: "A", label: "Excellent",   color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0", track: "#bbf7d0" };
+  if (pct >= 70) return { letter: "B", label: "Good",        color: "#2563eb", bg: "#dbeafe", border: "#bfdbfe", track: "#93c5fd" };
+  if (pct >= 55) return { letter: "C", label: "Average",     color: "#d97706", bg: "#fef3c7", border: "#fde68a", track: "#fcd34d" };
+  if (pct >= 40) return { letter: "D", label: "Fair",        color: "#ea580c", bg: "#ffedd5", border: "#fed7aa", track: "#fdba74" };
+  return             { letter: "F", label: "Needs Work",  color: "#dc2626", bg: "#fee2e2", border: "#fecaca", track: "#fca5a5" };
+}
+
+function useCountUp(target: number, duration = 1400, delay = 300) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let rafId: number;
+    const timeout = setTimeout(() => {
+      let startTime: number | null = null;
+      const animate = (ts: number) => {
+        if (!startTime) startTime = ts;
+        const progress = Math.min((ts - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setCount(Math.round(eased * target));
+        if (progress < 1) rafId = requestAnimationFrame(animate);
+      };
+      rafId = requestAnimationFrame(animate);
+    }, delay);
+    return () => { clearTimeout(timeout); cancelAnimationFrame(rafId); };
+  }, [target, duration, delay]);
+  return count;
 }
 
 function priorityBadge(priority: "high" | "medium" | "low") {
@@ -118,9 +138,12 @@ function DimensionCard({
   label: string; color: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   data: DimensionScore; index: number;
 }) {
+  const animatedScore = useCountUp(data.score, 1200, 400 + index * 120);
   const pct = data.max > 0 ? (data.score / data.max) * 100 : 0;
+  const animatedPct = data.max > 0 ? (animatedScore / data.max) * 100 : 0;
   const breakdown = data.breakdown ?? [];
   const passFails = breakdown.slice(0, 5);
+  const grade = gradeLabel(data.score, data.max);
 
   return (
     <motion.div
@@ -138,9 +161,14 @@ function DimensionCard({
           </div>
           <span className="text-gray-600 text-sm font-medium">{label}</span>
         </div>
-        <span className="font-bold text-lg" style={{ color }}>
-          {data.score}<span className="text-gray-300 text-sm font-normal">/{data.max}</span>
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: grade.color, background: grade.bg }}>
+            {grade.label}
+          </span>
+          <span className="font-bold text-lg tabular-nums" style={{ color }}>
+            {animatedScore}<span className="text-gray-300 text-sm font-normal">/{data.max}</span>
+          </span>
+        </div>
       </div>
 
       {/* Overall bar */}
@@ -151,10 +179,10 @@ function DimensionCard({
             style={{ background: color }}
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
-            transition={{ duration: 1.0, ease: "easeOut", delay: 0.2 + index * 0.1 }}
+            transition={{ duration: 1.2, ease: "easeOut", delay: 0.4 + index * 0.1 }}
           />
         </div>
-        <div className="text-xs text-gray-400 mt-1">{Math.round(pct)}% of max score</div>
+        <div className="text-xs text-gray-400 mt-1">{Math.round(animatedPct)}% of max score</div>
       </div>
 
       {/* Breakdown bars */}
@@ -283,30 +311,49 @@ function PresenceCard({ report }: { report: Report }) {
   );
 }
 
-function ScoreRing({ score, max, size = 80 }: { score: number; max: number; size?: number }) {
-  const pct = max > 0 ? score / max : 0;
+function ScoreRing({ score, max, size = 80, showLabel = false }: { score: number; max: number; size?: number; showLabel?: boolean }) {
+  const animated = useCountUp(score, 1400, 300);
+  const pct = max > 0 ? animated / max : 0;
   const r = (size - 10) / 2;
   const circ = 2 * Math.PI * r;
   const dash = pct * circ;
   const grade = gradeLabel(score, max);
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="rotate-[-90deg]">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e7eb" strokeWidth="6" />
-        <motion.circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke={grade.color} strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={`${circ}`}
-          initial={{ strokeDashoffset: circ }}
-          animate={{ strokeDashoffset: circ - dash }}
-          transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-bold leading-none" style={{ fontSize: size * 0.28, color: grade.color }}>{score}</span>
-        <span className="text-gray-400 leading-none mt-0.5" style={{ fontSize: size * 0.13 }}>/{max}</span>
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="rotate-[-90deg]">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e7eb" strokeWidth="7" />
+          <motion.circle
+            cx={size / 2} cy={size / 2} r={r}
+            fill="none" stroke={grade.color} strokeWidth="7"
+            strokeLinecap="round"
+            strokeDasharray={`${circ}`}
+            initial={{ strokeDashoffset: circ }}
+            animate={{ strokeDashoffset: circ - dash }}
+            transition={{ duration: 1.4, ease: "easeOut", delay: 0.3 }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <motion.span
+            className="font-bold leading-none tabular-nums"
+            style={{ fontSize: size * 0.3, color: grade.color }}
+          >
+            {animated}
+          </motion.span>
+          <span className="text-gray-400 leading-none mt-0.5" style={{ fontSize: size * 0.13 }}>/{max}</span>
+        </div>
       </div>
+      {showLabel && (
+        <motion.span
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.0, duration: 0.3 }}
+          className="text-xs font-bold px-2.5 py-0.5 rounded-full"
+          style={{ color: grade.color, background: grade.bg, border: `1px solid ${grade.border}` }}
+        >
+          {grade.label}
+        </motion.span>
+      )}
     </div>
   );
 }
@@ -400,16 +447,15 @@ export default function GraderReportPage() {
   }
 
   const { metadata: meta, overallScore, maxScore, scores, taskGroups, insights, media, topReviews } = report;
-  const grade = gradeLabel(overallScore, maxScore);
   const reportUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const shareWhatsApp = () => {
-    const text = `Check out my restaurant growth report for ${meta.name}: ${reportUrl}`;
+    const text = `Check out my growth report for ${meta.name}: ${reportUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
   const shareEmail = () => {
     window.open(
-      `mailto:?subject=Restaurant Report: ${meta.name}&body=${encodeURIComponent(`Here's the growth report:\n\n${reportUrl}`)}`,
+      `mailto:?subject=Business Growth Report: ${meta.name}&body=${encodeURIComponent(`Here's the growth report:\n\n${reportUrl}`)}`,
       "_blank"
     );
   };
@@ -532,13 +578,7 @@ export default function GraderReportPage() {
 
           {/* Overall score */}
           <div className="flex flex-col items-center gap-3 shrink-0">
-            <ScoreRing score={overallScore} max={maxScore} size={100} />
-            <div
-              className="px-3 py-1 rounded-full text-lg font-bold"
-              style={{ background: grade.bg, color: grade.color, border: `1px solid ${grade.border}` }}
-            >
-              Grade {grade.letter}
-            </div>
+            <ScoreRing score={overallScore} max={maxScore} size={108} showLabel />
           </div>
         </motion.div>
 
