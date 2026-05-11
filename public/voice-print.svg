@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <defs>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"></feTurbulence>
+      <feColorMatrix values="0 0 0 0 0.06  0 0 0 0 0.04  0 0 0 0 0.02  0 0 0 0.06 0"></feColorMatrix>
+      <feComposite in2="SourceGraphic" operator="in"></feComposite>
+    </filter>
+    <pattern id="paper" x="0" y="0" width="1600" height="900" patternUnits="userSpaceOnUse">
+      <rect width="1600" height="900" fill="#f6f0e6"></rect>
+      <rect width="1600" height="900" filter="url(#grain)"></rect>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#paper)"></rect>
+
+  
+  <rect x="80" y="80" width="1440" height="740" fill="none" stroke="#0e0a06" stroke-width="1" opacity="0.4"></rect>
+  <rect x="92" y="92" width="1416" height="716" fill="none" stroke="#0e0a06" stroke-width="0.5" opacity="0.3"></rect>
+
+  
+  <text x="120" y="150" font-family="JetBrains Mono, monospace" font-size="14" letter-spacing="3" fill="#5a4a3c">RETILO · VOICE · CALL #04832</text>
+  <text x="1480" y="150" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="14" letter-spacing="3" fill="#5a4a3c">00:11 · INBOUND</text>
+
+  
+  <g transform="translate(120, 280)">
+    <path d="M0,200&#xA;             C 60,200 90,40 140,60&#xA;             S 220,360 290,210&#xA;             S 380,90 440,170&#xA;             S 540,350 620,220&#xA;             S 720,140 790,200&#xA;             S 880,260 950,180&#xA;             S 1040,80 1110,200&#xA;             S 1200,330 1280,200&#xA;             L 1360,200" fill="none" stroke="#0e0a06" stroke-width="1.6" stroke-linecap="round"></path>
+    
+    <circle cx="140" cy="60" r="5" fill="#c8543d"></circle>
+    <circle cx="290" cy="210" r="3" fill="#0e0a06"></circle>
+    <circle cx="620" cy="220" r="3" fill="#0e0a06"></circle>
+    <circle cx="1110" cy="200" r="5" fill="#c8543d"></circle>
+
+    
+    <line x1="0" y1="200" x2="40" y2="200" stroke="#8a7a6a" stroke-width="0.8" stroke-dasharray="2 4"></line>
+    <line x1="1300" y1="200" x2="1360" y2="200" stroke="#8a7a6a" stroke-width="0.8" stroke-dasharray="2 4"></line>
+  </g>
+
+  
+  <g transform="translate(120, 540)">
+    <text font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="2.5" fill="#8a7a6a">CALLER</text>
+    <text y="46" font-family="Instrument Serif, serif" font-style="italic" font-size="42" fill="#0e0a06">&#34;Do you have the velvet kurta in medium?</text>
+    <text y="98" font-family="Instrument Serif, serif" font-style="italic" font-size="42" fill="#0e0a06">My sister&#39;s wedding is on Saturday.&#34;</text>
+
+    <text y="160" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="2.5" fill="#1e6b56">RETILO</text>
+    <text y="200" font-family="Instrument Serif, serif" font-style="italic" font-size="28" fill="#5a4a3c">&#34;Yes — one in maroon, one in olive. I&#39;ll hold it.&#34;</text>
+  </g>
+
+  
+  <g transform="translate(120, 770)">
+    <line x1="0" y1="0" x2="1360" y2="0" stroke="#e0d5c0" stroke-width="1"></line>
+    <text x="0" y="26" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8a7a6a">INTENT · PURCHASE</text>
+    <text x="280" y="26" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8a7a6a">SKU · VELVET-KURTA-M</text>
+    <text x="640" y="26" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#c8543d">URGENCY · THIS WEEK</text>
+    <text x="1360" y="26" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="3" fill="#8a7a6a">RESOLVED · 1.4S</text>
+  </g>
+</svg>

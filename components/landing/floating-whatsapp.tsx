@@ -34,11 +34,31 @@ export function FloatingWhatsApp() {
                 animate={{ opacity: 1, x: 0, scale: 1 }}
                 exit={{ opacity: 0, x: 8, scale: 0.92 }}
                 transition={{ duration: 0.18 }}
-                className="rounded-2xl px-4 py-2.5 text-sm font-medium shadow-lg whitespace-nowrap"
-                style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", color: "#111", boxShadow: "0 4px 20px rgba(0,0,0,0.12)" }}
+                className="flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 whitespace-nowrap"
+                style={{
+                  background: "#fff",
+                  border: "1px solid oklch(0.58 0.24 350 / 18%)",
+                  boxShadow: "0 4px 24px oklch(0.58 0.24 350 / 12%), 0 2px 8px rgba(0,0,0,0.08)",
+                }}
               >
-                <span className="block font-bold text-xs text-gray-400 mb-0.5 uppercase tracking-widest">Talk to founder</span>
-                WhatsApp Expert directly
+                <img src="/retilo-fox.svg" alt="Retilo" width={28} height={28} style={{ flexShrink: 0 }} />
+                <div>
+                  <span
+                    className="block font-bold uppercase"
+                    style={{
+                      fontSize: 9,
+                      letterSpacing: "0.18em",
+                      color: "oklch(0.58 0.24 350)",
+                      fontFamily: "var(--font-mono, ui-monospace, monospace)",
+                      marginBottom: 1,
+                    }}
+                  >
+                    Talk to founder
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "#111", fontFamily: "var(--font-sans, system-ui, sans-serif)" }}>
+                    WhatsApp us directly
+                  </span>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
