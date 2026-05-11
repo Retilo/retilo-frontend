@@ -32,7 +32,7 @@ const RIBBON_PATH =
   "M1 209.434C58.5872 255.935 387.926 325.938 482.583 209.434C600.905 63.8051 525.516 -43.2211 427.332 19.9613C329.149 83.1436 352.902 242.723 515.041 267.302C644.752 286.966 943.56 181.94 995 156.5";
 
 /** Slower drift along the path (default in ribbon.tsx is 5). */
-const MARQUEE_BASE_VELOCITY = 5.5;
+const MARQUEE_BASE_VELOCITY = 3.0;
 
 export function HeroRibbon() {
   const shouldReduceMotion = useReducedMotion();
