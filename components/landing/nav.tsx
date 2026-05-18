@@ -6,9 +6,9 @@ import { AnimatePresence, motion } from "motion/react"
 import { Menu, X } from "lucide-react"
 
 const NAV_LINKS = [
-  { href: "#features", label: "Features" },
+  { href: "#ai-visibility", label: "AI Visibility" },
   { href: "#how-it-works", label: "How it works" },
-  { href: "#integrations", label: "Integrations" },
+  { href: "#voice",         label: "Voice" },
 ]
 
 const CALENDLY = "https://calendly.com/satwikloka321/retilo?month=2026-03"
