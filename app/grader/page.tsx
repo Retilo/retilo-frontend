@@ -164,10 +164,15 @@ export default function GraderPage() {
             value={query}
             onChange={handleChange}
             onClear={() => { setQuery(""); setPredictions([]); }}
-            isLoading={isSearching || isStarting}
-            loadingText={isStarting ? "Starting your report…" : "Searching…"}
+            isLoading={isStarting}
+            loadingText="Starting your report…"
             blobTranslucent
           />
+          {isSearching && !isStarting && (
+            <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 z-10">
+              <div className="h-4 w-4 rounded-full border-2 border-violet-400/40 border-t-violet-500 animate-spin" />
+            </div>
+          )}
 
           <AnimatePresence>
             {predictions.length > 0 && !isStarting && (
