@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <defs>
+    <filter id="grainSpec">
+      <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 0.93  0 0 0 0 0.83  0 0 0 0.04 0"></feColorMatrix>
+      <feComposite in2="SourceGraphic" operator="in"></feComposite>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="#0e0a06"></rect>
+  <rect width="1600" height="900" filter="url(#grainSpec)"></rect>
+
+  
+  <g stroke="#fdfaf3" stroke-width="0.4" opacity="0.08">
+    <line x1="0" y1="220" x2="1600" y2="220"></line>
+    <line x1="0" y1="450" x2="1600" y2="450"></line>
+    <line x1="0" y1="680" x2="1600" y2="680"></line>
+  </g>
+
+  
+  <g transform="translate(80, 80)">
+    <text font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="4" fill="rgba(253,250,243,0.55)">RETILO · DEMAND SPECTRUM · LIVE</text>
+    <text x="1440" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="4" fill="rgba(253,250,243,0.55)">5 SOURCES · 72 HR LEAD</text>
+  </g>
+
+  
+  <text x="80" y="180" font-family="Instrument Serif, serif" font-style="italic" font-size="48" fill="#fdfaf3">Five waves, one shop&#39;s weather.</text>
+
+  
+  <g transform="translate(0, 450)">
+    
+    <path d="M0,0 Q 100,-180 200,0 T 400,0 T 600,0 T 800,0 T 1000,0 T 1200,0 T 1400,0 T 1600,0" fill="none" stroke="#c8543d" stroke-width="2.2" stroke-linecap="round"></path>
+    
+    <path d="M0,0 Q 140,160 280,0 T 560,0 T 840,0 T 1120,0 T 1400,0 T 1600,0" fill="none" stroke="#fdfaf3" stroke-width="1.4" stroke-linecap="round" opacity="0.55"></path>
+    
+    <path d="M0,0 Q 80,80 160,0 T 320,0 T 480,0 T 640,0 T 800,0 T 960,0 T 1120,0 T 1280,0 T 1440,0 T 1600,0" fill="none" stroke="#d99a3a" stroke-width="1.6" stroke-linecap="round" opacity="0.85"></path>
+    
+    <path d="M0,0 Q 200,-100 400,0 T 800,0 T 1200,0 T 1600,0" fill="none" stroke="#1e6b56" stroke-width="1.8" stroke-linecap="round" opacity="0.9"></path>
+    
+    <path d="M0,0 Q 60,40 120,0 T 240,0 T 360,0 T 480,0 T 600,0 T 720,0 T 840,0 T 960,0 T 1080,0 T 1200,0 T 1320,0 T 1440,0 T 1560,0 T 1600,0" fill="none" stroke="#fdfaf3" stroke-width="0.9" stroke-linecap="round" opacity="0.3"></path>
+  </g>
+
+  
+  <g transform="translate(80, 800)" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="3" fill="#fdfaf3">
+    <g>
+      <rect x="0" y="-10" width="22" height="2" fill="#c8543d"></rect>
+      <text x="32" y="0" opacity="0.85">SEARCHES</text>
+    </g>
+    <g transform="translate(220, 0)">
+      <rect x="0" y="-10" width="22" height="2" fill="#fdfaf3" opacity="0.55"></rect>
+      <text x="32" y="0" opacity="0.85">WEATHER</text>
+    </g>
+    <g transform="translate(420, 0)">
+      <rect x="0" y="-10" width="22" height="2" fill="#d99a3a"></rect>
+      <text x="32" y="0" opacity="0.85">PAYDAY</text>
+    </g>
+    <g transform="translate(610, 0)">
+      <rect x="0" y="-10" width="22" height="2" fill="#1e6b56"></rect>
+      <text x="32" y="0" opacity="0.85">EVENTS</text>
+    </g>
+    <g transform="translate(790, 0)">
+      <rect x="0" y="-10" width="22" height="2" fill="#fdfaf3" opacity="0.3"></rect>
+      <text x="32" y="0" opacity="0.6">RETURNS</text>
+    </g>
+    <text x="1440" text-anchor="end" font-family="Instrument Serif, serif" font-style="italic" font-size="22" fill="#d99a3a" letter-spacing="0">+42% biryani · this week</text>
+  </g>
+</svg>

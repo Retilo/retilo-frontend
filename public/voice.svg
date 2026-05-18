@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" fill="#fdfaf3"></rect>
+  <g stroke="#c8543d" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    
+    <path d="M 78 60 C 60 70, 56 100, 70 130 C 76 144, 88 152, 96 148 C 104 144, 100 132, 94 124 C 88 116, 92 106, 102 104 C 116 102, 124 90, 120 76 C 116 60, 96 52, 78 60 Z"></path>
+    
+    <path d="M 92 88 C 100 92, 102 102, 96 110"></path>
+    
+    <path d="M 130 80 C 140 84, 144 90, 144 100"></path>
+    <path d="M 138 70 C 154 76, 160 90, 160 104"></path>
+    <path d="M 146 60 C 168 68, 178 88, 176 110"></path>
+  </g>
+  <text x="100" y="180" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="3" fill="#5a4a3c">VOICE</text>
+</svg>

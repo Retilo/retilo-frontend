@@ -3,12 +3,11 @@
 import { LandingNav } from "./nav"
 import { HeroSection } from "./hero-section"
 import { BrandVisibilitySection } from "./brand-visibility-section"
-import { BentoSection } from "./bento-section"
-import { VoiceSection } from "./voice-section"
 import { StorySection } from "./story/story-section"
-import { CtaSection } from "./cta-cosmic-section"
-import { AnalyticsSection } from "./analytics-section"
+import { VoiceSection } from "./voice-section"
 import { GlobeStatsSection } from "./globe-stats-section"
+import { AnalyticsSection } from "./analytics-section"
+import { CtaSection } from "./cta-cosmic-section"
 import { LandingFooter } from "./footer"
 import { SectionDivider } from "./section-divider"
 import { FloatingWhatsApp } from "./floating-whatsapp"
@@ -19,23 +18,36 @@ export default function LandingPage() {
       <LandingNav />
       <FloatingWhatsApp />
       <main>
+
+        {/* ── 01 · Introduction ─────────────────────────────────── */}
         <HeroSection />
-        <SectionDivider n="01" label="AI Visibility" />
+
+        {/* ── 02 · The Problem ─────────────────────────────────── */}
+        <SectionDivider n="01" label="The Problem" />
         <div id="ai-visibility">
           <BrandVisibilitySection />
         </div>
-        <SectionDivider n="02" label="Analytics" />
-        <AnalyticsSection />
-        <GlobeStatsSection />
-        <SectionDivider n="03" label="Platform" />
-        <div id="integrations">
-          <BentoSection />
+
+        {/* ── 03 · The Platform — dark chapter flows through ─────── */}
+        <div id="how-it-works">
+          <StorySection />
         </div>
-        <SectionDivider n="04" label="Voice" />
-        <VoiceSection />
-        <SectionDivider n="05" label="How It Works" />
-        <StorySection />
+
+        {/* ── 04 · Voice — continues the dark chapter ──────────── */}
+        <div id="voice">
+          <VoiceSection />
+        </div>
+
+        {/* ── 05 · Scale ───────────────────────────────────────── */}
+        <GlobeStatsSection />
+
+        {/* ── 06 · The Results ─────────────────────────────────── */}
+        <SectionDivider n="02" label="The Results" />
+        <AnalyticsSection />
+
+        {/* ── 07 · Action ──────────────────────────────────────── */}
         <CtaSection />
+
       </main>
       <LandingFooter />
     </div>

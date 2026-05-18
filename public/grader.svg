@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" fill="#fdfaf3"></rect>
+  
+  <g fill="#c8543d" stroke="#c8543d" stroke-width="1" stroke-linejoin="round">
+    <path d="M 100 40&#xA;             C 110 40 116 36 124 42&#xA;             C 130 38 138 42 142 50&#xA;             C 152 50 158 58 158 66&#xA;             C 166 72 166 82 162 90&#xA;             C 168 100 162 110 156 114&#xA;             C 160 124 152 134 144 136&#xA;             C 144 146 134 152 124 150&#xA;             C 118 158 108 158 100 154&#xA;             C 92 158 82 158 76 150&#xA;             C 66 152 56 146 56 136&#xA;             C 48 134 40 124 44 114&#xA;             C 38 110 32 100 38 90&#xA;             C 34 82 34 72 42 66&#xA;             C 42 58 48 50 58 50&#xA;             C 62 42 70 38 76 42&#xA;             C 84 36 90 40 100 40 Z"></path>
+  </g>
+  
+  <text x="100" y="115" text-anchor="middle" font-family="Instrument Serif, serif" font-style="italic" font-size="56" fill="#fdfaf3">r</text>
+  
+  <g stroke="#fdfaf3" stroke-width="1.2" stroke-linecap="round" opacity="0.7">
+    <line x1="100" y1="58" x2="100" y2="64"></line>
+    <line x1="100" y1="136" x2="100" y2="142"></line>
+    <line x1="60" y1="100" x2="66" y2="100"></line>
+    <line x1="134" y1="100" x2="140" y2="100"></line>
+  </g>
+  <text x="100" y="180" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="3" fill="#5a4a3c">GRADER</text>
+</svg>
