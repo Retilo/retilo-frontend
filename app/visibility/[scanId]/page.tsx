@@ -135,8 +135,8 @@ function CategoryBar({ name, score, status }: { name: string; score: number; sta
 
 // ── Fix card ───────────────────────────────────────────────────────────────────
 
-function FixCard({ fix, index, total, isFree, done, onDone, onSkip }: {
-  fix: Fix; index: number; total: number; isFree: boolean;
+function FixCard({ fix, index, total, done, onDone, onSkip }: {
+  fix: Fix; index: number; total: number;
   done: boolean; onDone: () => void; onSkip: () => void;
 }) {
   const [expanded, setExpanded] = useState(index === 0);
@@ -157,7 +157,7 @@ function FixCard({ fix, index, total, isFree, done, onDone, onSkip }: {
       style={{ background: done ? "rgba(34,197,94,0.03)" : "white", borderColor: done ? "rgba(34,197,94,0.3)" : "rgba(0,0,0,0.08)", opacity: done ? 0.65 : 1 }}>
 
       <button type="button" className="w-full text-left px-5 py-4 flex items-start gap-3"
-        onClick={() => (!isFree && index > 1) ? null : setExpanded(!expanded)}>
+        onClick={() => setExpanded(!expanded)}>
         <span className="text-xs font-bold px-2 py-0.5 rounded-full uppercase flex-shrink-0 mt-0.5"
           style={{ background: `${sc}15`, color: sc }}>{fix.severity}</span>
         <div className="flex-1 min-w-0">
@@ -176,20 +176,8 @@ function FixCard({ fix, index, total, isFree, done, onDone, onSkip }: {
         </div>
       </button>
 
-      {!isFree && index > 1 && (
-        <div className="px-5 pb-4">
-          <div className="rounded-xl p-4 text-center" style={{ background: "linear-gradient(135deg,rgba(253,91,255,0.05),rgba(121,40,202,0.05))", border: "1px dashed rgba(253,91,255,0.3)" }}>
-            <p className="text-sm font-semibold text-gray-700 mb-1">Unlock full playbook</p>
-            <p className="text-xs text-gray-400 mb-3">Get all {total} fixes + rescan tracking</p>
-            <a href="/auth" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-xs font-semibold" style={{ background: "linear-gradient(135deg,#FD5BFF,#7928ca)" }}>
-              Unlock All Fixes <ArrowRight className="w-3 h-3" />
-            </a>
-          </div>
-        </div>
-      )}
-
       <AnimatePresence>
-        {expanded && (isFree || index <= 1) && (
+        {expanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
             <div className="px-5 pb-5 space-y-4">
@@ -506,7 +494,7 @@ export default function ScanPage() {
   // ── FIXES ─────────────────────────────────────────────────────────────────────
   if (view === "fixes" && scanFixes) {
     const doneCount = doneFixes.size;
-    const totalFree = Math.min(2, scanFixes.fixes.length);
+    const totalFree = scanFixes.fixes.length;
 
     return (
       <div className="min-h-screen bg-[#f4f4f7]" style={{ fontFamily: '"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
@@ -551,7 +539,7 @@ export default function ScanPage() {
           <div className="space-y-3">
             {scanFixes.fixes.map((fix, i) => (
               <FixCard key={fix.order} fix={fix} index={i} total={scanFixes.fixes.length}
-                isFree={i < 2} done={doneFixes.has(fix.order)}
+                done={doneFixes.has(fix.order)}
                 onDone={() => setDoneFixes((p) => new Set([...p, fix.order]))}
                 onSkip={() => setSkippedFixes((p) => new Set([...p, fix.order]))} />
             ))}

@@ -39,8 +39,16 @@ function AuthPageInner() {
           email: form.email,
           password: form.password,
         })
-        setMode("login")
-        setError("")
+        // Auto-login after registration so the pending redirect (e.g. /visibility) is honoured
+        const res = await api.post("/v1/auth/login", {
+          email: form.email,
+          password: form.password,
+        })
+        localStorage.setItem("retilo_token", res.data.data.token)
+        if (res.data.data.merchant) {
+          localStorage.setItem("retilo_merchant", JSON.stringify(res.data.data.merchant))
+        }
+        router.replace(redirectTo)
         return
       }
       const res = await api.post("/v1/auth/login", {
