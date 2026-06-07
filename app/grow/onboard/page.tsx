@@ -118,6 +118,7 @@ export default function GrowOnboardPage() {
     try {
       const res = await api.post("/v1/grow/onboard", {
         merchantId,
+        email: merchantEmail,
         productName: form.productName,
         productDescription: form.productDescription,
         icpDescription: form.icpDescription,
