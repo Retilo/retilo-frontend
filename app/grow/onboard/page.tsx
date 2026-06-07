@@ -42,8 +42,11 @@ export default function GrowOnboardPage() {
   const router = useRouter();
   const [pageState, setPageState] = useState<PageState>("loading");
   const [merchantId, setMerchantId] = useState<string | null>(null);
+  const [merchantEmail, setMerchantEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [form, setForm] = useState({
+    email: "",
     productName: "",
     productDescription: "",
     icpDescription: "",
@@ -55,17 +58,18 @@ export default function GrowOnboardPage() {
   // ── Auth + profile check on mount ──────────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem("retilo_token");
-    if (!token) {
-      router.replace("/auth?redirect=/grow/onboard");
-      return;
-    }
     const merchant = JSON.parse(localStorage.getItem("retilo_merchant") ?? "null");
     const id: string | undefined = merchant?.id;
-    if (!id) {
-      router.replace("/auth?redirect=/grow/onboard");
+
+    if (!token || !id) {
+      // Guest — show form with email field
+      setIsGuest(true);
+      setPageState("form");
       return;
     }
+
     setMerchantId(id);
+    if (merchant?.email) setMerchantEmail(merchant.email);
 
     api
       .get(`/v1/grow/profile/${id}`)
@@ -79,7 +83,7 @@ export default function GrowOnboardPage() {
         }
       })
       .catch(() => setPageState("form"));
-  }, [router]);
+  }, []);
 
   // ── Telegram polling ────────────────────────────────────────────────────────
   const startPolling = useCallback(
@@ -101,21 +105,22 @@ export default function GrowOnboardPage() {
   );
 
   useEffect(() => {
-    if (pageState === "connect" && merchantId) startPolling(merchantId);
+    const pollId = merchantId ?? profile?.profileId ?? null;
+    if (pageState === "connect" && pollId) startPolling(pollId);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [pageState, merchantId, startPolling]);
+  }, [pageState, merchantId, profile?.profileId, startPolling]);
 
   // ── Form submit ─────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!merchantId) return;
     setError("");
     setSubmitting(true);
     try {
       const res = await api.post("/v1/grow/onboard", {
-        merchantId,
+        ...(merchantId ? { merchantId } : {}),
+        email: isGuest ? form.email : merchantEmail,
         productName: form.productName,
         productDescription: form.productDescription,
         icpDescription: form.icpDescription,
@@ -210,6 +215,30 @@ export default function GrowOnboardPage() {
                   </p>
 
                   <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                    {/* Email — guests only */}
+                    {isGuest && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium text-foreground">
+                          Your email
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="you@example.com"
+                          value={form.email}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, email: e.target.value }))
+                          }
+                          className={cn(
+                            "h-10 w-full rounded-xl border border-border/50 bg-background/50 px-3 text-sm",
+                            "placeholder:text-muted-foreground/60",
+                            "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
+                            "transition-colors"
+                          )}
+                        />
+                      </div>
+                    )}
+
                     {/* Business name */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-medium text-foreground">
