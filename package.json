@@ -18,6 +18,7 @@
     "@number-flow/react": "^0.6.0",
     "@paper-design/shaders-react": "^0.0.76",
     "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-use-controllable-state": "^1.2.3",
     "@trigger.dev/react-hooks": "^4.4.3",
     "@trigger.dev/sdk": "^4.4.3",
     "@upstash/ratelimit": "^2.0.8",
