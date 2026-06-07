@@ -42,6 +42,7 @@ export default function GrowOnboardPage() {
   const router = useRouter();
   const [pageState, setPageState] = useState<PageState>("loading");
   const [merchantId, setMerchantId] = useState<string | null>(null);
+  const [merchantEmail, setMerchantEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [form, setForm] = useState({
     productName: "",
@@ -66,6 +67,7 @@ export default function GrowOnboardPage() {
       return;
     }
     setMerchantId(id);
+    if (merchant?.email) setMerchantEmail(merchant.email);
 
     api
       .get(`/v1/grow/profile/${id}`)
