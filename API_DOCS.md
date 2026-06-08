@@ -2873,6 +2873,31 @@ Each driver carries `signal` (human-readable label), `factor` (multiplier), `imp
 
 ---
 
+### v1.6.0 — 2026-06-08
+
+**Grow: zero-friction auto-onboard** (Section 20)
+
+| Change | Type | Detail |
+|--------|------|--------|
+| `POST /v1/grow/onboard/auto` | ✅ New | Guest onboard — accepts any business input (Maps URL / website / plain text) + email; auto-resolves context, creates Merchant + grow_profile, returns JWT. No prior auth needed. |
+
+---
+
+### v1.5.0 — 2026-06-03
+
+**New module: Grow (internal — OpenClaw)** (Section 20)
+
+| Change | Type | Detail |
+|--------|------|--------|
+| `POST /v1/internal/grow/run` | ✅ New | Run a harvest→score→enrich cycle for a profile; returns enriched signals + `runId` for approval. Internal (no JWT). |
+| `POST /v1/internal/grow/approve` | ✅ New | Resume a run by `runId` and send the approved signal indexes. Internal (no JWT). |
+| `GET /v1/internal/grow/status` | ✅ New | Cumulative grow metrics (totals, sent, converted, conversion rate, per-profile). Internal (no JWT). |
+| `POST /v1/internal/grow/autonomous` | ✅ New | Toggle Phase 2 autonomous mode (+ optional auto-approve threshold) for a profile. Internal (no JWT). |
+
+**What it does:** A profile-aware growth agent (`src/modules/grow/`) that harvests warm leads from GitHub/HN/Reddit, scores them with Claude Haiku, drafts outreach with Claude Opus, and sends after approval (Telegram digest in Phase 1, auto-approve in Phase 2). These four endpoints are the OpenClaw integration surface — mounted **before** the JWT middleware in `src/config/express.js` (same pattern as the voice internal tools), so they require no merchant token. Keep them bound to localhost at the network layer.
+
+---
+
 ## Error codes
 
 | Code | Meaning |

@@ -47,6 +47,7 @@ export default function GrowOnboardPage() {
   const [isGuest, setIsGuest] = useState(false);
   const [form, setForm] = useState({
     email: "",
+    businessInput: "",
     productName: "",
     productDescription: "",
     icpDescription: "",
@@ -118,15 +119,29 @@ export default function GrowOnboardPage() {
     setError("");
     setSubmitting(true);
     try {
-      const res = await api.post("/v1/grow/onboard", {
-        ...(merchantId ? { merchantId } : {}),
-        email: isGuest ? form.email : merchantEmail,
-        productName: form.productName,
-        productDescription: form.productDescription,
-        icpDescription: form.icpDescription,
-      });
-      const p: Profile = res.data?.data ?? res.data;
-      setProfile(p);
+      if (isGuest) {
+        const res = await api.post("/v1/grow/onboard/auto", {
+          email: form.email,
+          businessInput: form.businessInput,
+        });
+        const d = res.data?.data ?? res.data;
+        if (d.token) {
+          localStorage.setItem("retilo_token", d.token);
+          if (d.merchant) localStorage.setItem("retilo_merchant", JSON.stringify(d.merchant));
+        }
+        const p: Profile = d.profile ?? d;
+        setProfile(p);
+      } else {
+        const res = await api.post("/v1/grow/onboard", {
+          merchantId,
+          email: merchantEmail,
+          productName: form.productName,
+          productDescription: form.productDescription,
+          icpDescription: form.icpDescription,
+        });
+        const p: Profile = res.data?.data ?? res.data;
+        setProfile(p);
+      }
       setPageState("connect");
     } catch (err: unknown) {
       const msg =
@@ -207,103 +222,134 @@ export default function GrowOnboardPage() {
                   <div className="mb-1 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-primary" />
                     <h1 className="font-semibold text-xl text-foreground tracking-tight">
-                      Build your lead profile
+                      {isGuest ? "Start finding warm leads" : "Build your lead profile"}
                     </h1>
                   </div>
                   <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-                    We'll use AI to generate a keyword profile. Warm leads will land in your Telegram.
+                    {isGuest
+                      ? "Drop your Google Maps link, website, or just describe your business — we'll figure out the rest."
+                      : "We'll use AI to generate a keyword profile. Warm leads will land in your Telegram."}
                   </p>
 
                   <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                    {/* Email — guests only */}
-                    {isGuest && (
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-foreground">
-                          Your email
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          placeholder="you@example.com"
-                          value={form.email}
-                          onChange={(e) =>
-                            setForm((f) => ({ ...f, email: e.target.value }))
-                          }
-                          className={cn(
-                            "h-10 w-full rounded-xl border border-border/50 bg-background/50 px-3 text-sm",
-                            "placeholder:text-muted-foreground/60",
-                            "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
-                            "transition-colors"
-                          )}
-                        />
-                      </div>
+                    {isGuest ? (
+                      <>
+                        {/* Email */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-medium text-foreground">
+                            Your email
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            placeholder="you@example.com"
+                            value={form.email}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, email: e.target.value }))
+                            }
+                            className={cn(
+                              "h-10 w-full rounded-xl border border-border/50 bg-background/50 px-3 text-sm",
+                              "placeholder:text-muted-foreground/60",
+                              "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
+                              "transition-colors"
+                            )}
+                          />
+                        </div>
+
+                        {/* Business input */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-medium text-foreground">
+                            Your business
+                          </label>
+                          <textarea
+                            required
+                            rows={3}
+                            placeholder={"Paste a Google Maps link, your website URL, or just describe your business.\ne.g. \"Glow Salon — premium salon in Hyderabad\""}
+                            value={form.businessInput}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, businessInput: e.target.value }))
+                            }
+                            className={cn(
+                              "w-full resize-none rounded-xl border border-border/50 bg-background/50 px-3 py-2.5 text-sm",
+                              "placeholder:text-muted-foreground/60",
+                              "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
+                              "transition-colors"
+                            )}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            We'll auto-resolve your business context from any input.
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Business name */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-medium text-foreground">
+                            Business / Product name
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Glow Salon"
+                            value={form.productName}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, productName: e.target.value }))
+                            }
+                            className={cn(
+                              "h-10 w-full rounded-xl border border-border/50 bg-background/50 px-3 text-sm",
+                              "placeholder:text-muted-foreground/60",
+                              "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
+                              "transition-colors"
+                            )}
+                          />
+                        </div>
+
+                        {/* Product description */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-medium text-foreground">
+                            What does your product / service do?
+                          </label>
+                          <textarea
+                            required
+                            rows={3}
+                            placeholder="e.g. Premium salon chain in Hyderabad with 12 locations offering hair, skin and nail services."
+                            value={form.productDescription}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, productDescription: e.target.value }))
+                            }
+                            className={cn(
+                              "w-full resize-none rounded-xl border border-border/50 bg-background/50 px-3 py-2.5 text-sm",
+                              "placeholder:text-muted-foreground/60",
+                              "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
+                              "transition-colors"
+                            )}
+                          />
+                        </div>
+
+                        {/* ICP */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-medium text-foreground">
+                            Who is your ideal customer?
+                          </label>
+                          <textarea
+                            required
+                            rows={3}
+                            placeholder="e.g. Salon owners with 2+ locations struggling with Google review management."
+                            value={form.icpDescription}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, icpDescription: e.target.value }))
+                            }
+                            className={cn(
+                              "w-full resize-none rounded-xl border border-border/50 bg-background/50 px-3 py-2.5 text-sm",
+                              "placeholder:text-muted-foreground/60",
+                              "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
+                              "transition-colors"
+                            )}
+                          />
+                        </div>
+                      </>
                     )}
-
-                    {/* Business name */}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium text-foreground">
-                        Business / Product name
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Glow Salon"
-                        value={form.productName}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, productName: e.target.value }))
-                        }
-                        className={cn(
-                          "h-10 w-full rounded-xl border border-border/50 bg-background/50 px-3 text-sm",
-                          "placeholder:text-muted-foreground/60",
-                          "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
-                          "transition-colors"
-                        )}
-                      />
-                    </div>
-
-                    {/* Product description */}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium text-foreground">
-                        What does your product / service do?
-                      </label>
-                      <textarea
-                        required
-                        rows={3}
-                        placeholder="e.g. Premium salon chain in Hyderabad with 12 locations offering hair, skin and nail services."
-                        value={form.productDescription}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, productDescription: e.target.value }))
-                        }
-                        className={cn(
-                          "w-full resize-none rounded-xl border border-border/50 bg-background/50 px-3 py-2.5 text-sm",
-                          "placeholder:text-muted-foreground/60",
-                          "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
-                          "transition-colors"
-                        )}
-                      />
-                    </div>
-
-                    {/* ICP */}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium text-foreground">
-                        Who is your ideal customer?
-                      </label>
-                      <textarea
-                        required
-                        rows={3}
-                        placeholder="e.g. Salon owners with 2+ locations struggling with Google review management."
-                        value={form.icpDescription}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, icpDescription: e.target.value }))
-                        }
-                        className={cn(
-                          "w-full resize-none rounded-xl border border-border/50 bg-background/50 px-3 py-2.5 text-sm",
-                          "placeholder:text-muted-foreground/60",
-                          "focus:outline-none focus:border-primary/50 focus:bg-background focus:ring-1 focus:ring-primary/20",
-                          "transition-colors"
-                        )}
-                      />
-                    </div>
 
                     {error && (
                       <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -323,11 +369,11 @@ export default function GrowOnboardPage() {
                       {submitting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Generating keyword profile with AI…
+                          {isGuest ? "Setting up your profile…" : "Generating keyword profile with AI…"}
                         </>
                       ) : (
                         <>
-                          Generate my lead profile
+                          {isGuest ? "Get started" : "Generate my lead profile"}
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}
