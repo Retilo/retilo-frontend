@@ -16,6 +16,56 @@ Errors return `{ "code": 4xx|5xx, "message": "..." }`.
 
 ---
 
+### v1.8.0 — 2026-06-10
+
+**New module: Discovery — Store Profiles & Nearby Feed** (Section 21)
+
+| Change | Type | Detail |
+|--------|------|--------|
+| `GET /v1/store-profile` | ✅ New | The merchant's discovery listing (category, address, lat/lng, isListed) — defaults if never set |
+| `PUT /v1/store-profile` | ✅ New | Upsert the listing. Category vocabulary matches the Retilo Business app: clinic, salon, restaurant, retail, services |
+| `GET /v1/public/discovery/nearby?lat=&lng=&radiusKm=&limit=` | ✅ New | **PUBLIC** — the consumer app's "Stores near you" feed. With coordinates: haversine distance-sorted within radius (default 25 km). Without: all listed stores, distance null |
+
+**What it does:** Separates the merchant *auth* record from the merchant's *public listing*. A merchant appears in consumer discovery once their profile has coordinates and `isListed: true`. Distance is computed in JS (fine at launch scale; swap for PostGIS later). `hasActiveDraw` is a placeholder `false` until the lucky-draw module exists.
+
+---
+
+### v1.7.1 — 2026-06-10
+
+**Bookings: Merchant business hours** (Section 20)
+
+| Change | Type | Detail |
+|--------|------|--------|
+| `GET /v1/merchant-hours` | ✅ New | The merchant's weekly hours — always 7 rows, unset days filled with defaults (10:00–19:00) |
+| `PUT /v1/merchant-hours` | ✅ New | Replace the week: `{hours: [{day, openTime, closeTime, isHoliday, breaks}]}` |
+| `GET /v1/public/bookings/:merchantId/hours` | ✅ New | **PUBLIC** — for "Open now · closes 7 PM" on consumer surfaces |
+| `GET …/availability` | 🔁 Changed | Now bounded by the merchant's hours for that weekday: holidays return `isHoliday: true` with no slots; slots overlapping breaks are excluded. Response gains an `isHoliday` field |
+
+Modelled on the handyman template's proven `shop_hours` shape (per-day open/close, `is_holiday`, `breaks` JSON). Times are "HH:MM" IST wall-clock.
+
+---
+
+### v1.7.0 — 2026-06-10
+
+**New module: Bookings — Offerings & Appointments** (Section 20)
+
+| Change | Type | Detail |
+|--------|------|--------|
+| `GET /v1/offerings` | ✅ New | List the merchant's bookable offerings |
+| `POST /v1/offerings` | ✅ New | Create an offering {name, durationMins, priceInr, offeringType} |
+| `PUT /v1/offerings/:id` | ✅ New | Update an offering |
+| `DELETE /v1/offerings/:id` | ✅ New | Soft-delete (sets active=false) |
+| `GET /v1/appointments?date=today\|YYYY-MM-DD&status=` | ✅ New | Merchant's appointment queue for an IST day |
+| `POST /v1/appointments` | ✅ New | Merchant creates a walk-in/phone booking |
+| `POST /v1/appointments/:id/status` | ✅ New | Move status: requested → confirmed → completed (or cancelled). Invalid transition → 422 |
+| `GET /v1/public/bookings/:merchantId/offerings` | ✅ New | **PUBLIC** — consumer app lists what's bookable |
+| `GET /v1/public/bookings/:merchantId/availability?offeringId&date=` | ✅ New | **PUBLIC** — free slots (10:00–19:00 IST grid, booked + past slots excluded) |
+| `POST /v1/public/bookings/:merchantId/book` | ✅ New | **PUBLIC** — consumer books a slot. Double-booked slot → 409 |
+
+**What it does:** Vertical-agnostic scheduling shared by clinics, salons, restaurants and service businesses. The merchant defines *offerings* (consultation / haircut / table) in Retilo Business; consumers book through the Retilo user app via the public endpoints; the merchant works the queue (confirm / complete / cancel). Appointments are scheduling-only by design — a free-text note, no medical fields. Events published: `appointment.created`, `appointment.status_changed` (wired to the workflow engine for reminders/follow-ups later).
+
+---
+
 ### v1.4.0 — 2026-05-07
 
 **New module: Demand Signals** (Section 19)
@@ -2907,3 +2957,107 @@ Each driver carries `signal` (human-readable label), `factor` (multiplier), `imp
 | 403 | Forbidden — resource belongs to another merchant |
 | 404 | Resource not found |
 | 500 | Internal server error |
+
+---
+
+## 20. Bookings — Offerings & Appointments
+
+Vertical-agnostic scheduling. Merchant endpoints require JWT; the consumer flow is public with the merchant id in the URL.
+
+### Offering object
+```json
+{
+  "id": "uuid", "merchantId": "uuid", "name": "General consultation",
+  "durationMins": 15, "priceInr": 300,
+  "offeringType": "consultation | service | table | other", "active": true
+}
+```
+
+### Appointment object (serialized)
+```json
+{
+  "id": "uuid", "offeringId": "uuid", "offeringName": "General consultation",
+  "customerName": "Ramesh Gupta", "customerPhone": "+919876543210",
+  "staffName": null, "note": "Follow-up — BP check",
+  "startsAt": "2026-06-11T04:30:00.000Z", "timeLabel": "10:00 AM",
+  "durationMins": 15,
+  "status": "requested | confirmed | completed | cancelled",
+  "source": "app | voice | walk_in"
+}
+```
+
+### Merchant — offerings `JWT required`
+
+- `GET /v1/offerings` → `{ data: { offerings: [...] } }` (add `?includeInactive=true` for paused ones)
+- `POST /v1/offerings` — body: `{ name (required), durationMins (5–480, default 30), priceInr (default 0), offeringType }` → `201`
+- `PUT /v1/offerings/:id` — partial update
+- `DELETE /v1/offerings/:id` — soft delete (`active=false`) → `204`
+
+### Merchant — appointments `JWT required`
+
+- `GET /v1/appointments?date=today|YYYY-MM-DD&status=requested` → `{ data: { appointments: [...] } }` — the IST day's queue, ordered by time
+- `POST /v1/appointments` — walk-in/phone booking; same body as the public book endpoint, `source` defaults to `walk_in`
+- `POST /v1/appointments/:id/status` — body `{ "status": "confirmed" | "completed" | "cancelled" }`
+
+**Status lifecycle:** `requested → confirmed → completed`; `cancelled` allowed from `requested`/`confirmed`. Anything else → `422`.
+
+### Public — consumer booking flow (Retilo user app)
+
+- `GET /v1/public/bookings/:merchantId/offerings` → active offerings
+- `GET /v1/public/bookings/:merchantId/availability?offeringId=<uuid>&date=YYYY-MM-DD` →
+  ```json
+  { "data": { "offeringId": "...", "date": "2026-06-11", "durationMins": 15,
+              "slots": [ { "startsAt": "2026-06-11T04:30:00.000Z", "timeLabel": "10:00 AM" } ] } }
+  ```
+  Slot grid = offering duration over 10:00–19:00 IST (per-merchant hours later). Past and taken slots excluded.
+- `POST /v1/public/bookings/:merchantId/book` — body:
+  ```json
+  { "offeringId": "uuid (required)", "customerName": "string (required)",
+    "customerPhone": "string", "note": "string ≤500", "startsAt": "ISO date (required)" }
+  ```
+  → `201` with the appointment (`status: requested`). Already-taken slot → `409 "That slot was just taken — pick another"`.
+
+### Merchant — business hours `JWT required`
+
+- `GET /v1/merchant-hours` → `{ data: { hours: [ {day, openTime, closeTime, isHoliday, breaks} × 7 ] } }`
+- `PUT /v1/merchant-hours` — body:
+  ```json
+  { "hours": [
+      { "day": "monday", "openTime": "09:00", "closeTime": "18:00",
+        "isHoliday": false, "breaks": [ { "start": "13:00", "end": "14:00" } ] },
+      { "day": "sunday", "isHoliday": true }
+  ] }
+  ```
+  1–7 entries, unique days, times as `"HH:MM"` (24h, IST). Days omitted fall back to the 10:00–19:00 default. `400` if open ≥ close or a break's start ≥ end.
+
+### Public — business hours
+
+- `GET /v1/public/bookings/:merchantId/hours` → same 7-row shape, no auth. Availability automatically respects these hours: holiday → `{ "isHoliday": true, "slots": [] }`; break windows produce no slots.
+
+---
+
+## 21. Discovery — Store Profiles & Nearby Feed
+
+### Merchant — store profile `JWT required`
+
+- `GET /v1/store-profile` → `{ data: { merchantId, category, address, lat, lng, isListed } }` (defaults: retail, listed, no coordinates)
+- `PUT /v1/store-profile` — body (all optional, min 1):
+  ```json
+  { "category": "clinic | salon | restaurant | retail | services",
+    "address": "string ≤500", "lat": -90..90, "lng": -180..180, "isListed": true }
+  ```
+
+### Public — nearby stores (Retilo user app)
+
+- `GET /v1/public/discovery/nearby?lat=17.41&lng=78.43&radiusKm=25&limit=20`
+  ```json
+  { "data": { "stores": [
+      { "id": "<merchantId>", "name": "Sunrise Clinic", "type": "clinic",
+        "address": "Road No 12, Banjara Hills, Hyderabad",
+        "distanceKm": 3.4, "hasActiveDraw": false }
+  ] } }
+  ```
+  - With `lat`/`lng`: nearest first, stores without coordinates excluded, bounded by `radiusKm`.
+  - Without coordinates: all listed stores, `distanceKm: null` — usable before the app has location permission.
+  - `id` is the merchant id — feed it straight into the public booking endpoints (Section 20).
+
