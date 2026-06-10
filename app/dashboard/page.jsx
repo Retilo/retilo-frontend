@@ -150,9 +150,9 @@ export default function DashboardPage() {
   ]
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh overflow-hidden">
       <AppSidebar />
-      <SidebarInset className="min-h-screen overflow-hidden" style={{ background: "oklch(0.985 0.003 350)" }}>
+      <SidebarInset className="h-full overflow-hidden" style={{ background: "oklch(0.985 0.003 350)" }}>
         <div className="flex flex-col h-full">
 
           {/* Top bar */}
