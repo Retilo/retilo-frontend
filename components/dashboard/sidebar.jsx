@@ -2,10 +2,12 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 import {
   LayoutDashboard, Star, BarChart3, Workflow,
   MapPin, Send, LogOut, Users, Zap, Grid2X2, Mail, Sparkles,
-  ShoppingBag, Phone, TrendingUp, Globe, Scan, Activity,
+  ShoppingBag, Phone, TrendingUp, Globe, Scan, Activity, Moon, Sun,
 } from "lucide-react"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -28,6 +30,31 @@ const EMAIL_NAV_ITEMS = [
   { label: "Email Agent", icon: Mail, href: "/email" },
   { label: "Campaigns", icon: Sparkles, href: "/email/campaigns" },
 ]
+
+function DarkModeToggle() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
+
+  const isDark = theme === "dark"
+  return (
+    <button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2 transition-all hover:bg-sidebar-accent text-left"
+    >
+      <div className="flex size-7 items-center justify-center rounded-lg bg-sidebar-accent shrink-0">
+        {isDark
+          ? <Sun className="size-3.5 text-sidebar-foreground/70" />
+          : <Moon className="size-3.5 text-sidebar-foreground/70" />}
+      </div>
+      <span className="text-[12.5px] font-medium text-sidebar-foreground/55">
+        {isDark ? "Light mode" : "Dark mode"}
+      </span>
+    </button>
+  )
+}
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -246,6 +273,8 @@ export function AppSidebar() {
 
       {/* ── Footer ───────────────────────────────────── */}
       <SidebarFooter className="px-3 py-4">
+        <DarkModeToggle />
+        <div className="h-px bg-sidebar-border my-1" />
         <button
           onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all hover:bg-sidebar-accent cursor-pointer group text-left"
