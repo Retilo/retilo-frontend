@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { ModuleHelper } from "@/components/module-helper"
+import { LocationsMap } from "@/components/locations-map"
 
 // ── Endpoint health card ──────────────────────────────────────────────────────
 
@@ -244,6 +245,13 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Locations</h2>
                     <Link href="/dashboard/locations" className="text-xs font-medium transition-colors hover:opacity-75" style={{ color: "oklch(0.48 0.22 350)" }}>View all</Link>
+                  </div>
+                  {/* Map overview — the brand's footprint at a glance */}
+                  <div className="h-64 mb-3">
+                    <LocationsMap
+                      locations={locations}
+                      onSelect={() => router.push("/dashboard/locations")}
+                    />
                   </div>
                   <div className="space-y-2">
                     {locations.slice(0, 5).map((loc) => (
