@@ -69,9 +69,9 @@ export default function LocationsPage() {
   const handleStartAnalysis = async () => {
     if (selected.length === 0) return
     setProcessing(true)
-    // selected will be in [google_location_id, email]
+    // selected entries are [google_location_id, email] tuples
     const locationIds = selected.map((l) => l[0])
-    const email = selected[0]
+    const email = selected[0]?.[1]
     // one year for start date
     const startDate = new Date()
     startDate.setFullYear(startDate.getFullYear() - 1);

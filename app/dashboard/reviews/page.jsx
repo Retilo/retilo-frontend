@@ -21,16 +21,19 @@ const INPUT_BORDER = "oklch(0.90 0.008 350)"
 
 // ── Review card ────────────────────────────────────────────────
 function ReviewCard({ review, onAiReply, onPostReply }) {
+  // The reply/ai-reply endpoints resolve by the Google review_id, not the numeric PK.
+  const reviewId = review.review_id ?? review.reviewId ?? review.id
+  const existingReply = review.review_reply ?? review.reply?.comment ?? null
   const [expanded, setExpanded] = useState(false)
-  const [draft, setDraft] = useState(review.reply?.comment ?? "")
+  const [draft, setDraft] = useState(existingReply ?? "")
   const [generating, setGenerating] = useState(false)
   const [posting, setPosting] = useState(false)
-  const [posted, setPosted] = useState(!!review.reply)
+  const [posted, setPosted] = useState(!!existingReply)
 
   const handleAiDraft = async () => {
     setGenerating(true)
     try {
-      const res = await onAiReply(review.reviewId ?? review.id)
+      const res = await onAiReply(reviewId)
       setDraft(res.replyText)
       setExpanded(true)
     } finally {
@@ -42,7 +45,7 @@ function ReviewCard({ review, onAiReply, onPostReply }) {
     if (!draft.trim()) return
     setPosting(true)
     try {
-      await onPostReply(review.reviewId ?? review.id, draft)
+      await onPostReply(reviewId, draft)
       setPosted(true)
     } finally {
       setPosting(false)
@@ -107,13 +110,13 @@ function ReviewCard({ review, onAiReply, onPostReply }) {
       </div>
 
       {/* Existing reply */}
-      {review.reply?.comment && !expanded && (
+      {existingReply && !expanded && (
         <div
           className="mx-5 mb-4 rounded-xl p-3 text-xs"
           style={{ background: "oklch(0.60 0.20 160 / 8%)", border: "1px solid oklch(0.60 0.20 160 / 20%)", color: TEXT_MUTED }}
         >
           <span className="font-medium" style={{ color: "oklch(0.42 0.18 160)" }}>Your reply: </span>
-          {review.reply.comment}
+          {existingReply}
         </div>
       )}
 
@@ -230,7 +233,7 @@ export default function ReviewsPage() {
     await api.post(`/v1/gmb/reviews/${reviewId}/reply`, { replyText })
   }
 
-  const unrepliedCount = reviews.filter(r => !r.replied && !r.reply).length
+  const unrepliedCount = reviews.filter(r => !r.review_reply && !r.reply).length
 
   return (
     <DashboardPageLayout
