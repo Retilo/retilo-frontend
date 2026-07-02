@@ -3,16 +3,14 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { motion, AnimatePresence } from "motion/react"
+import { motion } from "motion/react"
 import { AppSidebar } from "@/components/dashboard/sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import {
-  Star, BarChart3, MessageSquare, MapPin, TrendingUp, TrendingDown,
-  ArrowRight, Zap, Activity, Globe, Mail, Webhook, CheckCircle2,
-  AlertCircle, Clock, RefreshCw, ExternalLink, ChevronRight,
+  Star, BarChart3, MapPin, TrendingUp, TrendingDown,
+  ArrowRight, Zap, Activity, Globe, Mail, RefreshCw, ChevronRight,
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { ModuleHelper } from "@/components/module-helper"
 import { LocationsMap } from "@/components/locations-map"
 
 // ── Endpoint health card ──────────────────────────────────────────────────────
@@ -100,16 +98,36 @@ function StatCard({ label, value, sub, trend, accent = "oklch(0.58 0.24 350)" })
   )
 }
 
-// ── Mock activity feed ────────────────────────────────────────────────────────
+// ── Connect Google Business prompt ────────────────────────────────────────────
 
-const MOCK_FEED = [
-  { type: "review",   label: "New 5★ review — \"Amazing service!\" — Melbourne CBD",          time: "2 min ago",  color: "#f59e0b", delta: null },
-  { type: "reply",    label: "AI reply sent to James K. on George St location",               time: "5 min ago",  color: "#7c3aed", delta: null },
-  { type: "rank",     label: "Keyword 'best coffee Sydney' moved to position #3",             time: "18 min ago", color: "#22c55e", delta: +3 },
-  { type: "campaign", label: "Review request campaign sent — 42 contacts",                    time: "1 hr ago",   color: "#0ea5e9", delta: null },
-  { type: "sync",     label: "GMB sync complete — 3 locations updated",                       time: "2 hr ago",   color: "#6b7280", delta: null },
-  { type: "rank",     label: "Keyword 'hair salon Brisbane' dropped from #7 to #10",          time: "3 hr ago",   color: "#ef4444", delta: -3 },
-]
+function ConnectGooglePrompt() {
+  return (
+    <div
+      className="w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 py-14"
+      style={{ borderColor: "oklch(0.58 0.24 350 / 30%)", background: "oklch(0.58 0.24 350 / 4%)" }}
+    >
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center"
+        style={{ background: "oklch(0.58 0.24 350 / 12%)" }}
+      >
+        <MapPin className="w-7 h-7" style={{ color: "oklch(0.48 0.22 350)" }} />
+      </div>
+      <div className="text-center">
+        <h3 className="text-base font-semibold text-gray-800 mb-1">Connect your Google Business locations</h3>
+        <p className="text-sm text-gray-400 max-w-xs mx-auto">
+          Your locations will appear on this map once you connect Google Business. Reviews, analytics and AI replies activate automatically.
+        </p>
+      </div>
+      <Link
+        href="/dashboard/locations"
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 hover:shadow-md"
+        style={{ background: "oklch(0.58 0.24 350)" }}
+      >
+        Connect Google Business <ArrowRight className="w-4 h-4" />
+      </Link>
+    </div>
+  )
+}
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -136,18 +154,17 @@ export default function DashboardPage() {
 
   const STATS = [
     { label: "Locations",     value: loading ? "…" : locations.length || "0",      sub: "connected to Google",  accent: "oklch(0.58 0.24 350)" },
-    { label: "Avg Rating",    value: loading ? "…" : avgRating,                     sub: "across all locations", trend: { dir: "up", label: "+0.2 this month" }, accent: "oklch(0.55 0.22 55)" },
+    { label: "Avg Rating",    value: loading ? "…" : avgRating,                     sub: "across all locations", trend: locations.length ? { dir: "up", label: "+0.2 this month" } : null, accent: "oklch(0.55 0.22 55)" },
     { label: "Total Reviews", value: loading ? "…" : totalReviews.toLocaleString(), sub: "all time",             accent: "oklch(0.52 0.20 160)" },
     { label: "Response Rate", value: loading ? "…" : `${avgResponseRate}%`,         sub: "of reviews replied",   accent: "oklch(0.55 0.22 280)" },
   ]
 
   const ENDPOINTS = [
-    { icon: MapPin,       name: "Google Business",  status: locations.length > 0 ? "live" : "error",  meta: `${locations.length} location${locations.length !== 1 ? "s" : ""} synced`,    href: "/dashboard/locations",  accent: "#4285F4", pulse: locations.length > 0 },
-    { icon: Star,         name: "Review Engine",    status: "live",      meta: "AI replies active",                                href: "/dashboard/reviews",    accent: "#f59e0b", pulse: true  },
-    { icon: BarChart3,    name: "Analytics",        status: "live",      meta: "Real-time data",                                   href: "/dashboard/analytics",  accent: "#22c55e", pulse: false },
-    { icon: Globe,        name: "AI Visibility",    status: "degraded",  meta: "Not yet scanned",                                  href: "/visibility",              accent: "#FD5BFF", pulse: false },
-    { icon: Mail,         name: "Email Agent",      status: "live",      meta: "Campaign queue ready",                             href: "/email/agent",          accent: "#7c3aed", pulse: false },
-    { icon: Zap,          name: "Workflows",        status: "live",      meta: "4 active automations",                             href: "/dashboard/workflows",  accent: "#0ea5e9", pulse: true  },
+    { icon: MapPin,    name: "Google Business", status: locations.length > 0 ? "live" : "error",  meta: `${locations.length} location${locations.length !== 1 ? "s" : ""} synced`, href: "/dashboard/locations", accent: "#4285F4", pulse: locations.length > 0 },
+    { icon: Star,      name: "Review Engine",   status: locations.length > 0 ? "live" : "degraded", meta: locations.length > 0 ? "AI replies active" : "Connect Google to activate", href: "/dashboard/reviews",   accent: "#f59e0b", pulse: locations.length > 0 },
+    { icon: BarChart3, name: "Analytics",       status: locations.length > 0 ? "live" : "degraded", meta: locations.length > 0 ? "Real-time data" : "No data yet",                href: "/dashboard/analytics", accent: "#22c55e", pulse: false },
+    { icon: Globe,     name: "AI Visibility",   status: "degraded", meta: "Not yet scanned",                                                                                        href: "/visibility",          accent: "#FD5BFF", pulse: false },
+    { icon: Mail,      name: "Email Agent",     status: "live",     meta: "Campaign queue ready",                                                                                   href: "/email/agent",         accent: "#7c3aed", pulse: false },
   ]
 
   return (
@@ -163,8 +180,8 @@ export default function DashboardPage() {
                 {merchant?.name ? `Welcome back, ${merchant.name.split(" ")[0]}` : "Control Center"}
               </h1>
               <p className="text-xs text-gray-400 mt-0.5">
-                {new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
-                {locations.length > 0 ? ` · ${locations.length} endpoint${locations.length > 1 ? "s" : ""} active` : ""}
+                {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+                {locations.length > 0 ? ` · ${locations.length} location${locations.length > 1 ? "s" : ""} active` : ""}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -172,49 +189,56 @@ export default function DashboardPage() {
                 <Globe className="w-3 h-3" />
                 AI Scan
               </Link>
-              <div className="flex items-center gap-1.5">
-                <div className="size-2 animate-pulse rounded-full bg-emerald-500" />
-                <span className="text-xs font-medium text-gray-400">Live</span>
-              </div>
+              {locations.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <div className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                  <span className="text-xs font-medium text-gray-400">Live</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-5xl mx-auto px-8 py-8 space-y-8">
-              <ModuleHelper
-                moduleKey="dashboard-home-v1"
-                title="Welcome to Retilo Control Center"
-                description="This is your command centre — connect a Google Business location via the sidebar to activate reviews, analytics, voice AI, ranking intel, and demand forecasting for your business."
-                rimVariant="default"
-              />
+
+              {/* ── Map section — hero at the top ─────────────────────────── */}
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Your Locations</h2>
+                  {locations.length > 0 && (
+                    <Link href="/dashboard/locations" className="text-xs font-medium transition-colors hover:opacity-75" style={{ color: "oklch(0.48 0.22 350)" }}>
+                      Manage →
+                    </Link>
+                  )}
+                </div>
+
+                {loading ? (
+                  <div className="h-72 rounded-2xl animate-pulse" style={{ background: "oklch(0.93 0.005 350)" }} />
+                ) : locations.length > 0 ? (
+                  <div className="h-72">
+                    <LocationsMap
+                      locations={locations}
+                      onSelect={() => router.push("/dashboard/locations")}
+                    />
+                  </div>
+                ) : (
+                  <ConnectGooglePrompt />
+                )}
+              </section>
 
               {/* Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {STATS.map((s) => <StatCard key={s.label} {...s} />)}
               </div>
 
-              {/* Onboarding prompt */}
-              {!loading && locations.length === 0 && (
-                <div className="rounded-2xl border-2 border-dashed p-8 text-center" style={{ borderColor: "oklch(0.58 0.24 350 / 35%)", background: "oklch(0.58 0.24 350 / 5%)" }}>
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: "oklch(0.58 0.24 350 / 15%)" }}>
-                    <MapPin className="w-6 h-6" style={{ color: "oklch(0.48 0.22 350)" }} />
-                  </div>
-                  <h3 className="text-base font-semibold text-gray-800 mb-2">Connect your first endpoint</h3>
-                  <p className="text-sm text-gray-400 mb-6 max-w-sm mx-auto">Connect your Google Business account to activate all endpoint monitoring.</p>
-                  <Link href="/onboarding" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 hover:shadow-md" style={{ background: "oklch(0.58 0.24 350)" }}>
-                    Connect Google Business <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              )}
-
-              {/* Endpoint grid + Activity feed */}
+              {/* Endpoint grid + Location list */}
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
                 {/* Endpoints */}
                 <div className="lg:col-span-3">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Digital Endpoints</h2>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Services</h2>
                     <span className="text-xs text-gray-300 font-medium">{ENDPOINTS.filter(e => e.status === "live").length}/{ENDPOINTS.length} live</span>
                   </div>
                   <div className="space-y-2">
@@ -222,63 +246,39 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Activity feed */}
+                {/* Location cards */}
                 <div className="lg:col-span-2">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Activity</h2>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs text-gray-300 font-medium">Live</span>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Locations</h2>
+                  </div>
+                  {locations.length === 0 ? (
+                    <div className="rounded-2xl border p-6 text-center" style={{ background: "white", borderColor: "rgba(0,0,0,0.07)" }}>
+                      <p className="text-xs text-gray-400">No locations yet</p>
                     </div>
-                  </div>
-                  <div className="rounded-2xl border p-4 divide-y divide-gray-50" style={{ background: "white", borderColor: "rgba(0,0,0,0.07)" }}>
-                    {MOCK_FEED.map((event, i) => (
-                      <FeedItem key={i} event={event} />
-                    ))}
-                  </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {locations.slice(0, 5).map((loc) => (
+                        <div key={loc.id} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all hover:shadow-sm" style={{ background: "white", border: "1px solid oklch(0.91 0.008 350)" }}>
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "oklch(0.58 0.24 350 / 10%)" }}>
+                            <MapPin className="w-3.5 h-3.5" style={{ color: "oklch(0.48 0.22 350)" }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-gray-800 truncate">{loc.title}</div>
+                            <div className="text-[10px] text-gray-400 truncate">{loc.address ?? loc.email}</div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="text-right">
+                              <div className="text-xs font-semibold text-gray-800">{loc.average_rating?.toFixed(1) ?? "—"}</div>
+                              <div className="text-[10px] text-gray-400">{loc.total_review_count ?? 0} rev</div>
+                            </div>
+                            <div className={`w-1.5 h-1.5 rounded-full ${loc.status ? "bg-emerald-500" : "bg-gray-200"}`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Locations table */}
-              {locations.length > 0 && (
-                <section>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Locations</h2>
-                    <Link href="/dashboard/locations" className="text-xs font-medium transition-colors hover:opacity-75" style={{ color: "oklch(0.48 0.22 350)" }}>View all</Link>
-                  </div>
-                  {/* Map overview — the brand's footprint at a glance */}
-                  <div className="h-64 mb-3">
-                    <LocationsMap
-                      locations={locations}
-                      onSelect={() => router.push("/dashboard/locations")}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    {locations.slice(0, 5).map((loc) => (
-                      <div key={loc.id} className="flex items-center gap-4 rounded-xl px-4 py-3 transition-all hover:shadow-sm" style={{ background: "white", border: "1px solid oklch(0.91 0.008 350)" }}>
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "oklch(0.58 0.24 350 / 12%)" }}>
-                          <MapPin className="w-4 h-4" style={{ color: "oklch(0.48 0.22 350)" }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-800 truncate">{loc.title}</div>
-                          <div className="text-xs text-gray-400">{loc.email}</div>
-                        </div>
-                        <div className="flex items-center gap-4 flex-shrink-0">
-                          <div className="text-right">
-                            <div className="text-sm font-semibold text-gray-800">{loc.average_rating?.toFixed(1) ?? "—"}</div>
-                            <div className="text-[10px] text-gray-400">rating</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-semibold text-gray-800">{loc.total_review_count ?? 0}</div>
-                            <div className="text-[10px] text-gray-400">reviews</div>
-                          </div>
-                          <div className={`w-1.5 h-1.5 rounded-full ${loc.status ? "bg-emerald-500" : "bg-gray-200"}`} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
 
             </div>
           </div>

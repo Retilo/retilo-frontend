@@ -5,9 +5,9 @@ import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import {
-  LayoutDashboard, Star, BarChart3, Workflow,
+  LayoutDashboard, Star, BarChart3,
   MapPin, Send, LogOut, Users, Zap, Grid2X2, Mail, Sparkles,
-  ShoppingBag, Phone, TrendingUp, Globe, Scan, Activity, Moon, Sun,
+  ShoppingBag, Phone, TrendingUp, Globe, Scan, Activity, Moon, Sun, FileText,
 } from "lucide-react"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -19,8 +19,8 @@ const GMB_NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { label: "Reviews", icon: Star, href: "/dashboard/reviews", badge: "5" },
   { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
-  { label: "Workflows", icon: Workflow, href: "/dashboard/workflows" },
   { label: "Locations", icon: MapPin, href: "/dashboard/locations" },
+  { label: "Posts", icon: FileText, href: "/dashboard/posts" },
   { label: "Review Campaigns", icon: Send, href: "/dashboard/campaigns" },
   { label: "Competitors", icon: Users, href: "/dashboard/competitors" },
   { label: "Ranking", icon: Grid2X2, href: "/dashboard/ranking" },
