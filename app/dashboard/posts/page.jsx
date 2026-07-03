@@ -3,17 +3,21 @@
 import { useEffect, useState, useRef } from "react"
 import { AppSidebar } from "@/components/dashboard/sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { FileText, Sparkles, Plus, X, Send, Trash2, Bot, User, ChevronDown } from "lucide-react"
+import { FileText, Sparkles, Plus, X, Send, Trash2, Bot, User, ChevronDown, ImagePlus } from "lucide-react"
 import { api } from "@/lib/api"
 
 const ACCENT = "oklch(0.58 0.24 350)"
 const ACCENT_MID = "oklch(0.48 0.22 350)"
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function fmtDate(iso) {
   if (!iso) return ""
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+}
+
+function parseDate(str) {
+  if (!str) return undefined
+  const [y, m, d] = str.split("-").map(Number)
+  return { year: y, month: m, day: d }
 }
 
 function SourceBadge({ source }) {
@@ -27,6 +31,20 @@ function SourceBadge({ source }) {
     >
       {isAI ? <Bot className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
       {isAI ? "AI agent" : "Manual"}
+    </span>
+  )
+}
+
+function TypeBadge({ type }) {
+  const cfg = {
+    STANDARD: { label: "Update", color: "#6366f1" },
+    OFFER:    { label: "Offer",  color: "#f59e0b" },
+    EVENT:    { label: "Event",  color: "#10b981" },
+  }[type] ?? { label: type || "Update", color: "#94a3b8" }
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+      style={{ background: `${cfg.color}18`, color: cfg.color }}>
+      {cfg.label}
     </span>
   )
 }
@@ -45,8 +63,6 @@ function StateBadge({ state }) {
     </span>
   )
 }
-
-// ── Post card ─────────────────────────────────────────────────────────────────
 
 function PostCard({ post, onDelete }) {
   const [deleting, setDeleting] = useState(false)
@@ -68,6 +84,7 @@ function PostCard({ post, onDelete }) {
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <SourceBadge source={post.source} />
+          <TypeBadge type={post.topic_type} />
           <StateBadge state={post.state} />
           <span className="text-[10px] text-gray-400">{fmtDate(post.published_at || post.created_at)}</span>
         </div>
@@ -80,6 +97,13 @@ function PostCard({ post, onDelete }) {
           <Trash2 className="w-3.5 h-3.5 text-red-400" />
         </button>
       </div>
+      {post.media_url && (
+        <img
+          src={post.media_url}
+          alt="Post media"
+          className="w-full h-36 object-cover rounded-xl mb-3"
+        />
+      )}
       <p className="text-sm text-gray-700 leading-relaxed">{post.summary}</p>
       {post.call_to_action?.url && (
         <a
@@ -96,18 +120,68 @@ function PostCard({ post, onDelete }) {
   )
 }
 
-// ── Create post drawer ────────────────────────────────────────────────────────
+const POST_TYPES = [
+  { id: "STANDARD", label: "Update" },
+  { id: "OFFER",    label: "Offer" },
+  { id: "EVENT",    label: "Event" },
+]
+
+function FieldInput({ label, value, onChange, placeholder, type = "text" }) {
+  return (
+    <div>
+      <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1"
+        style={{ borderColor: `${ACCENT}20`, background: "oklch(0.985 0.003 350)" }}
+      />
+    </div>
+  )
+}
 
 function CreateDrawer({ locations, onClose, onCreated }) {
   const [locationId, setLocationId] = useState(locations[0]?.google_location_id ?? "")
-  const [summary, setSummary] = useState("")
-  const [ctaUrl, setCtaUrl] = useState("")
-  const [drafting, setDrafting] = useState(false)
-  const [posting, setPosting] = useState(false)
-  const [error, setError] = useState(null)
-  const textRef = useRef(null)
+  const [postType, setPostType]     = useState("STANDARD")
+  const [summary, setSummary]       = useState("")
+  const [ctaUrl, setCtaUrl]         = useState("")
+  const [drafting, setDrafting]     = useState(false)
+  const [posting, setPosting]       = useState(false)
+  const [error, setError]           = useState(null)
 
+  const [imageFile, setImageFile]       = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const fileInputRef = useRef(null)
+
+  const [couponCode, setCouponCode]   = useState("")
+  const [redeemUrl, setRedeemUrl]     = useState("")
+  const [terms, setTerms]             = useState("")
+  const [offerStart, setOfferStart]   = useState("")
+  const [offerEnd, setOfferEnd]       = useState("")
+
+  const [eventTitle, setEventTitle]   = useState("")
+  const [eventStart, setEventStart]   = useState("")
+  const [eventEnd, setEventEnd]       = useState("")
+
+  const textRef = useRef(null)
   const selectedLoc = locations.find(l => l.google_location_id === locationId)
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setImagePreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
 
   const handleAIDraft = async () => {
     if (!locationId) return
@@ -131,16 +205,39 @@ function CreateDrawer({ locations, onClose, onCreated }) {
 
   const handlePost = async () => {
     if (!summary.trim()) return
+    if (postType === "EVENT" && !eventTitle.trim()) { setError("Event title is required"); return }
     setPosting(true)
     setError(null)
     try {
-      const body = {
-        locationId,
-        summary: summary.trim(),
-        topicType: "STANDARD",
-        source: "manual",
+      let mediaUrl = null
+      if (imageFile) {
+        const fd = new FormData()
+        fd.append("file", imageFile)
+        const upRes = await api.post("/v1/media/upload", fd, { headers: { "Content-Type": "multipart/form-data" } })
+        mediaUrl = upRes.data.data.url
       }
-      if (ctaUrl.trim()) body.callToAction = { actionType: "LEARN_MORE", url: ctaUrl.trim() }
+
+      const body = { locationId, summary: summary.trim(), topicType: postType, source: "manual" }
+      if (ctaUrl.trim()) body.callToAction = { actionType: postType === "OFFER" ? "GET_OFFER" : "LEARN_MORE", url: ctaUrl.trim() }
+      if (mediaUrl) body.media = [{ mediaFormat: "PHOTO", sourceUrl: mediaUrl }]
+
+      if (postType === "OFFER") {
+        const offer = {}
+        if (couponCode.trim()) offer.couponCode = couponCode.trim()
+        if (redeemUrl.trim()) offer.redeemOnlineUrl = redeemUrl.trim()
+        if (terms.trim()) offer.termsConditions = terms.trim()
+        const sd = parseDate(offerStart), ed = parseDate(offerEnd)
+        if (sd && ed) offer.redeemTimePeriod = { startDate: sd, endDate: ed }
+        if (Object.keys(offer).length) body.offer = offer
+      }
+
+      if (postType === "EVENT") {
+        body.event = {
+          title: eventTitle.trim(),
+          schedule: { startDate: parseDate(eventStart), endDate: parseDate(eventEnd) },
+        }
+      }
+
       const res = await api.post("/v1/gmb/posts", body)
       onCreated(res.data.data)
       onClose()
@@ -149,6 +246,8 @@ function CreateDrawer({ locations, onClose, onCreated }) {
       setPosting(false)
     }
   }
+
+  const canPost = !posting && summary.trim() && locationId && (postType !== "EVENT" || eventTitle.trim())
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgba(0,0,0,0.35)" }} onClick={onClose}>
@@ -170,6 +269,26 @@ function CreateDrawer({ locations, onClose, onCreated }) {
 
         {/* Body */}
         <div className="flex-1 px-6 py-6 space-y-5">
+
+          {/* Post type tabs */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 mb-2 block">Post type</label>
+            <div className="flex gap-2">
+              {POST_TYPES.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setPostType(t.id)}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all"
+                  style={postType === t.id
+                    ? { background: ACCENT, color: "white" }
+                    : { background: "oklch(0.94 0.005 270)", color: "oklch(0.45 0.01 270)" }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Location picker */}
           {locations.length > 1 && (
             <div>
@@ -188,6 +307,16 @@ function CreateDrawer({ locations, onClose, onCreated }) {
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
+          )}
+
+          {/* Event title (EVENT only) */}
+          {postType === "EVENT" && (
+            <FieldInput
+              label="Event title *"
+              value={eventTitle}
+              onChange={setEventTitle}
+              placeholder="e.g. Grand Opening Sale"
+            />
           )}
 
           {/* Post text */}
@@ -209,13 +338,84 @@ function CreateDrawer({ locations, onClose, onCreated }) {
               value={summary}
               onChange={e => setSummary(e.target.value)}
               maxLength={1500}
-              rows={6}
+              rows={5}
               placeholder="What's new at your business this week?"
               className="w-full rounded-xl border px-4 py-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-1"
-              style={{ borderColor: `${ACCENT}20`, background: "oklch(0.985 0.003 350)", focusRingColor: ACCENT }}
+              style={{ borderColor: `${ACCENT}20`, background: "oklch(0.985 0.003 350)" }}
             />
             <div className="text-right text-[10px] text-gray-400 mt-0.5">{summary.length}/1500</div>
           </div>
+
+          {/* Image upload */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+              Photo <span className="font-normal text-gray-400">(optional)</span>
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            {imagePreview ? (
+              <div className="relative rounded-xl overflow-hidden">
+                <img src={imagePreview} alt="Preview" className="w-full h-36 object-cover" />
+                <button
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full rounded-xl border-2 border-dashed py-6 flex flex-col items-center gap-2 transition-colors hover:border-current"
+                style={{ borderColor: `${ACCENT}30`, color: ACCENT_MID }}
+              >
+                <ImagePlus className="w-5 h-5" />
+                <span className="text-xs font-medium">Add photo</span>
+              </button>
+            )}
+          </div>
+
+          {/* Offer fields */}
+          {postType === "OFFER" && (
+            <div className="space-y-3">
+              <div className="h-px" style={{ background: `${ACCENT}14` }} />
+              <p className="text-xs font-semibold text-gray-500">Offer details</p>
+              <FieldInput label="Coupon code (optional)" value={couponCode} onChange={setCouponCode} placeholder="e.g. SAVE20" />
+              <FieldInput label="Redeem URL (optional)" value={redeemUrl} onChange={setRedeemUrl} placeholder="https://…" type="url" />
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Terms &amp; conditions (optional)</label>
+                <textarea
+                  value={terms}
+                  onChange={e => setTerms(e.target.value)}
+                  rows={2}
+                  placeholder="Offer T&Cs…"
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm text-gray-700 resize-none focus:outline-none"
+                  style={{ borderColor: `${ACCENT}20`, background: "oklch(0.985 0.003 350)" }}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <FieldInput label="Start date" value={offerStart} onChange={setOfferStart} type="date" placeholder="" />
+                <FieldInput label="End date"   value={offerEnd}   onChange={setOfferEnd}   type="date" placeholder="" />
+              </div>
+            </div>
+          )}
+
+          {/* Event date fields */}
+          {postType === "EVENT" && (
+            <div className="space-y-3">
+              <div className="h-px" style={{ background: `${ACCENT}14` }} />
+              <p className="text-xs font-semibold text-gray-500">Event schedule</p>
+              <div className="grid grid-cols-2 gap-3">
+                <FieldInput label="Start date" value={eventStart} onChange={setEventStart} type="date" placeholder="" />
+                <FieldInput label="End date"   value={eventEnd}   onChange={setEventEnd}   type="date" placeholder="" />
+              </div>
+            </div>
+          )}
 
           {/* CTA URL */}
           <div>
@@ -243,7 +443,7 @@ function CreateDrawer({ locations, onClose, onCreated }) {
         <div className="px-6 py-4 border-t" style={{ borderColor: `${ACCENT}14` }}>
           <button
             onClick={handlePost}
-            disabled={posting || !summary.trim() || !locationId}
+            disabled={!canPost}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
             style={{ background: ACCENT }}
           >
@@ -256,12 +456,10 @@ function CreateDrawer({ locations, onClose, onCreated }) {
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
-
 export default function PostsPage() {
-  const [locations, setLocations] = useState([])
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [locations, setLocations]   = useState([])
+  const [posts, setPosts]           = useState([])
+  const [loading, setLoading]       = useState(true)
   const [selectedLoc, setSelectedLoc] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
 
@@ -312,7 +510,6 @@ export default function PostsPage() {
       <SidebarInset className="h-full overflow-hidden" style={{ background: "oklch(0.985 0.003 350)" }}>
         <div className="flex flex-col h-full">
 
-          {/* Top bar */}
           <div
             className="flex items-center justify-between px-8 py-4 sticky top-0 z-10 backdrop-blur-sm"
             style={{ background: "oklch(0.985 0.003 350 / 85%)", borderBottom: "1px solid oklch(0.91 0.008 350)" }}
@@ -352,7 +549,6 @@ export default function PostsPage() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-8 py-8">
 
