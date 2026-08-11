@@ -19,10 +19,7 @@ export default function DeleteAccountPage() {
 
   const isGmbOnly = mode === "gmb"
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (stage === "form") { setStage("confirm"); return }
-
+  const performDelete = async () => {
     setError(""); setLoading(true)
     try {
       const endpoint = isGmbOnly ? "/v1/auth/account/gmb" : "/v1/auth/account"
@@ -35,6 +32,12 @@ export default function DeleteAccountPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (stage === "form") { setStage("confirm"); return }
+    await performDelete()
   }
 
   if (stage === "done") {
@@ -134,7 +137,7 @@ export default function DeleteAccountPage() {
                   className="flex-1 py-2.5 rounded-xl text-gray-700 text-sm font-semibold border border-gray-200 hover:bg-gray-50 transition-colors">
                   Cancel
                 </button>
-                <button type="button" disabled={loading} onClick={handleSubmit}
+                <button type="button" disabled={loading} onClick={performDelete}
                   className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-60"
                   style={{ background: isGmbOnly ? "oklch(0.65 0.18 60)" : "oklch(0.55 0.22 25)" }}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
