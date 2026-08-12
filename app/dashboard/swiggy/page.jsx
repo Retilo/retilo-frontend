@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import {
   Zap, Link2, Unlink, RefreshCw, TrendingUp, TrendingDown,
   Minus, Star, Search, Trash2, X, ChevronRight, ShoppingBag,
-  BarChart2, DollarSign, Hash,
+  BarChart2, DollarSign, Hash, GitBranch, MapPin, Plus, Check,
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { api } from "@/lib/api"
@@ -279,6 +279,153 @@ function ScanModal({ onClose, onScan }) {
   )
 }
 
+// ── Branches section ──────────────────────────────────────────────
+function BranchesSection({ branches, onRemove, onAdd }) {
+  const [showAdd, setShowAdd] = useState(false)
+  const [locations, setLocations] = useState([])
+  const [selectedLoc, setSelectedLoc] = useState(null)
+  const [adding, setAdding] = useState(false)
+
+  const openAdd = async () => {
+    try {
+      const res = await api.get("/v1/gmb/locations")
+      const list = Array.isArray(res.data?.data)
+        ? res.data.data
+        : (res.data?.data?.locations ?? [])
+      setLocations(list.filter(l => l.lat || l.latitude))
+    } catch {}
+    setSelectedLoc(null)
+    setShowAdd(true)
+  }
+
+  const handleAdd = async () => {
+    if (!selectedLoc) return
+    setAdding(true)
+    try {
+      const locId = parseInt(
+        (selectedLoc.google_location_id ?? selectedLoc.googleLocationId ?? "").replace(/\D/g, ""),
+        10
+      )
+      await api.post("/v1/swiggy/branches", {
+        locationId: locId,
+        latitude: selectedLoc.lat ?? selectedLoc.latitude,
+        longitude: selectedLoc.lng ?? selectedLoc.longitude,
+      })
+      setShowAdd(false)
+      onAdd()
+    } catch {} finally {
+      setAdding(false)
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <GitBranch className="w-3.5 h-3.5" style={{ color: TEXT_FAINT }} />
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
+            Branch Locations
+          </h2>
+        </div>
+        <button
+          onClick={openAdd}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+          style={{ background: `${ORANGE}15`, color: ORANGE, border: `1px solid ${ORANGE}28` }}
+        >
+          <Plus className="w-3 h-3" />
+          Add Branch
+        </button>
+      </div>
+
+      {branches.length === 0 ? (
+        <div className="py-6 text-center rounded-2xl" style={{ border: `1px dashed ${CARD_BORDER}` }}>
+          <p className="text-xs" style={{ color: TEXT_FAINT }}>No branches configured. Add one to set per-location restaurant context.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {branches.map(b => (
+            <div
+              key={b.locationId}
+              className="flex items-center gap-3 p-4 rounded-xl"
+              style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${ORANGE}12` }}>
+                <MapPin className="w-4 h-4" style={{ color: ORANGE }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium" style={{ color: TEXT }}>
+                  {b.locationTitle ?? `Branch ${b.locationId}`}
+                </div>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="flex items-center gap-1 text-[10px]" style={{ color: b.hasLocation ? GREEN : TEXT_FAINT }}>
+                    <Check className="w-2.5 h-2.5" />
+                    Location
+                  </span>
+                  <span className="flex items-center gap-1 text-[10px]" style={{ color: b.isMatched ? GREEN : TEXT_FAINT }}>
+                    <Check className="w-2.5 h-2.5" />
+                    Restaurant
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => onRemove(b.locationId)}
+                className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                style={{ color: TEXT_FAINT }}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showAdd && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowAdd(false)} />
+          <div className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold" style={{ color: TEXT }}>Add Branch Location</h3>
+              <button onClick={() => setShowAdd(false)} style={{ color: TEXT_FAINT }}><X className="w-4 h-4" /></button>
+            </div>
+            {locations.length === 0 ? (
+              <p className="text-xs py-4 text-center" style={{ color: TEXT_MUTED }}>No GMB locations with coordinates found.</p>
+            ) : (
+              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+                {locations.map(loc => {
+                  const id = loc.google_location_id ?? loc.googleLocationId
+                  const sel = selectedLoc && (selectedLoc.google_location_id ?? selectedLoc.googleLocationId) === id
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setSelectedLoc(loc)}
+                      className="w-full text-left p-3 rounded-xl transition-all"
+                      style={{
+                        background: sel ? `${ORANGE}10` : INPUT_BG,
+                        border: `1px solid ${sel ? ORANGE + "40" : INPUT_BORDER}`,
+                      }}
+                    >
+                      <div className="text-sm font-medium" style={{ color: TEXT }}>{loc.title ?? loc.name}</div>
+                      {loc.address && <div className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>{loc.address}</div>}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            <button
+              onClick={handleAdd}
+              disabled={adding || !selectedLoc}
+              className="w-full py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-50 hover:opacity-90"
+              style={{ background: ORANGE }}
+            >
+              {adding ? "Adding…" : "Add Branch"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────
 export default function SwiggyPage() {
   const router = useRouter()
@@ -291,6 +438,7 @@ export default function SwiggyPage() {
   const [disconnecting, setDisconnecting] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [showScanModal, setShowScanModal] = useState(false)
+  const [branches, setBranches] = useState([])
 
   useEffect(() => {
     if (!localStorage.getItem("retilo_token")) { router.replace("/auth"); return }
@@ -300,13 +448,15 @@ export default function SwiggyPage() {
   const fetchAll = async () => {
     setLoading(true)
     try {
-      const [statusRes, competitorRes] = await Promise.allSettled([
+      const [statusRes, competitorRes, branchRes] = await Promise.allSettled([
         api.get("/v1/swiggy/auth/status"),
         api.get("/v1/swiggy/competitors"),
+        api.get("/v1/swiggy/branches"),
       ])
 
       const s = statusRes.status === "fulfilled" ? statusRes.value.data?.data : { connected: false }
       setStatus(s ?? { connected: false })
+      if (branchRes.status === "fulfilled") setBranches(branchRes.value.data?.data?.branches ?? [])
 
       if (s?.connected) {
         const [pricingRes, rankingRes] = await Promise.allSettled([
@@ -343,6 +493,11 @@ export default function SwiggyPage() {
   const handleDeleteCompetitor = async (id) => {
     await api.delete(`/v1/swiggy/competitors/${id}`)
     setCompetitors(prev => prev.filter(c => c.id !== id))
+  }
+
+  const handleRemoveBranch = async (locationId) => {
+    await api.delete(`/v1/swiggy/branches/${locationId}`)
+    setBranches(prev => prev.filter(b => b.locationId !== locationId))
   }
 
   const handleScan = async (keywords) => {
@@ -391,6 +546,12 @@ export default function SwiggyPage() {
 
             {status?.connected && (
               <>
+                <BranchesSection
+                  branches={branches}
+                  onRemove={handleRemoveBranch}
+                  onAdd={fetchAll}
+                />
+
                 {/* Intelligence grid */}
                 {(pricing || rankings.length > 0) && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
