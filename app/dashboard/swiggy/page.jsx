@@ -282,41 +282,72 @@ function ScanModal({ onClose, onScan }) {
 // ── Branches section ──────────────────────────────────────────────
 function BranchesSection({ branches, onRemove, onAdd }) {
   const [showAdd, setShowAdd] = useState(false)
+  const [mode, setMode] = useState("gmb") // "gmb" | "manual"
   const [locations, setLocations] = useState([])
   const [selectedLoc, setSelectedLoc] = useState(null)
+  const [manualName, setManualName] = useState("")
+  const [manualLat, setManualLat] = useState("")
+  const [manualLng, setManualLng] = useState("")
   const [adding, setAdding] = useState(false)
+  const [error, setError] = useState("")
 
   const openAdd = async () => {
+    setMode("gmb")
+    setSelectedLoc(null)
+    setManualName("")
+    setManualLat("")
+    setManualLng("")
+    setError("")
     try {
       const res = await api.get("/v1/gmb/locations")
       const list = Array.isArray(res.data?.data)
         ? res.data.data
         : (res.data?.data?.locations ?? [])
       setLocations(list.filter(l => l.lat || l.latitude))
-    } catch {}
-    setSelectedLoc(null)
+    } catch {
+      setLocations([])
+    }
     setShowAdd(true)
   }
 
   const handleAdd = async () => {
-    if (!selectedLoc) return
+    setError("")
     setAdding(true)
     try {
-      const locId = parseInt(
-        (selectedLoc.google_location_id ?? selectedLoc.googleLocationId ?? "").replace(/\D/g, ""),
-        10
-      )
-      await api.post("/v1/swiggy/branches", {
-        locationId: locId,
-        latitude: selectedLoc.lat ?? selectedLoc.latitude,
-        longitude: selectedLoc.lng ?? selectedLoc.longitude,
-      })
+      if (mode === "gmb") {
+        if (!selectedLoc) return
+        await api.post("/v1/swiggy/branches", {
+          locationId: selectedLoc.id,
+          branchName: selectedLoc.title ?? selectedLoc.name ?? null,
+          latitude:   selectedLoc.lat ?? selectedLoc.latitude,
+          longitude:  selectedLoc.lng ?? selectedLoc.longitude,
+        })
+      } else {
+        const lat = parseFloat(manualLat)
+        const lng = parseFloat(manualLng)
+        if (!manualName.trim())       { setError("Branch name is required"); return }
+        if (isNaN(lat) || isNaN(lng)) { setError("Enter valid latitude and longitude"); return }
+        if (lat < -90 || lat > 90)    { setError("Latitude must be between -90 and 90"); return }
+        if (lng < -180 || lng > 180)  { setError("Longitude must be between -180 and 180"); return }
+        await api.post("/v1/swiggy/branches", {
+          locationId: Date.now(),
+          branchName: manualName.trim(),
+          latitude:   lat,
+          longitude:  lng,
+        })
+      }
       setShowAdd(false)
       onAdd()
-    } catch {} finally {
+    } catch (e) {
+      setError(e?.response?.data?.message ?? "Failed to add branch")
+    } finally {
       setAdding(false)
     }
   }
+
+  const canSubmit = mode === "gmb"
+    ? !!selectedLoc
+    : (manualName.trim() && manualLat && manualLng)
 
   return (
     <div>
@@ -345,7 +376,7 @@ function BranchesSection({ branches, onRemove, onAdd }) {
         <div className="space-y-2">
           {branches.map(b => (
             <div
-              key={b.locationId}
+              key={b.location_id}
               className="flex items-center gap-3 p-4 rounded-xl"
               style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
             >
@@ -354,21 +385,21 @@ function BranchesSection({ branches, onRemove, onAdd }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium" style={{ color: TEXT }}>
-                  {b.locationTitle ?? `Branch ${b.locationId}`}
+                  {b.branch_name ?? `Branch ${b.location_id}`}
                 </div>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="flex items-center gap-1 text-[10px]" style={{ color: b.hasLocation ? GREEN : TEXT_FAINT }}>
+                  <span className="flex items-center gap-1 text-[10px]" style={{ color: (b.latitude && b.longitude) ? GREEN : TEXT_FAINT }}>
                     <Check className="w-2.5 h-2.5" />
                     Location
                   </span>
-                  <span className="flex items-center gap-1 text-[10px]" style={{ color: b.isMatched ? GREEN : TEXT_FAINT }}>
+                  <span className="flex items-center gap-1 text-[10px]" style={{ color: b.own_swiggy_restaurant_id ? GREEN : TEXT_FAINT }}>
                     <Check className="w-2.5 h-2.5" />
                     Restaurant
                   </span>
                 </div>
               </div>
               <button
-                onClick={() => onRemove(b.locationId)}
+                onClick={() => onRemove(b.location_id)}
                 className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
                 style={{ color: TEXT_FAINT }}
               >
@@ -387,33 +418,105 @@ function BranchesSection({ branches, onRemove, onAdd }) {
               <h3 className="text-sm font-semibold" style={{ color: TEXT }}>Add Branch Location</h3>
               <button onClick={() => setShowAdd(false)} style={{ color: TEXT_FAINT }}><X className="w-4 h-4" /></button>
             </div>
-            {locations.length === 0 ? (
-              <p className="text-xs py-4 text-center" style={{ color: TEXT_MUTED }}>No GMB locations with coordinates found.</p>
+
+            {/* Mode toggle */}
+            <div className="flex rounded-xl overflow-hidden mb-4" style={{ border: `1px solid ${INPUT_BORDER}` }}>
+              {["gmb", "manual"].map(m => (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); setError("") }}
+                  className="flex-1 py-2 text-xs font-semibold transition-all"
+                  style={{
+                    background: mode === m ? ORANGE : "transparent",
+                    color: mode === m ? "#fff" : TEXT_MUTED,
+                  }}
+                >
+                  {m === "gmb" ? "From GMB" : "Enter manually"}
+                </button>
+              ))}
+            </div>
+
+            {mode === "gmb" ? (
+              locations.length === 0 ? (
+                <p className="text-xs py-4 text-center" style={{ color: TEXT_MUTED }}>
+                  No GMB locations with coordinates found. Use manual entry instead.
+                </p>
+              ) : (
+                <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
+                  {locations.map(loc => {
+                    const sel = selectedLoc?.id === loc.id
+                    return (
+                      <button
+                        key={loc.id}
+                        onClick={() => setSelectedLoc(loc)}
+                        className="w-full text-left p-3 rounded-xl transition-all"
+                        style={{
+                          background: sel ? `${ORANGE}10` : INPUT_BG,
+                          border: `1px solid ${sel ? ORANGE + "40" : INPUT_BORDER}`,
+                        }}
+                      >
+                        <div className="text-sm font-medium" style={{ color: TEXT }}>{loc.title ?? loc.name}</div>
+                        {loc.address && <div className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>{loc.address}</div>}
+                      </button>
+                    )
+                  })}
+                </div>
+              )
             ) : (
-              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
-                {locations.map(loc => {
-                  const id = loc.google_location_id ?? loc.googleLocationId
-                  const sel = selectedLoc && (selectedLoc.google_location_id ?? selectedLoc.googleLocationId) === id
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => setSelectedLoc(loc)}
-                      className="w-full text-left p-3 rounded-xl transition-all"
-                      style={{
-                        background: sel ? `${ORANGE}10` : INPUT_BG,
-                        border: `1px solid ${sel ? ORANGE + "40" : INPUT_BORDER}`,
-                      }}
-                    >
-                      <div className="text-sm font-medium" style={{ color: TEXT }}>{loc.title ?? loc.name}</div>
-                      {loc.address && <div className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>{loc.address}</div>}
-                    </button>
-                  )
-                })}
+              <div className="space-y-3 mb-4">
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Branch name</label>
+                  <input
+                    value={manualName}
+                    onChange={e => setManualName(e.target.value)}
+                    placeholder="e.g. Koramangala outlet"
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                    onFocus={e => e.target.style.borderColor = ORANGE}
+                    onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Latitude</label>
+                    <input
+                      type="number"
+                      value={manualLat}
+                      onChange={e => setManualLat(e.target.value)}
+                      placeholder="12.9352"
+                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                      style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                      onFocus={e => e.target.style.borderColor = ORANGE}
+                      onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Longitude</label>
+                    <input
+                      type="number"
+                      value={manualLng}
+                      onChange={e => setManualLng(e.target.value)}
+                      placeholder="77.6245"
+                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                      style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                      onFocus={e => e.target.style.borderColor = ORANGE}
+                      onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px]" style={{ color: TEXT_FAINT }}>
+                  Right-click any location in Google Maps and copy the coordinates.
+                </p>
               </div>
             )}
+
+            {error && (
+              <p className="text-xs mb-3" style={{ color: RED }}>{error}</p>
+            )}
+
             <button
               onClick={handleAdd}
-              disabled={adding || !selectedLoc}
+              disabled={adding || !canSubmit}
               className="w-full py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-50 hover:opacity-90"
               style={{ background: ORANGE }}
             >
