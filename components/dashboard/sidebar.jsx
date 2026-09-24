@@ -7,7 +7,7 @@ import { useEffect, useState } from "react"
 import {
   LayoutDashboard, Star, BarChart3,
   MapPin, Send, LogOut, Users, Zap, Grid2X2, Mail, Sparkles,
-  ShoppingBag, Phone, TrendingUp, Globe, Scan, Activity, Moon, Sun, FileText,
+  ShoppingBag, Phone, TrendingUp, Globe, Scan, Activity, Moon, Sun, FileText, BookOpen,
 } from "lucide-react"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
@@ -216,6 +216,7 @@ export function AppSidebar() {
         </div>
         <SidebarMenu className="gap-0.5">
           {[
+            { label: "Booking Page", icon: BookOpen, href: "/dashboard/booking-page" },
             { label: "Swiggy", icon: ShoppingBag, href: "/dashboard/swiggy" },
             { label: "Voice AI", icon: Phone, href: "/dashboard/voice" },
           ].map((item) => {
