@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Retilo
+
+Open-source Retail Customer Experience (CX) platform for SMBs.
+
+Retilo helps retailers and local businesses manage customer engagement, automate workflows, improve online presence, and grow with AI-powered tools—all from a single platform.
+
+🌐 **Try it:** https://app.retilo.io
+
+## Features
+
+- ⭐ Google Reviews management
+- 🤖 AI-powered customer engagement
+- 📈 Marketing campaigns
+- 💬 Customer communication
+- 📊 Business insights & analytics
+- 🏪 Multi-store management
+- 🔌 Extensible APIs & integrations
+
+## Why Retilo?
+
+Most SMBs struggle with fragmented tools for customer communication, reviews, and marketing. Retilo brings everything together into one modern, open-source platform built specifically for retail businesses.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- Docker (recommended)
+- PostgreSQL
+
+### Installation
 
 ```bash
+git clone https://github.com/<your-username>/retilo.git
+cd retilo
+
+# Install dependencies
+npm install
+
+# Configure environment variables
+cp .env.example .env
+
+# Start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Contributing
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+We welcome contributions from the community! Feel free to open issues, submit pull requests, or suggest new features.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Roadmap
 
-## Learn More
+- [ ] AI Agents for Retail
+- [ ] WhatsApp & Instagram integrations
+- [ ] Advanced analytics
+- [ ] Marketplace integrations
+- [ ] Mobile application
+- [ ] Plugin ecosystem
 
-To learn more about Next.js, take a look at the following resources:
+## Community
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 🌐 Website: https://retilo.io
+- 🚀 App: https://app.retilo.io
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+If you find Retilo useful, consider giving this repository a ⭐.

@@ -405,15 +405,25 @@ export default function VoicePage() {
       title="Voice AI"
       subtitle="AI phone receptionist for your stores — handles product queries, hours, directions and stock checks"
       actions={
-        <button
-          onClick={() => setShowProvision(true)}
-          disabled={locations.length === 0}
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all disabled:opacity-40 hover:opacity-90"
-          style={{ background: BLUE }}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          New agent
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push("/dashboard/voice/numbers")}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+            style={{ background: `${PINK}12`, color: PINK, border: `1px solid ${PINK}30` }}
+          >
+            <Hash className="w-3.5 h-3.5" />
+            Get a number
+          </button>
+          <button
+            onClick={() => setShowProvision(true)}
+            disabled={locations.length === 0}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all disabled:opacity-40 hover:opacity-90"
+            style={{ background: BLUE }}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New agent
+          </button>
+        </div>
       }
     >
       <div className="max-w-3xl mx-auto px-8 py-6 space-y-8">
