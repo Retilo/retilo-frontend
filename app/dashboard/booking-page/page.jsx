@@ -151,6 +151,29 @@ function CopyButton({ text }) {
   )
 }
 
+// Compress image client-side to stay well under the 5 MB server limit.
+// Draws onto a canvas at max 1400px on longest side, quality 0.82 JPEG.
+async function compressImage(file, maxPx = 1400, quality = 0.82) {
+  return new Promise((resolve) => {
+    const img = new window.Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+      if (width > maxPx || height > maxPx) {
+        if (width >= height) { height = Math.round(height * maxPx / width); width = maxPx }
+        else { width = Math.round(width * maxPx / height); height = maxPx }
+      }
+      const canvas = document.createElement("canvas")
+      canvas.width = width; canvas.height = height
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height)
+      canvas.toBlob(blob => resolve(blob ?? file), "image/jpeg", quality)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+    img.src = url
+  })
+}
+
 function ImageUploadZone({ label, url, onUpload, uploading }) {
   const inputRef = useRef(null)
   return (
@@ -169,7 +192,7 @@ function ImageUploadZone({ label, url, onUpload, uploading }) {
           <>
             <Upload className="w-5 h-5" style={{ color: TEXT_FAINT }} />
             <span className="text-xs" style={{ color: TEXT_FAINT }}>
-              {uploading ? "Uploading…" : "Click to upload (JPEG, PNG, WebP · max 5 MB)"}
+              {uploading ? "Uploading…" : "Click to upload (JPEG, PNG, WebP)"}
             </span>
           </>
         )}
@@ -180,7 +203,14 @@ function ImageUploadZone({ label, url, onUpload, uploading }) {
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
         className="hidden"
-        onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = "" }}
+        onChange={async e => {
+          const f = e.target.files?.[0]
+          if (f) {
+            const compressed = await compressImage(f)
+            onUpload(compressed)
+          }
+          e.target.value = ""
+        }}
       />
     </div>
   )
@@ -383,7 +413,7 @@ function EditForm({ initialForm, isNew, locations, onSave, onBack, showToast }) 
     setUploading(true)
     try {
       const fd = new FormData()
-      fd.append("image", file)
+      fd.append("image", file, "image.jpg")
       const res = await api.post(`/v1/brand-config/upload-image?type=${type}`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       })
