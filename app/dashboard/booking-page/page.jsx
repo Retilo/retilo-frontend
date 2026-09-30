@@ -12,6 +12,7 @@ import {
   BookOpen, Copy, Check, Upload, Globe, MessageSquare,
   Palette, MapPin, Phone, ExternalLink, Info,
   Plus, ChevronRight, ArrowLeft, Code2,
+  Search, X, UtensilsCrossed,
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { api } from "@/lib/api"
@@ -58,6 +59,8 @@ function emptyForm(locationId = null) {
     confirmationMessage: "",
     showPoweredBy:       true,
     locationId,
+    swiggyRestaurantId:  "",
+    swiggyRestaurantName: "",
   }
 }
 
@@ -78,6 +81,8 @@ function brandToForm(b) {
     confirmationMessage: b.confirmationMessage ?? b.confirmation_message ?? "",
     showPoweredBy:       b.showPoweredBy       ?? b.show_powered_by      ?? true,
     locationId:          b.locationId          ?? b.location_id          ?? null,
+    swiggyRestaurantId:  b.swiggyRestaurantId  ?? b.swiggy_restaurant_id ?? "",
+    swiggyRestaurantName: b.swiggyRestaurantName ?? "",
   }
 }
 
@@ -265,6 +270,121 @@ function LoadingSkeleton() {
   )
 }
 
+// ── Swiggy restaurant picker ──────────────────────────────────────
+
+function SwiggyRestaurantPicker({ restaurantId, restaurantName, onChange }) {
+  const [query, setQuery]       = useState("")
+  const [results, setResults]   = useState([])
+  const [searching, setSearching] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const debounceRef = useRef(null)
+
+  const search = (q) => {
+    if (!q.trim()) { setResults([]); setShowDropdown(false); return }
+    setSearching(true)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await api.get(`/v1/swiggy/restaurants/search?q=${encodeURIComponent(q.trim())}`)
+        const list = res.data?.data?.restaurants ?? res.data?.restaurants ?? []
+        setResults(list)
+        setShowDropdown(list.length > 0)
+      } catch (e) {
+        const msg = e?.response?.data?.message ?? ""
+        if (msg.includes("Location context")) {
+          setResults([{ _error: "Go to the Swiggy tab first and connect your Swiggy account to enable restaurant search." }])
+          setShowDropdown(true)
+        } else {
+          setResults([])
+          setShowDropdown(false)
+        }
+      } finally {
+        setSearching(false)
+      }
+    }, 400)
+  }
+
+  const handleSelect = (r) => {
+    onChange({ id: r.restaurantId, name: r.name })
+    setQuery("")
+    setResults([])
+    setShowDropdown(false)
+  }
+
+  const handleClear = () => onChange({ id: "", name: "" })
+
+  if (restaurantId) {
+    return (
+      <div
+        className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+        style={{ background: `oklch(0.50 0.18 145 / 0.08)`, border: `1px solid oklch(0.50 0.18 145 / 0.25)` }}
+      >
+        <UtensilsCrossed className="w-4 h-4 flex-shrink-0" style={{ color: "oklch(0.50 0.18 145)" }} />
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-semibold truncate" style={{ color: TEXT }}>{restaurantName || restaurantId}</div>
+          <div className="text-[11px] font-mono" style={{ color: TEXT_FAINT }}>ID: {restaurantId}</div>
+        </div>
+        <button
+          type="button"
+          onClick={handleClear}
+          className="flex items-center justify-center w-6 h-6 rounded-lg hover:opacity-70"
+          style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}` }}
+        >
+          <X className="w-3.5 h-3.5" style={{ color: TEXT_FAINT }} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: TEXT_FAINT }} />
+        <input
+          type="text"
+          value={query}
+          onChange={e => { setQuery(e.target.value); search(e.target.value) }}
+          placeholder="Search Swiggy Dineout restaurant…"
+          className="w-full pl-8 pr-3 py-2 rounded-xl text-sm outline-none"
+          style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+          onFocus={e => { e.target.style.borderColor = PINK; if (results.length) setShowDropdown(true) }}
+          onBlur={e => { e.target.style.borderColor = INPUT_BORDER; setTimeout(() => setShowDropdown(false), 150) }}
+        />
+        {searching && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 animate-spin"
+            style={{ borderColor: `${PINK} transparent transparent transparent` }} />
+        )}
+      </div>
+      {showDropdown && (
+        <div
+          className="absolute z-20 left-0 right-0 mt-1 rounded-xl shadow-lg overflow-hidden"
+          style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+        >
+          {results[0]?._error ? (
+            <div className="px-3 py-3 text-xs" style={{ color: TEXT_MUTED }}>{results[0]._error}</div>
+          ) : results.slice(0, 6).map((r, i) => (
+            <button
+              key={r.restaurantId ?? i}
+              type="button"
+              onMouseDown={() => handleSelect(r)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:opacity-80 transition-opacity"
+              style={{ borderBottom: i < results.length - 1 ? `1px solid ${CARD_BORDER}` : "none" }}
+            >
+              <UtensilsCrossed className="w-3.5 h-3.5 flex-shrink-0" style={{ color: TEXT_FAINT }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold truncate" style={{ color: TEXT }}>{r.name}</div>
+                {r.address && (
+                  <div className="text-[11px] truncate" style={{ color: TEXT_FAINT }}>{r.address}</div>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Brand list card ───────────────────────────────────────────────
 
 function BrandCard({ brand, onEdit }) {
@@ -272,6 +392,7 @@ function BrandCard({ brand, onEdit }) {
   const slug = brand.slug ?? ""
   const name = brand.displayName ?? brand.display_name ?? slug
   const bookingUrl = brand.bookingUrl ?? `https://book.retilo.io/${slug}`
+  const hasSwiggy = !!(brand.swiggyRestaurantId ?? brand.swiggy_restaurant_id)
 
   return (
     <div
@@ -302,6 +423,14 @@ function BrandCard({ brand, onEdit }) {
           >
             {isMaster ? "Main" : "Branch"}
           </span>
+          {hasSwiggy && (
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
+              style={{ background: "oklch(0.50 0.18 145 / 0.12)", color: "oklch(0.50 0.18 145)" }}
+            >
+              Swiggy linked
+            </span>
+          )}
         </div>
         <div className="text-xs font-mono truncate" style={{ color: TEXT_MUTED }}>
           {bookingUrl.replace("https://", "")}
@@ -459,6 +588,7 @@ function EditForm({ initialForm, isNew, locations, onSave, onBack, showToast }) 
         confirmationMessage: form.confirmationMessage || undefined,
         showPoweredBy:       form.showPoweredBy,
         locationId:          form.locationId          ?? undefined,
+        swiggyRestaurantId:  form.swiggyRestaurantId  || null,
       })
       showToast("Booking page saved!")
       onSave()
@@ -470,6 +600,7 @@ function EditForm({ initialForm, isNew, locations, onSave, onBack, showToast }) 
   }
 
   const bookingUrl   = form.slug ? `https://book.retilo.io/${form.slug}` : null
+  const dineinUrl    = form.slug && form.swiggyRestaurantId ? `https://book.retilo.io/${form.slug}/dinein` : null
   const embedSnippet = form.slug ? `<script src="https://api.retilo.io/book/${form.slug}/embed.js" async></script>` : null
   const isMaster     = form.locationId == null
 
@@ -713,11 +844,29 @@ function EditForm({ initialForm, isNew, locations, onSave, onBack, showToast }) 
         </div>
       </SectionCard>
 
-      {/* ── D. Share (only when slug exists) ── */}
+      {/* ── D. Swiggy Dineout integration ── */}
+      <SectionCard icon={UtensilsCrossed} title="Swiggy Dineout">
+        <p className="text-xs mb-3" style={{ color: TEXT_MUTED }}>
+          Link your Swiggy Dineout listing so customers can book a table directly via this page.
+        </p>
+        <SwiggyRestaurantPicker
+          restaurantId={form.swiggyRestaurantId}
+          restaurantName={form.swiggyRestaurantName}
+          onChange={({ id, name }) => setForm(f => ({ ...f, swiggyRestaurantId: id, swiggyRestaurantName: name }))}
+        />
+        {form.swiggyRestaurantId && (
+          <p className="text-[11px] mt-2" style={{ color: TEXT_FAINT }}>
+            Dineout page: <span className="font-mono" style={{ color: TEXT_MUTED }}>book.retilo.io/{form.slug || "your-slug"}/dinein</span>
+          </p>
+        )}
+      </SectionCard>
+
+      {/* ── E. Share (only when slug exists) ── */}
       {bookingUrl && (
         <SectionCard icon={ExternalLink} title="Share your page">
           <div className="space-y-3 mb-4">
             <ShareRow label="Booking URL" value={bookingUrl} />
+            {dineinUrl && <ShareRow label="Dineout booking" value={dineinUrl} />}
             <ShareRow label="Website widget" value={embedSnippet} />
           </div>
           <div className="space-y-2">

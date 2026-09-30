@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import {
   Link2, Unlink, RefreshCw, TrendingUp, TrendingDown,
   Minus, Star, Search, Trash2, X, ShoppingBag,
@@ -468,6 +469,13 @@ function BookingPagesSection({ branches }) {
           <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
             Booking Pages
           </h2>
+          <Link
+            href="/dashboard/booking-page"
+            className="text-[10px] font-medium"
+            style={{ color: ORANGE }}
+          >
+            Manage all →
+          </Link>
         </div>
         <button
           onClick={openCreate}
@@ -501,54 +509,78 @@ function BookingPagesSection({ branches }) {
           {pages.map(page => (
             <div
               key={page.id}
-              className="flex items-center gap-3 p-4 rounded-xl"
-              style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+              className="rounded-xl overflow-hidden"
+              style={{ background: CARD_BG, border: `1px solid ${page.swiggyRestaurantId ? CARD_BORDER : ORANGE + "40"}` }}
             >
-              {/* Color swatch */}
-              <div
-                className="w-8 h-8 rounded-lg flex-shrink-0"
-                style={{ background: page.primaryColor ?? ORANGE }}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate" style={{ color: TEXT }}>{page.displayName}</div>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <span className="text-[10px] font-mono truncate" style={{ color: TEXT_FAINT }}>
-                    book.retilo.io/{page.slug}/dinein
-                  </span>
-                  {page.swiggyRestaurantId && (
-                    <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: `${GREEN}12`, color: GREEN }}>
-                      <Check className="w-2.5 h-2.5" />Swiggy
+              <div className="flex items-center gap-3 p-4">
+                {/* Color swatch */}
+                <div
+                  className="w-8 h-8 rounded-lg flex-shrink-0"
+                  style={{ background: page.primaryColor ?? ORANGE }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate" style={{ color: TEXT }}>{page.displayName}</div>
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className="text-[10px] font-mono" style={{ color: TEXT_FAINT }}>
+                      /{page.slug}/dinein
                     </span>
-                  )}
+                    {page.swiggyRestaurantId ? (
+                      <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: `${GREEN}12`, color: GREEN }}>
+                        <Check className="w-2.5 h-2.5" />Swiggy linked
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: `${ORANGE}12`, color: ORANGE }}>
+                        Swiggy not linked
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => copy(page.slug)}
+                    className="p-1.5 rounded-lg transition-all"
+                    style={{ background: copiedSlug === page.slug ? `${GREEN}15` : INPUT_BG, color: copiedSlug === page.slug ? GREEN : TEXT_FAINT }}
+                    title="Copy dineout URL"
+                  >
+                    {copiedSlug === page.slug ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                  <a
+                    href={`https://book.retilo.io/${page.slug}/dinein`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg"
+                    style={{ background: INPUT_BG, color: TEXT_FAINT }}
+                    title="Open page"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <Link
+                    href="/dashboard/booking-page"
+                    className="p-1.5 rounded-lg"
+                    style={{ background: INPUT_BG, color: TEXT_FAINT, display: "flex" }}
+                    title="Configure in booking page editor"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button
-                  onClick={() => copy(page.slug)}
-                  className="p-1.5 rounded-lg text-[10px] font-semibold transition-all flex items-center gap-0.5"
-                  style={{ background: copiedSlug === page.slug ? `${GREEN}15` : `${ORANGE}15`, color: copiedSlug === page.slug ? GREEN : ORANGE }}
-                  title="Copy booking URL"
+              {/* CTA when Swiggy not linked */}
+              {!page.swiggyRestaurantId && (
+                <div
+                  className="flex items-center justify-between px-4 py-2.5"
+                  style={{ background: `${ORANGE}08`, borderTop: `1px solid ${ORANGE}20` }}
                 >
-                  {copiedSlug === page.slug ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
-                <a
-                  href={`https://book.retilo.io/${page.slug}/dinein`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="p-1.5 rounded-lg"
-                  style={{ background: `${ORANGE}15`, color: ORANGE }}
-                  title="Open page"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-                <button
-                  onClick={() => openEdit(page)}
-                  className="p-1.5 rounded-lg"
-                  style={{ background: INPUT_BG, color: TEXT_MUTED }}
-                  title="Edit branding"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-              </div>
+                  <span className="text-[11px]" style={{ color: TEXT_MUTED }}>
+                    Link a Swiggy restaurant to enable real-time slot booking on this page
+                  </span>
+                  <Link
+                    href="/dashboard/booking-page"
+                    className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg flex-shrink-0 ml-3"
+                    style={{ background: ORANGE, color: "#fff" }}
+                  >
+                    Configure →
+                  </Link>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -753,7 +785,7 @@ function BookingPagesSection({ branches }) {
 }
 
 // ── Branches section ──────────────────────────────────────────────
-function BranchesSection({ branches, onRemove, onAdd, merchantHandle }) {
+function BranchesSection({ branches, onRemove, onAdd }) {
   const [showAdd, setShowAdd] = useState(false)
   const [swiggyQuery, setSwiggyQuery] = useState("")
   const [swiggyResults, setSwiggyResults] = useState([])
@@ -857,21 +889,9 @@ function BranchesSection({ branches, onRemove, onAdd, merchantHandle }) {
                     style={{ background: b.own_swiggy_restaurant_id ? `${GREEN}12` : `${TEXT_FAINT}12`, color: b.own_swiggy_restaurant_id ? GREEN : TEXT_FAINT }}
                   >
                     <Check className="w-2.5 h-2.5" />
-                    {b.own_swiggy_restaurant_id ? "Swiggy linked" : "Not linked"}
+                    {b.own_swiggy_restaurant_id ? `Swiggy #${b.own_swiggy_restaurant_id}` : "Not linked to Swiggy"}
                   </span>
                 </div>
-                {merchantHandle && (
-                  <a
-                    href={`https://book.retilo.io/${merchantHandle}/dinein`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-0.5 text-[10px] mt-1.5"
-                    style={{ color: ORANGE }}
-                  >
-                    <ExternalLink className="w-2.5 h-2.5" />
-                    book.retilo.io/{merchantHandle}/dinein
-                  </a>
-                )}
               </div>
               <button
                 onClick={() => onRemove(b.location_id)}
@@ -989,7 +1009,6 @@ export default function SwiggyPage() {
   const [scanning, setScanning] = useState(false)
   const [showScanModal, setShowScanModal] = useState(false)
   const [branches, setBranches] = useState([])
-  const [merchantHandle, setMerchantHandle] = useState(null)
 
   useEffect(() => {
     if (!localStorage.getItem("retilo_token")) { router.replace("/auth"); return }
@@ -999,17 +1018,15 @@ export default function SwiggyPage() {
   const fetchAll = async () => {
     setLoading(true)
     try {
-      const [statusRes, competitorRes, branchRes, meRes] = await Promise.allSettled([
+      const [statusRes, competitorRes, branchRes] = await Promise.allSettled([
         api.get("/v1/swiggy/auth/status"),
         api.get("/v1/swiggy/competitors"),
         api.get("/v1/swiggy/branches"),
-        api.get("/v1/auth/me"),
       ])
 
       const s = statusRes.status === "fulfilled" ? statusRes.value.data?.data : { connected: false }
       setStatus(s ?? { connected: false })
       if (branchRes.status === "fulfilled") setBranches(branchRes.value.data?.data?.branches ?? [])
-      if (meRes.status === "fulfilled") setMerchantHandle(meRes.value.data?.data?.handle ?? null)
 
       if (s?.connected) {
         const [pricingRes, rankingRes] = await Promise.allSettled([
@@ -1103,7 +1120,6 @@ export default function SwiggyPage() {
                   branches={branches}
                   onRemove={handleRemoveBranch}
                   onAdd={fetchAll}
-                  merchantHandle={merchantHandle}
                 />
 
                 <BookingPagesSection branches={branches} />
