@@ -64,6 +64,7 @@ function emptyForm(locationId = null, branchName = "") {
     locationId,
     swiggyRestaurantId:  "",
     swiggyRestaurantName: "",
+    quickReplies:        ["Free reservation", "Best available deal"],
   }
 }
 
@@ -86,6 +87,9 @@ function brandToForm(b) {
     locationId:          b.locationId          ?? b.location_id          ?? null,
     swiggyRestaurantId:  b.swiggyRestaurantId  ?? b.swiggy_restaurant_id ?? "",
     swiggyRestaurantName: b.swiggyRestaurantName ?? "",
+    quickReplies:        Array.isArray(b.quickReplies ?? b.quick_replies)
+                           ? (b.quickReplies ?? b.quick_replies)
+                           : ["Free reservation", "Best available deal"],
   }
 }
 
@@ -592,6 +596,7 @@ function EditForm({ initialForm, isNew, locations, onSave, onBack, showToast }) 
         showPoweredBy:       form.showPoweredBy,
         locationId:          form.locationId          ?? undefined,
         swiggyRestaurantId:  form.swiggyRestaurantId  || null,
+        quickReplies:        form.quickReplies?.filter(s => s.trim()) ?? [],
       })
       showToast("Booking page saved!")
       onSave()
@@ -847,7 +852,62 @@ function EditForm({ initialForm, isNew, locations, onSave, onBack, showToast }) 
         </div>
       </SectionCard>
 
-      {/* ── D. Swiggy Dineout integration ── */}
+      {/* ── D. Quick Reply Chips ── */}
+      <SectionCard icon={MessageSquare} title="Chat quick replies">
+        <p className="text-xs mb-3" style={{ color: TEXT_MUTED }}>
+          Sticky shortcut buttons shown to customers during the booking chat — tap to send instantly. Max 4.
+        </p>
+        <div className="space-y-2">
+          {(form.quickReplies ?? []).map((reply, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <InputField
+                value={reply}
+                onChange={e => {
+                  const next = [...(form.quickReplies ?? [])]
+                  next[idx] = e.target.value
+                  setForm(f => ({ ...f, quickReplies: next }))
+                }}
+                placeholder={`Quick reply ${idx + 1}`}
+              />
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, quickReplies: f.quickReplies.filter((_, i) => i !== idx) }))}
+                className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg hover:opacity-70"
+                style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}` }}
+              >
+                <X className="w-3.5 h-3.5" style={{ color: TEXT_FAINT }} />
+              </button>
+            </div>
+          ))}
+          {(form.quickReplies ?? []).length < 4 && (
+            <button
+              type="button"
+              onClick={() => setForm(f => ({ ...f, quickReplies: [...(f.quickReplies ?? []), ""] }))}
+              className="flex items-center gap-1.5 text-xs font-medium transition-all hover:opacity-70 mt-1"
+              style={{ color: PINK }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add reply
+            </button>
+          )}
+        </div>
+        {/* Preview */}
+        {(form.quickReplies ?? []).some(r => r.trim()) && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(form.quickReplies ?? []).filter(r => r.trim()).map((r, i) => (
+              <span
+                key={i}
+                className="text-xs px-3 py-1.5 rounded-full font-medium"
+                style={{ background: `${form.primaryColor}15`, border: `1px solid ${form.primaryColor}30`, color: form.primaryColor }}
+              >
+                {r}
+              </span>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
+      {/* ── E. Swiggy Dineout integration ── */}
       <SectionCard icon={UtensilsCrossed} title="Swiggy Dineout">
         <p className="text-xs mb-3" style={{ color: TEXT_MUTED }}>
           Link your Swiggy Dineout listing so customers can book a table directly via this page.
