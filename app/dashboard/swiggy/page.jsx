@@ -1114,6 +1114,9 @@ export default function SwiggyPage() {
               disconnecting={disconnecting}
             />
 
+            {/* Booking pages always visible — independent of Swiggy connection */}
+            <BookingPagesSection branches={branches} />
+
             {status?.connected && (
               <>
                 <BranchesSection
@@ -1121,8 +1124,6 @@ export default function SwiggyPage() {
                   onRemove={handleRemoveBranch}
                   onAdd={fetchAll}
                 />
-
-                <BookingPagesSection branches={branches} />
 
                 {/* Intelligence grid */}
                 {(pricing || rankings.length > 0) && (
