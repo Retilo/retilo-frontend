@@ -6,8 +6,8 @@
 // POST /v1/brand-config/upload-image?type= → upload logo/banner, returns { url }
 // GET  /v1/gmb/locations                   → list GMB locations for branch picker
 
-import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useEffect, useRef, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   BookOpen, Copy, Check, Upload, Globe, MessageSquare,
   Palette, MapPin, Phone, ExternalLink, Info,
@@ -42,10 +42,13 @@ const BUSINESS_TYPES = [
   { value: "other",      label: "Other" },
 ]
 
-function emptyForm(locationId = null) {
+function emptyForm(locationId = null, branchName = "") {
+  const autoSlug = branchName
+    ? branchName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    : ""
   return {
-    slug:                "",
-    displayName:         "",
+    slug:                autoSlug,
+    displayName:         branchName || "",
     tagline:             "",
     businessType:        "restaurant",
     logoUrl:             "",
@@ -635,8 +638,8 @@ function EditForm({ initialForm, isNew, locations, onSave, onBack, showToast }) 
         </div>
       )}
 
-      {/* Location picker (only for new pages when locations exist) */}
-      {isNew && locations.length > 0 && (
+      {/* Location picker (only when no location is pre-assigned from URL params) */}
+      {isNew && locations.length > 0 && form.locationId == null && (
         <SectionCard icon={MapPin} title="Location (optional)">
           <p className="text-xs mb-3" style={{ color: TEXT_MUTED }}>
             Leave as "Main brand" for your primary booking page, or pick a specific branch.
@@ -904,8 +907,9 @@ function EditForm({ initialForm, isNew, locations, onSave, onBack, showToast }) 
 
 // ── Main page ─────────────────────────────────────────────────────
 
-export default function BookingPageSetup() {
-  const router    = useRouter()
+function BookingPageSetup() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading]     = useState(true)
   const [brands, setBrands]       = useState([])
   const [locations, setLocations] = useState([])
@@ -931,8 +935,18 @@ export default function BookingPageSetup() {
     Promise.all([
       api.get("/v1/brand-config").then(res => setBrands(res.data?.brands ?? [])).catch(() => {}),
       api.get("/v1/gmb/locations").then(res => setLocations(res.data?.data ?? [])).catch(() => {}),
-    ]).finally(() => setLoading(false))
-  }, [router])
+    ]).finally(() => {
+      setLoading(false)
+      // Auto-open new branch page if URL has ?locationId=X&branchName=Y
+      const locId = searchParams.get("locationId")
+      const branchName = searchParams.get("branchName") ?? ""
+      if (locId) {
+        setEditingForm(emptyForm(Number(locId), branchName))
+        setIsNew(true)
+        setView("edit")
+      }
+    })
+  }, [router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEdit = (brand) => {
     setEditingForm(brandToForm(brand))
@@ -1006,5 +1020,13 @@ export default function BookingPageSetup() {
 
       <Toast message={toast.message} type={toast.type} />
     </DashboardPageLayout>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <BookingPageSetup />
+    </Suspense>
   )
 }

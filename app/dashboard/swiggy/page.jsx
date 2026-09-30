@@ -457,9 +457,11 @@ function BookingPagesSection({ branches }) {
     setTimeout(() => setCopiedSlug(null), 2000)
   }
 
-  const linkedRestaurants = branches
-    .filter(b => b.own_swiggy_restaurant_id)
-    .map(b => ({ id: b.own_swiggy_restaurant_id, name: b.branch_name }))
+  // Match pages to branches by locationId
+  const masterPages = pages.filter(p => p.locationId == null)
+  const branchPageMap = {} // location_id → page
+  pages.forEach(p => { if (p.locationId != null) branchPageMap[p.locationId] = p })
+  const branchesWithoutPage = branches.filter(b => !branchPageMap[b.location_id])
 
   return (
     <div>
@@ -477,35 +479,36 @@ function BookingPagesSection({ branches }) {
             Manage all →
           </Link>
         </div>
-        <button
-          onClick={openCreate}
+        <Link
+          href="/dashboard/booking-page"
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
           style={{ background: `${ORANGE}15`, color: ORANGE, border: `1px solid ${ORANGE}28` }}
         >
           <Plus className="w-3 h-3" />
           New page
-        </button>
+        </Link>
       </div>
 
       {loadingPages ? (
         <div className="h-20 rounded-2xl animate-pulse" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }} />
-      ) : pages.length === 0 ? (
+      ) : pages.length === 0 && branches.length === 0 ? (
         <div className="py-8 text-center rounded-2xl" style={{ border: `1px dashed ${CARD_BORDER}` }}>
           <Globe className="w-6 h-6 mx-auto mb-2" style={{ color: TEXT_FAINT }} />
           <p className="text-sm font-medium mb-1" style={{ color: TEXT }}>No booking pages yet</p>
           <p className="text-xs mb-4" style={{ color: TEXT_FAINT }}>
             Create a branded dineout page for each of your locations.
           </p>
-          <button
-            onClick={openCreate}
-            className="px-4 py-2 rounded-xl text-white text-xs font-semibold hover:opacity-90"
+          <Link
+            href="/dashboard/booking-page"
+            className="px-4 py-2 rounded-xl text-white text-xs font-semibold hover:opacity-90 inline-block"
             style={{ background: ORANGE }}
           >
             Create first page
-          </button>
+          </Link>
         </div>
       ) : (
         <div className="space-y-2">
+          {/* Pages that are already configured */}
           {pages.map(page => (
             <div
               key={page.id}
@@ -582,6 +585,31 @@ function BookingPagesSection({ branches }) {
                 </div>
               )}
             </div>
+          ))}
+
+          {/* Branches that don't have a booking page yet */}
+          {branchesWithoutPage.map(b => (
+            <Link
+              key={b.location_id}
+              href={`/dashboard/booking-page?locationId=${b.location_id}&branchName=${encodeURIComponent(b.branch_name ?? "")}`}
+              className="flex items-center gap-3 p-4 rounded-xl transition-all hover:opacity-80"
+              style={{ background: INPUT_BG, border: `1.5px dashed ${ORANGE}40` }}
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${ORANGE}12` }}>
+                <Plus className="w-4 h-4" style={{ color: ORANGE }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold" style={{ color: TEXT }}>
+                  {b.branch_name ?? `Branch ${b.location_id}`}
+                </div>
+                <div className="text-[10px]" style={{ color: TEXT_FAINT }}>
+                  No booking page yet — tap to create one
+                </div>
+              </div>
+              <span className="text-[11px] font-semibold px-2 py-1 rounded-lg flex-shrink-0" style={{ background: ORANGE, color: "#fff" }}>
+                Create →
+              </span>
+            </Link>
           ))}
         </div>
       )}
