@@ -11,7 +11,7 @@ import {
   Link2, Unlink, RefreshCw, TrendingUp, TrendingDown,
   Minus, Star, Search, Trash2, X, ShoppingBag,
   BarChart2, DollarSign, Hash, GitBranch, MapPin, Plus, Check,
-  Copy, ExternalLink,
+  Copy, ExternalLink, Palette, Globe, Pencil,
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { api } from "@/lib/api"
@@ -366,6 +366,392 @@ function ScanModal({ onClose, onScan }) {
   )
 }
 
+// ── Booking pages section (per-branch Canva-style pages) ─────────
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60)
+}
+
+function BookingPagesSection({ branches }) {
+  const [pages, setPages] = useState([])
+  const [loadingPages, setLoadingPages] = useState(true)
+  const [showCreate, setShowCreate] = useState(false)
+  const [editing, setEditing] = useState(null) // page object being edited
+  // Form state
+  const [fSlug, setFSlug] = useState("")
+  const [fName, setFName] = useState("")
+  const [fTagline, setFTagline] = useState("")
+  const [fPrimary, setFPrimary] = useState("#FF6200")
+  const [fAccent, setFAccent] = useState("#FFA500")
+  const [fRestaurantId, setFRestaurantId] = useState("")
+  const [fTheme, setFTheme] = useState("dark")
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [copiedSlug, setCopiedSlug] = useState(null)
+
+  useEffect(() => { fetchPages() }, [])
+
+  const fetchPages = async () => {
+    setLoadingPages(true)
+    try {
+      const res = await api.get("/v1/brand-config")
+      setPages(res.data?.brands ?? [])
+    } catch { setPages([]) }
+    finally { setLoadingPages(false) }
+  }
+
+  const openCreate = () => {
+    setEditing(null)
+    setFSlug(""); setFName(""); setFTagline("")
+    setFPrimary("#FF6200"); setFAccent("#FFA500"); setFRestaurantId(""); setFTheme("dark")
+    setFormError("")
+    setShowCreate(true)
+  }
+
+  const openEdit = (page) => {
+    setEditing(page)
+    setFSlug(page.slug ?? "")
+    setFName(page.displayName ?? "")
+    setFTagline(page.tagline ?? "")
+    setFPrimary(page.primaryColor ?? "#FF6200")
+    setFAccent(page.accentColor ?? "#FFA500")
+    setFRestaurantId(page.swiggyRestaurantId ?? "")
+    setFTheme(page.bookingTheme ?? "dark")
+    setFormError("")
+    setShowCreate(true)
+  }
+
+  const handleNameChange = (val) => {
+    setFName(val)
+    if (!editing) setFSlug(slugify(val))
+  }
+
+  const handleSave = async () => {
+    if (!fName.trim()) { setFormError("Display name is required"); return }
+    if (!fSlug.trim()) { setFormError("URL slug is required"); return }
+    if (!/^[a-z0-9-]+$/.test(fSlug)) { setFormError("Slug can only contain lowercase letters, numbers and hyphens"); return }
+    setSaving(true)
+    setFormError("")
+    try {
+      await api.put("/v1/brand-config", {
+        slug:               fSlug.trim(),
+        displayName:        fName.trim(),
+        tagline:            fTagline.trim() || undefined,
+        primaryColor:       fPrimary,
+        accentColor:        fAccent,
+        businessType:       "restaurant",
+        bookingTheme:       fTheme,
+        swiggyRestaurantId: fRestaurantId.trim() || null,
+        locationId:         null,
+      })
+      setShowCreate(false)
+      fetchPages()
+    } catch (e) {
+      setFormError(e?.response?.data?.message ?? "Failed to save booking page")
+    } finally { setSaving(false) }
+  }
+
+  const copy = (slug) => {
+    navigator.clipboard.writeText(`https://book.retilo.io/${slug}/dinein`)
+    setCopiedSlug(slug)
+    setTimeout(() => setCopiedSlug(null), 2000)
+  }
+
+  const linkedRestaurants = branches
+    .filter(b => b.own_swiggy_restaurant_id)
+    .map(b => ({ id: b.own_swiggy_restaurant_id, name: b.branch_name }))
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Palette className="w-3.5 h-3.5" style={{ color: TEXT_FAINT }} />
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
+            Booking Pages
+          </h2>
+        </div>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+          style={{ background: `${ORANGE}15`, color: ORANGE, border: `1px solid ${ORANGE}28` }}
+        >
+          <Plus className="w-3 h-3" />
+          New page
+        </button>
+      </div>
+
+      {loadingPages ? (
+        <div className="h-20 rounded-2xl animate-pulse" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }} />
+      ) : pages.length === 0 ? (
+        <div className="py-8 text-center rounded-2xl" style={{ border: `1px dashed ${CARD_BORDER}` }}>
+          <Globe className="w-6 h-6 mx-auto mb-2" style={{ color: TEXT_FAINT }} />
+          <p className="text-sm font-medium mb-1" style={{ color: TEXT }}>No booking pages yet</p>
+          <p className="text-xs mb-4" style={{ color: TEXT_FAINT }}>
+            Create a branded dineout page for each of your locations.
+          </p>
+          <button
+            onClick={openCreate}
+            className="px-4 py-2 rounded-xl text-white text-xs font-semibold hover:opacity-90"
+            style={{ background: ORANGE }}
+          >
+            Create first page
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {pages.map(page => (
+            <div
+              key={page.id}
+              className="flex items-center gap-3 p-4 rounded-xl"
+              style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+            >
+              {/* Color swatch */}
+              <div
+                className="w-8 h-8 rounded-lg flex-shrink-0"
+                style={{ background: page.primaryColor ?? ORANGE }}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate" style={{ color: TEXT }}>{page.displayName}</div>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="text-[10px] font-mono truncate" style={{ color: TEXT_FAINT }}>
+                    book.retilo.io/{page.slug}/dinein
+                  </span>
+                  {page.swiggyRestaurantId && (
+                    <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: `${GREEN}12`, color: GREEN }}>
+                      <Check className="w-2.5 h-2.5" />Swiggy
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => copy(page.slug)}
+                  className="p-1.5 rounded-lg text-[10px] font-semibold transition-all flex items-center gap-0.5"
+                  style={{ background: copiedSlug === page.slug ? `${GREEN}15` : `${ORANGE}15`, color: copiedSlug === page.slug ? GREEN : ORANGE }}
+                  title="Copy booking URL"
+                >
+                  {copiedSlug === page.slug ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+                <a
+                  href={`https://book.retilo.io/${page.slug}/dinein`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="p-1.5 rounded-lg"
+                  style={{ background: `${ORANGE}15`, color: ORANGE }}
+                  title="Open page"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <button
+                  onClick={() => openEdit(page)}
+                  className="p-1.5 rounded-lg"
+                  style={{ background: INPUT_BG, color: TEXT_MUTED }}
+                  title="Edit branding"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create / Edit modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowCreate(false)} />
+          <div className="relative w-full max-w-md rounded-2xl shadow-2xl" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4" style={{ color: ORANGE }} />
+                <h3 className="text-sm font-semibold" style={{ color: TEXT }}>
+                  {editing ? "Edit booking page" : "Create booking page"}
+                </h3>
+              </div>
+              <button onClick={() => setShowCreate(false)} style={{ color: TEXT_FAINT }}><X className="w-4 h-4" /></button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              {/* Preview strip */}
+              <div
+                className="rounded-xl p-4 flex items-center gap-3"
+                style={{ background: fTheme === "dark" ? "#111" : "#fafafa", border: `2px solid ${fPrimary}33` }}
+              >
+                <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: fPrimary }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold truncate" style={{ color: fTheme === "dark" ? "#fff" : "#111" }}>
+                    {fName || "Restaurant name"}
+                  </div>
+                  {fTagline && <div className="text-[11px] truncate" style={{ color: fTheme === "dark" ? "#aaa" : "#666" }}>{fTagline}</div>}
+                </div>
+                <div className="text-[10px] px-2 py-1 rounded-lg font-semibold" style={{ background: fPrimary, color: "#fff" }}>
+                  Book
+                </div>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Restaurant display name</label>
+                <input
+                  value={fName}
+                  onChange={e => handleNameChange(e.target.value)}
+                  placeholder="Meghana Foods Koramangala"
+                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                  onFocus={e => e.target.style.borderColor = ORANGE}
+                  onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                />
+              </div>
+
+              {/* Tagline */}
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Tagline (optional)</label>
+                <input
+                  value={fTagline}
+                  onChange={e => setFTagline(e.target.value)}
+                  placeholder="Authentic Andhra Cuisine since 1998"
+                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                  onFocus={e => e.target.style.borderColor = ORANGE}
+                  onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                />
+              </div>
+
+              {/* Slug */}
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Booking URL slug</label>
+                <div className="flex items-center rounded-xl overflow-hidden" style={{ border: `1px solid ${INPUT_BORDER}`, background: INPUT_BG }}>
+                  <span className="pl-3 text-xs flex-shrink-0" style={{ color: TEXT_FAINT }}>book.retilo.io/</span>
+                  <input
+                    value={fSlug}
+                    onChange={e => setFSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                    placeholder="meghana-koramangala"
+                    className="flex-1 px-2 py-2.5 text-sm outline-none bg-transparent"
+                    style={{ color: TEXT }}
+                    onFocus={e => e.target.parentElement.style.borderColor = ORANGE}
+                    onBlur={e => e.target.parentElement.style.borderColor = INPUT_BORDER}
+                  />
+                  <span className="pr-3 text-xs flex-shrink-0" style={{ color: TEXT_FAINT }}>/dinein</span>
+                </div>
+              </div>
+
+              {/* Colors */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Primary color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={fPrimary}
+                      onChange={e => setFPrimary(e.target.value)}
+                      className="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent p-0"
+                    />
+                    <input
+                      value={fPrimary}
+                      onChange={e => setFPrimary(e.target.value)}
+                      maxLength={7}
+                      className="flex-1 rounded-xl px-3 py-2 text-sm outline-none font-mono"
+                      style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Accent color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={fAccent}
+                      onChange={e => setFAccent(e.target.value)}
+                      className="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent p-0"
+                    />
+                    <input
+                      value={fAccent}
+                      onChange={e => setFAccent(e.target.value)}
+                      maxLength={7}
+                      className="flex-1 rounded-xl px-3 py-2 text-sm outline-none font-mono"
+                      style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Theme */}
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Page theme</label>
+                <div className="flex rounded-xl overflow-hidden" style={{ border: `1px solid ${INPUT_BORDER}` }}>
+                  {["dark", "light"].map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setFTheme(t)}
+                      className="flex-1 py-2 text-xs font-semibold capitalize transition-all"
+                      style={{ background: fTheme === t ? ORANGE : "transparent", color: fTheme === t ? "#fff" : TEXT_MUTED }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Swiggy restaurant */}
+              <div>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>
+                  Swiggy restaurant
+                  <span className="ml-1 font-normal" style={{ color: TEXT_FAINT }}>(picks slots for this page)</span>
+                </label>
+                {linkedRestaurants.length > 0 ? (
+                  <div className="space-y-1.5 mb-2 max-h-36 overflow-y-auto">
+                    {linkedRestaurants.map(r => {
+                      const sel = fRestaurantId === r.id
+                      return (
+                        <button
+                          key={r.id}
+                          onClick={() => setFRestaurantId(sel ? "" : r.id)}
+                          className="w-full text-left p-2.5 rounded-xl transition-all text-sm"
+                          style={{
+                            background: sel ? `${ORANGE}10` : INPUT_BG,
+                            border: `1px solid ${sel ? ORANGE + "40" : INPUT_BORDER}`,
+                            color: TEXT,
+                          }}
+                        >
+                          {r.name}
+                          <span className="text-[10px] ml-2 font-mono" style={{ color: TEXT_FAINT }}>#{r.id}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs mb-2" style={{ color: TEXT_FAINT }}>
+                    No linked branches yet — add a branch above first, or paste a Swiggy restaurant ID manually.
+                  </p>
+                )}
+                <input
+                  value={fRestaurantId}
+                  onChange={e => setFRestaurantId(e.target.value)}
+                  placeholder="Swiggy restaurant ID (e.g. 786054)"
+                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none font-mono"
+                  style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                  onFocus={e => e.target.style.borderColor = ORANGE}
+                  onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                />
+              </div>
+
+              {formError && <p className="text-xs" style={{ color: RED }}>{formError}</p>}
+
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full py-3 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-50 hover:opacity-90"
+                style={{ background: ORANGE }}
+              >
+                {saving ? "Saving…" : editing ? "Save changes" : "Create booking page"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Branches section ──────────────────────────────────────────────
 function BranchesSection({ branches, onRemove, onAdd, merchantHandle }) {
   const [showAdd, setShowAdd] = useState(false)
@@ -713,14 +1099,14 @@ export default function SwiggyPage() {
 
             {status?.connected && (
               <>
-                <BookingPageCard handle={merchantHandle} />
-
                 <BranchesSection
                   branches={branches}
                   onRemove={handleRemoveBranch}
                   onAdd={fetchAll}
                   merchantHandle={merchantHandle}
                 />
+
+                <BookingPagesSection branches={branches} />
 
                 {/* Intelligence grid */}
                 {(pricing || rankings.length > 0) && (
