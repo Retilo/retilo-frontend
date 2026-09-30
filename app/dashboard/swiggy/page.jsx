@@ -8,9 +8,10 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  Zap, Link2, Unlink, RefreshCw, TrendingUp, TrendingDown,
+  Link2, Unlink, RefreshCw, TrendingUp, TrendingDown,
   Minus, Star, Search, Trash2, X, ChevronRight, ShoppingBag,
   BarChart2, DollarSign, Hash, GitBranch, MapPin, Plus, Check,
+  Copy, ExternalLink, ArrowRight,
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { api } from "@/lib/api"
@@ -86,6 +87,68 @@ function ConnectionBanner({ status, onConnect, onDisconnect, connecting, disconn
         <Unlink className="w-3 h-3" />
         Disconnect
       </button>
+    </div>
+  )
+}
+
+// ── Booking page URL card ─────────────────────────────────────────
+function BookingPageCard({ handle }) {
+  const [copied, setCopied] = useState(false)
+  const url = handle ? `https://book.retilo.io/${handle}/dinein` : null
+
+  const copy = () => {
+    if (!url) return
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="rounded-2xl p-5" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+      <div className="flex items-center gap-2 mb-3">
+        <Link2 className="w-3.5 h-3.5" style={{ color: ORANGE }} />
+        <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
+          Dineout Booking Page
+        </h2>
+      </div>
+      {handle ? (
+        <div>
+          <div className="flex items-center gap-2 p-3 rounded-xl mb-2" style={{ background: INPUT_BG }}>
+            <span className="text-xs flex-1 truncate font-mono" style={{ color: TEXT }}>
+              book.retilo.io/{handle}/dinein
+            </span>
+            <button
+              onClick={copy}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold flex-shrink-0 transition-all"
+              style={{ background: copied ? `${GREEN}15` : `${ORANGE}15`, color: copied ? GREEN : ORANGE }}
+            >
+              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold flex-shrink-0"
+              style={{ background: `${ORANGE}15`, color: ORANGE }}
+            >
+              <ExternalLink className="w-3 h-3" />
+              Open
+            </a>
+          </div>
+          <p className="text-[11px]" style={{ color: TEXT_FAINT }}>
+            Share this with your guests. Each branch below must have a linked Swiggy restaurant to enable slot booking.
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs" style={{ color: TEXT_MUTED }}>
+          Set your unique handle in{" "}
+          <a href="/dashboard/settings" className="underline" style={{ color: ORANGE }}>
+            Settings
+          </a>{" "}
+          to generate your booking page URL.
+        </p>
+      )}
     </div>
   )
 }
@@ -234,16 +297,37 @@ function RankingCard({ rankings }) {
 function ScanModal({ onClose, onScan }) {
   const [keywords, setKeywords] = useState("")
   const [scanning, setScanning] = useState(false)
+  const [done, setDone] = useState(false)
 
   const handleScan = async () => {
     setScanning(true)
     try {
       const kwList = keywords.split(",").map(k => k.trim()).filter(Boolean)
       await onScan(kwList.length > 0 ? kwList : undefined)
-      onClose()
+      setDone(true)
     } finally {
       setScanning(false)
     }
+  }
+
+  if (done) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl text-center" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: `${GREEN}15` }}>
+            <Check className="w-5 h-5" style={{ color: GREEN }} />
+          </div>
+          <h2 className="text-sm font-semibold mb-1" style={{ color: TEXT }}>Scan triggered</h2>
+          <p className="text-xs mb-5" style={{ color: TEXT_MUTED }}>
+            Competitors will appear here in 2–5 minutes once the background scan completes.
+          </p>
+          <button onClick={onClose} className="px-6 py-2 rounded-xl text-white text-sm font-semibold" style={{ background: ORANGE }}>
+            Got it
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -261,11 +345,14 @@ function ScanModal({ onClose, onScan }) {
           value={keywords}
           onChange={e => setKeywords(e.target.value)}
           placeholder="biryani, pizza, chinese (comma separated)"
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none mb-4"
+          className="w-full rounded-xl px-4 py-3 text-sm outline-none mb-3"
           style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
           onFocus={e => e.target.style.borderColor = ORANGE}
           onBlur={e => e.target.style.borderColor = INPUT_BORDER}
         />
+        <p className="text-[11px] mb-4" style={{ color: TEXT_FAINT }}>
+          Results appear in 2–5 min after scan completes in the background.
+        </p>
         <button
           onClick={handleScan}
           disabled={scanning}
@@ -280,8 +367,9 @@ function ScanModal({ onClose, onScan }) {
 }
 
 // ── Branches section ──────────────────────────────────────────────
-function BranchesSection({ branches, onRemove, onAdd }) {
+function BranchesSection({ branches, onRemove, onAdd, merchantHandle }) {
   const [showAdd, setShowAdd] = useState(false)
+  const [step, setStep] = useState("location") // "location" | "restaurant"
   const [mode, setMode] = useState("gmb") // "gmb" | "manual"
   const [locations, setLocations] = useState([])
   const [selectedLoc, setSelectedLoc] = useState(null)
@@ -290,14 +378,23 @@ function BranchesSection({ branches, onRemove, onAdd }) {
   const [manualLng, setManualLng] = useState("")
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState("")
+  // Swiggy restaurant step
+  const [swiggyQuery, setSwiggyQuery] = useState("")
+  const [swiggyResults, setSwiggyResults] = useState([])
+  const [selectedSwiggy, setSelectedSwiggy] = useState(null)
+  const [searchingSwiggy, setSearchingSwiggy] = useState(false)
 
   const openAdd = async () => {
+    setStep("location")
     setMode("gmb")
     setSelectedLoc(null)
     setManualName("")
     setManualLat("")
     setManualLng("")
     setError("")
+    setSwiggyQuery("")
+    setSwiggyResults([])
+    setSelectedSwiggy(null)
     try {
       const res = await api.get("/v1/gmb/locations")
       const list = Array.isArray(res.data?.data)
@@ -310,30 +407,56 @@ function BranchesSection({ branches, onRemove, onAdd }) {
     setShowAdd(true)
   }
 
-  const handleAdd = async () => {
+  const goToRestaurantStep = () => {
+    const name = mode === "gmb"
+      ? (selectedLoc?.title ?? selectedLoc?.name ?? "")
+      : manualName.trim()
+    setSwiggyQuery(name)
+    setSwiggyResults([])
+    setSelectedSwiggy(null)
+    setStep("restaurant")
+  }
+
+  const handleSwiggySearch = async () => {
+    if (!swiggyQuery.trim()) return
+    setSearchingSwiggy(true)
+    try {
+      const res = await api.get(`/v1/swiggy/restaurants/search?q=${encodeURIComponent(swiggyQuery)}`)
+      setSwiggyResults(res.data?.data?.restaurants ?? [])
+    } catch {
+      setSwiggyResults([])
+    } finally {
+      setSearchingSwiggy(false)
+    }
+  }
+
+  const handleAdd = async (skipRestaurant = false) => {
     setError("")
     setAdding(true)
     try {
+      const restaurantId = (skipRestaurant ? null : selectedSwiggy?.restaurantId) ?? null
       if (mode === "gmb") {
-        if (!selectedLoc) return
+        if (!selectedLoc) { setAdding(false); return }
         await api.post("/v1/swiggy/branches", {
-          locationId: selectedLoc.id,
-          branchName: selectedLoc.title ?? selectedLoc.name ?? null,
-          latitude:   selectedLoc.lat ?? selectedLoc.latitude,
-          longitude:  selectedLoc.lng ?? selectedLoc.longitude,
+          locationId:            selectedLoc.id,
+          branchName:            selectedLoc.title ?? selectedLoc.name ?? null,
+          latitude:              selectedLoc.lat ?? selectedLoc.latitude,
+          longitude:             selectedLoc.lng ?? selectedLoc.longitude,
+          ownSwiggyRestaurantId: restaurantId,
         })
       } else {
         const lat = parseFloat(manualLat)
         const lng = parseFloat(manualLng)
-        if (!manualName.trim())       { setError("Branch name is required"); return }
-        if (isNaN(lat) || isNaN(lng)) { setError("Enter valid latitude and longitude"); return }
-        if (lat < -90 || lat > 90)    { setError("Latitude must be between -90 and 90"); return }
-        if (lng < -180 || lng > 180)  { setError("Longitude must be between -180 and 180"); return }
+        if (!manualName.trim())       { setError("Branch name is required"); setAdding(false); return }
+        if (isNaN(lat) || isNaN(lng)) { setError("Enter valid latitude and longitude"); setAdding(false); return }
+        if (lat < -90 || lat > 90)    { setError("Latitude must be between -90 and 90"); setAdding(false); return }
+        if (lng < -180 || lng > 180)  { setError("Longitude must be between -180 and 180"); setAdding(false); return }
         await api.post("/v1/swiggy/branches", {
-          locationId: Date.now(),
-          branchName: manualName.trim(),
-          latitude:   lat,
-          longitude:  lng,
+          locationId:            Date.now(),
+          branchName:            manualName.trim(),
+          latitude:              lat,
+          longitude:             lng,
+          ownSwiggyRestaurantId: restaurantId,
         })
       }
       setShowAdd(false)
@@ -345,7 +468,7 @@ function BranchesSection({ branches, onRemove, onAdd }) {
     }
   }
 
-  const canSubmit = mode === "gmb"
+  const locationIsSet = mode === "gmb"
     ? !!selectedLoc
     : (manualName.trim() && manualLat && manualLng)
 
@@ -370,7 +493,9 @@ function BranchesSection({ branches, onRemove, onAdd }) {
 
       {branches.length === 0 ? (
         <div className="py-6 text-center rounded-2xl" style={{ border: `1px dashed ${CARD_BORDER}` }}>
-          <p className="text-xs" style={{ color: TEXT_FAINT }}>No branches configured. Add one to set per-location restaurant context.</p>
+          <p className="text-xs" style={{ color: TEXT_FAINT }}>
+            No branches configured. Add one to link your Swiggy restaurant and enable the booking page.
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -394,9 +519,21 @@ function BranchesSection({ branches, onRemove, onAdd }) {
                   </span>
                   <span className="flex items-center gap-1 text-[10px]" style={{ color: b.own_swiggy_restaurant_id ? GREEN : TEXT_FAINT }}>
                     <Check className="w-2.5 h-2.5" />
-                    Restaurant
+                    {b.own_swiggy_restaurant_id ? `Swiggy linked` : "Swiggy not linked"}
                   </span>
                 </div>
+                {merchantHandle && (
+                  <a
+                    href={`https://book.retilo.io/${merchantHandle}/dinein`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-0.5 text-[10px] mt-1.5"
+                    style={{ color: ORANGE }}
+                  >
+                    <ExternalLink className="w-2.5 h-2.5" />
+                    book.retilo.io/{merchantHandle}/dinein
+                  </a>
+                )}
               </div>
               <button
                 onClick={() => onRemove(b.location_id)}
@@ -414,114 +551,219 @@ function BranchesSection({ branches, onRemove, onAdd }) {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowAdd(false)} />
           <div className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold" style={{ color: TEXT }}>Add Branch Location</h3>
+            {/* Header with step indicator */}
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: TEXT }}>
+                  {step === "location" ? "Add Branch Location" : "Link Swiggy Restaurant"}
+                </h3>
+                <div className="flex items-center gap-1 mt-1.5">
+                  <div className="w-8 h-1 rounded-full" style={{ background: ORANGE }} />
+                  <div className="w-8 h-1 rounded-full transition-all" style={{ background: step === "restaurant" ? ORANGE : CARD_BORDER }} />
+                </div>
+              </div>
               <button onClick={() => setShowAdd(false)} style={{ color: TEXT_FAINT }}><X className="w-4 h-4" /></button>
             </div>
 
-            {/* Mode toggle */}
-            <div className="flex rounded-xl overflow-hidden mb-4" style={{ border: `1px solid ${INPUT_BORDER}` }}>
-              {["gmb", "manual"].map(m => (
-                <button
-                  key={m}
-                  onClick={() => { setMode(m); setError("") }}
-                  className="flex-1 py-2 text-xs font-semibold transition-all"
-                  style={{
-                    background: mode === m ? ORANGE : "transparent",
-                    color: mode === m ? "#fff" : TEXT_MUTED,
-                  }}
-                >
-                  {m === "gmb" ? "From GMB" : "Enter manually"}
-                </button>
-              ))}
-            </div>
-
-            {mode === "gmb" ? (
-              locations.length === 0 ? (
-                <p className="text-xs py-4 text-center" style={{ color: TEXT_MUTED }}>
-                  No GMB locations with coordinates found. Use manual entry instead.
-                </p>
-              ) : (
-                <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
-                  {locations.map(loc => {
-                    const sel = selectedLoc?.id === loc.id
-                    return (
-                      <button
-                        key={loc.id}
-                        onClick={() => setSelectedLoc(loc)}
-                        className="w-full text-left p-3 rounded-xl transition-all"
-                        style={{
-                          background: sel ? `${ORANGE}10` : INPUT_BG,
-                          border: `1px solid ${sel ? ORANGE + "40" : INPUT_BORDER}`,
-                        }}
-                      >
-                        <div className="text-sm font-medium" style={{ color: TEXT }}>{loc.title ?? loc.name}</div>
-                        {loc.address && <div className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>{loc.address}</div>}
-                      </button>
-                    )
-                  })}
+            {step === "location" ? (
+              <>
+                {/* Mode toggle */}
+                <div className="flex rounded-xl overflow-hidden mb-4" style={{ border: `1px solid ${INPUT_BORDER}` }}>
+                  {["gmb", "manual"].map(m => (
+                    <button
+                      key={m}
+                      onClick={() => { setMode(m); setError("") }}
+                      className="flex-1 py-2 text-xs font-semibold transition-all"
+                      style={{
+                        background: mode === m ? ORANGE : "transparent",
+                        color: mode === m ? "#fff" : TEXT_MUTED,
+                      }}
+                    >
+                      {m === "gmb" ? "From GMB" : "Enter manually"}
+                    </button>
+                  ))}
                 </div>
-              )
+
+                {mode === "gmb" ? (
+                  locations.length === 0 ? (
+                    <p className="text-xs py-4 text-center" style={{ color: TEXT_MUTED }}>
+                      No GMB locations with coordinates found. Use manual entry instead.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 mb-4 max-h-52 overflow-y-auto">
+                      {locations.map(loc => {
+                        const sel = selectedLoc?.id === loc.id
+                        return (
+                          <button
+                            key={loc.id}
+                            onClick={() => setSelectedLoc(loc)}
+                            className="w-full text-left p-3 rounded-xl transition-all"
+                            style={{
+                              background: sel ? `${ORANGE}10` : INPUT_BG,
+                              border: `1px solid ${sel ? ORANGE + "40" : INPUT_BORDER}`,
+                            }}
+                          >
+                            <div className="text-sm font-medium" style={{ color: TEXT }}>{loc.title ?? loc.name}</div>
+                            {loc.address && <div className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>{loc.address}</div>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )
+                ) : (
+                  <div className="space-y-3 mb-4">
+                    <div>
+                      <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Branch name</label>
+                      <input
+                        value={manualName}
+                        onChange={e => setManualName(e.target.value)}
+                        placeholder="e.g. Koramangala outlet"
+                        className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                        style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                        onFocus={e => e.target.style.borderColor = ORANGE}
+                        onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Latitude</label>
+                        <input
+                          type="number"
+                          value={manualLat}
+                          onChange={e => setManualLat(e.target.value)}
+                          placeholder="12.9352"
+                          className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                          style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                          onFocus={e => e.target.style.borderColor = ORANGE}
+                          onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Longitude</label>
+                        <input
+                          type="number"
+                          value={manualLng}
+                          onChange={e => setManualLng(e.target.value)}
+                          placeholder="77.6245"
+                          className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                          style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                          onFocus={e => e.target.style.borderColor = ORANGE}
+                          onBlur={e => e.target.style.borderColor = INPUT_BORDER}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px]" style={{ color: TEXT_FAINT }}>
+                      Right-click any location in Google Maps and copy the coordinates.
+                    </p>
+                  </div>
+                )}
+
+                {error && <p className="text-xs mb-3" style={{ color: RED }}>{error}</p>}
+
+                <button
+                  onClick={goToRestaurantStep}
+                  disabled={!locationIsSet}
+                  className="w-full py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-50 hover:opacity-90 flex items-center justify-center gap-2"
+                  style={{ background: ORANGE }}
+                >
+                  Next: Find on Swiggy
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </>
             ) : (
-              <div className="space-y-3 mb-4">
-                <div>
-                  <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Branch name</label>
+              <>
+                <p className="text-xs mb-4" style={{ color: TEXT_MUTED }}>
+                  Search Swiggy Dineout to find and link your restaurant. This powers the booking page slot feed.
+                </p>
+
+                {/* Search input */}
+                <div className="flex gap-2 mb-3">
                   <input
-                    value={manualName}
-                    onChange={e => setManualName(e.target.value)}
-                    placeholder="e.g. Koramangala outlet"
-                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    value={swiggyQuery}
+                    onChange={e => setSwiggyQuery(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleSwiggySearch()}
+                    placeholder="Search restaurant name…"
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
                     onFocus={e => e.target.style.borderColor = ORANGE}
                     onBlur={e => e.target.style.borderColor = INPUT_BORDER}
                   />
+                  <button
+                    onClick={handleSwiggySearch}
+                    disabled={searchingSwiggy || !swiggyQuery.trim()}
+                    className="px-4 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-50 flex items-center"
+                    style={{ background: ORANGE }}
+                  >
+                    {searchingSwiggy
+                      ? <RefreshCw className="w-4 h-4 animate-spin" />
+                      : <Search className="w-4 h-4" />}
+                  </button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Latitude</label>
-                    <input
-                      type="number"
-                      value={manualLat}
-                      onChange={e => setManualLat(e.target.value)}
-                      placeholder="12.9352"
-                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                      style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
-                      onFocus={e => e.target.style.borderColor = ORANGE}
-                      onBlur={e => e.target.style.borderColor = INPUT_BORDER}
-                    />
+
+                {/* Results */}
+                {swiggyResults.length > 0 && (
+                  <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+                    {swiggyResults.map(r => {
+                      const sel = selectedSwiggy?.restaurantId === r.restaurantId
+                      return (
+                        <button
+                          key={r.restaurantId}
+                          onClick={() => setSelectedSwiggy(r)}
+                          className="w-full text-left p-3 rounded-xl transition-all"
+                          style={{
+                            background: sel ? `${ORANGE}10` : INPUT_BG,
+                            border: `1px solid ${sel ? ORANGE + "40" : INPUT_BORDER}`,
+                          }}
+                        >
+                          <div className="text-sm font-medium" style={{ color: TEXT }}>{r.name}</div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {r.rating && (
+                              <span className="flex items-center gap-0.5 text-[10px]" style={{ color: TEXT_MUTED }}>
+                                <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
+                                {r.rating}
+                              </span>
+                            )}
+                            {r.address && (
+                              <span className="text-[10px] truncate" style={{ color: TEXT_FAINT }}>{r.address}</span>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>Longitude</label>
-                    <input
-                      type="number"
-                      value={manualLng}
-                      onChange={e => setManualLng(e.target.value)}
-                      placeholder="77.6245"
-                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                      style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
-                      onFocus={e => e.target.style.borderColor = ORANGE}
-                      onBlur={e => e.target.style.borderColor = INPUT_BORDER}
-                    />
-                  </div>
+                )}
+
+                {swiggyResults.length === 0 && !searchingSwiggy && swiggyQuery.trim() && (
+                  <p className="text-xs mb-3 text-center" style={{ color: TEXT_FAINT }}>
+                    No results. Try a shorter name or different spelling.
+                  </p>
+                )}
+
+                {error && <p className="text-xs mb-3" style={{ color: RED }}>{error}</p>}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleAdd(true)}
+                    disabled={adding}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all hover:opacity-80 disabled:opacity-50"
+                    style={{ border: `1px solid ${CARD_BORDER}`, color: TEXT_MUTED, background: CARD_BG }}
+                  >
+                    Skip for now
+                  </button>
+                  <button
+                    onClick={() => handleAdd(false)}
+                    disabled={adding || !selectedSwiggy}
+                    className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-50 hover:opacity-90"
+                    style={{ background: ORANGE }}
+                  >
+                    {adding ? "Adding…" : "Add Branch"}
+                  </button>
                 </div>
-                <p className="text-[11px]" style={{ color: TEXT_FAINT }}>
-                  Right-click any location in Google Maps and copy the coordinates.
+                <p className="text-[10px] mt-2 text-center" style={{ color: TEXT_FAINT }}>
+                  You can link a restaurant later from this panel.
                 </p>
-              </div>
+              </>
             )}
-
-            {error && (
-              <p className="text-xs mb-3" style={{ color: RED }}>{error}</p>
-            )}
-
-            <button
-              onClick={handleAdd}
-              disabled={adding || !canSubmit}
-              className="w-full py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-50 hover:opacity-90"
-              style={{ background: ORANGE }}
-            >
-              {adding ? "Adding…" : "Add Branch"}
-            </button>
           </div>
         </div>
       )}
@@ -542,6 +784,7 @@ export default function SwiggyPage() {
   const [scanning, setScanning] = useState(false)
   const [showScanModal, setShowScanModal] = useState(false)
   const [branches, setBranches] = useState([])
+  const [merchantHandle, setMerchantHandle] = useState(null)
 
   useEffect(() => {
     if (!localStorage.getItem("retilo_token")) { router.replace("/auth"); return }
@@ -551,15 +794,17 @@ export default function SwiggyPage() {
   const fetchAll = async () => {
     setLoading(true)
     try {
-      const [statusRes, competitorRes, branchRes] = await Promise.allSettled([
+      const [statusRes, competitorRes, branchRes, meRes] = await Promise.allSettled([
         api.get("/v1/swiggy/auth/status"),
         api.get("/v1/swiggy/competitors"),
         api.get("/v1/swiggy/branches"),
+        api.get("/v1/auth/me"),
       ])
 
       const s = statusRes.status === "fulfilled" ? statusRes.value.data?.data : { connected: false }
       setStatus(s ?? { connected: false })
       if (branchRes.status === "fulfilled") setBranches(branchRes.value.data?.data?.branches ?? [])
+      if (meRes.status === "fulfilled") setMerchantHandle(meRes.value.data?.data?.handle ?? null)
 
       if (s?.connected) {
         const [pricingRes, rankingRes] = await Promise.allSettled([
@@ -600,7 +845,7 @@ export default function SwiggyPage() {
 
   const handleRemoveBranch = async (locationId) => {
     await api.delete(`/v1/swiggy/branches/${locationId}`)
-    setBranches(prev => prev.filter(b => b.locationId !== locationId))
+    setBranches(prev => prev.filter(b => b.location_id !== locationId))
   }
 
   const handleScan = async (keywords) => {
@@ -609,7 +854,7 @@ export default function SwiggyPage() {
     setTimeout(() => {
       setScanning(false)
       fetchAll()
-    }, 3000)
+    }, 5000)
   }
 
   return (
@@ -649,10 +894,13 @@ export default function SwiggyPage() {
 
             {status?.connected && (
               <>
+                <BookingPageCard handle={merchantHandle} />
+
                 <BranchesSection
                   branches={branches}
                   onRemove={handleRemoveBranch}
                   onAdd={fetchAll}
+                  merchantHandle={merchantHandle}
                 />
 
                 {/* Intelligence grid */}
@@ -675,7 +923,9 @@ export default function SwiggyPage() {
                     <div className="text-center py-12 rounded-2xl" style={{ border: `1px dashed ${CARD_BORDER}` }}>
                       <Search className="w-8 h-8 mx-auto mb-3" style={{ color: TEXT_FAINT }} />
                       <p className="text-sm font-medium mb-1" style={{ color: TEXT }}>No competitors tracked yet</p>
-                      <p className="text-xs mb-4" style={{ color: TEXT_MUTED }}>Run a scan to discover nearby competitors on Swiggy.</p>
+                      <p className="text-xs mb-4" style={{ color: TEXT_MUTED }}>
+                        Run a scan to discover nearby competitors on Swiggy. Results appear in 2–5 minutes.
+                      </p>
                       <button
                         onClick={() => setShowScanModal(true)}
                         className="px-4 py-2 rounded-xl text-white text-xs font-semibold transition-all hover:opacity-90"
