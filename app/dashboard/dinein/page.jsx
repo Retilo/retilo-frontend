@@ -1,15 +1,25 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import {
   Plus, Trash2, Upload, X, Camera, Eye, EyeOff,
   Pencil, ChevronLeft, ChevronRight, ImagePlus, LayoutGrid,
-  Map, Armchair, Check, Users, AlertCircle,
+  Map, Armchair, Check, Users, AlertCircle, Layers,
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { api } from "@/lib/api"
 
 const PINK        = "oklch(0.58 0.24 350)"
+
+const KonvaEditor = dynamic(() => import("./konva-editor"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: `${PINK}40`, borderTopColor: PINK }} />
+    </div>
+  ),
+})
 const CARD_BG     = "oklch(1 0 0)"
 const CARD_BORDER = "oklch(0.91 0.008 350)"
 const TEXT        = "oklch(0.14 0.008 270)"
@@ -36,7 +46,7 @@ function ZoneModal({ zone, onSave, onClose }) {
       const res = isEdit
         ? await api.patch(`/v1/dinein/zones/${zone.id}`, payload)
         : await api.post("/v1/dinein/zones", payload)
-      onSave(res.data)
+      onSave(res.data?.data ?? res.data)
     } catch (e) { setErr(e.response?.data?.message ?? "Failed to save") }
     finally { setSaving(false) }
   }
@@ -92,7 +102,7 @@ function TablePopover({ table, zones, onUpdate, onDelete, onClose }) {
         label: form.label, capacity: Number(form.capacity),
         zoneId: form.zoneId ? Number(form.zoneId) : null,
       })
-      onUpdate(res.data)
+      onUpdate(res.data?.data ?? res.data)
       onClose()
     } catch { setSaving(false) }
   }
@@ -106,7 +116,7 @@ function TablePopover({ table, zones, onUpdate, onDelete, onClose }) {
 
   async function toggle() {
     const res = await api.patch(`/v1/dinein/tables/${table.id}`, { isAvailable: !table.isAvailable })
-    onUpdate(res.data)
+    onUpdate(res.data?.data ?? res.data)
     onClose()
   }
 
@@ -148,8 +158,9 @@ function TablePopover({ table, zones, onUpdate, onDelete, onClose }) {
   )
 }
 
-// ── Floor plan canvas editor ────────────────────────────────────────
-function FloorPlanEditor({ floorPlanUrl, tables, zones, onTablesChange, onFloorPlanChange }) {
+// ── Floor plan canvas editor (legacy image-based — replaced by KonvaEditor)
+// eslint-disable-next-line no-unused-vars
+function FloorPlanEditorLegacy({ floorPlanUrl, tables, zones, onTablesChange, onFloorPlanChange }) {
   const canvasRef = useRef(null)
   const [addMode, setAddMode] = useState(false)
   const [dragging, setDragging] = useState(null) // { id, startX, startY, origX, origY }
@@ -408,7 +419,7 @@ function ZoneCard({ zone, onUpdate, onDelete, onRefresh }) {
 
   async function toggleAvailability() {
     setToggling(true)
-    try { const res = await api.patch(`/v1/dinein/zones/${zone.id}`, { isAvailable: !zone.isAvailable }); onUpdate(res.data) }
+    try { const res = await api.patch(`/v1/dinein/zones/${zone.id}`, { isAvailable: !zone.isAvailable }); onUpdate(res.data?.data ?? res.data) }
     catch { } finally { setToggling(false) }
   }
 
@@ -493,16 +504,16 @@ function ZoneCard({ zone, onUpdate, onDelete, onRefresh }) {
 }
 
 // ── Live customer preview ───────────────────────────────────────────
-function CustomerPreview({ zones, floorPlanUrl, tables }) {
-  const [selectedTable, setSelectedTable] = useState(null)
+function CustomerPreview({ zones, canvas }) {
   const vibePhotos = zones.flatMap(z => z.photos.slice(0, 2).map(p => ({ ...p, zoneName: z.name })))
   const availableZones = zones.filter(z => z.isAvailable)
-  const availableTables = tables.filter(t => t.isAvailable)
+  const canvasTables = canvas?.tables ?? []
+  const canvasZones  = canvas?.zones  ?? []
 
   return (
     <div className="rounded-2xl overflow-hidden sticky top-6" style={{ background: "#0e0f12", color: "white", border: "1px solid #1e2028" }}>
       <div className="px-4 pt-4 pb-2 border-b border-white/8">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Customer view</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Customer view preview</p>
       </div>
 
       {vibePhotos.length > 0 && (
@@ -519,32 +530,37 @@ function CustomerPreview({ zones, floorPlanUrl, tables }) {
         </div>
       )}
 
-      {floorPlanUrl && availableTables.length > 0 ? (
-        <div className="p-3">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 mb-2">Pick your table</p>
-          <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={floorPlanUrl} alt="" className="w-full h-full object-cover" />
-            {availableTables.map(t => (
-              <button key={t.id} onClick={() => setSelectedTable(t.id === selectedTable ? null : t.id)}
-                className="absolute flex flex-col items-center transition-transform active:scale-110"
-                style={{ left: `${t.x}%`, top: `${t.y}%`, transform: "translate(-50%,-50%)" }}>
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-lg"
-                  style={{ background: t.id === selectedTable ? "#a855f7" : "#374151", border: `2px solid ${t.id === selectedTable ? "#a855f7" : "rgba(255,255,255,0.5)"}` }}>
-                  {t.label.replace(/^T/, "")}
-                </div>
-              </button>
-            ))}
-          </div>
-          {selectedTable && (
-            <div className="mt-2 rounded-xl px-3 py-2 flex items-center gap-2" style={{ background: "#1d2026", border: "1px solid #2a2f3a" }}>
-              <div>
-                <p className="text-xs font-semibold text-white">{availableTables.find(t => t.id === selectedTable)?.label}</p>
-                <p className="text-[10px] text-zinc-500">{availableTables.find(t => t.id === selectedTable)?.capacity} guests</p>
+      {canvasTables.length > 0 ? (
+        <div className="p-4 flex flex-col gap-3">
+          {canvasZones.length > 0 && (
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 mb-2">Zones on floor plan</p>
+              <div className="flex flex-wrap gap-1.5">
+                {canvasZones.map(z => (
+                  <span key={z.id} className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: `${z.color}22`, color: z.color, border: `1px solid ${z.color}44` }}>
+                    {z.name}
+                  </span>
+                ))}
               </div>
-              <button className="ml-auto rounded-lg px-3 py-1.5 text-[10px] font-bold text-white" style={{ background: "#a855f7" }}>Book this table</button>
             </div>
           )}
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 mb-2">Tables</p>
+            <div className="flex flex-wrap gap-1.5">
+              {canvasTables.map(t => (
+                <div key={t.id} className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{
+                    background: t.available ? "#ffffff12" : "#ffffff06",
+                    color: t.available ? "#ffffff" : "#555",
+                    border: `1px solid ${t.available ? "#ffffff22" : "#ffffff0a"}`,
+                  }}>
+                  {t.label} · {t.capacity}p
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="text-[9px] text-zinc-600">Customers will see this as an interactive floor plan and tap their preferred table.</p>
         </div>
       ) : availableZones.length > 0 ? (
         <div className="px-3 py-3">
@@ -566,7 +582,7 @@ function CustomerPreview({ zones, floorPlanUrl, tables }) {
           </div>
         </div>
       ) : (
-        <div className="px-4 py-6 text-center"><p className="text-xs text-zinc-600">Create zones or a floor plan to preview</p></div>
+        <div className="px-4 py-6 text-center"><p className="text-xs text-zinc-600">Design your floor plan to preview it here</p></div>
       )}
     </div>
   )
@@ -576,19 +592,15 @@ function CustomerPreview({ zones, floorPlanUrl, tables }) {
 export default function DineInDesignerPage() {
   const [tab, setTab] = useState("floorplan")
   const [zones, setZones] = useState([])
-  const [tables, setTables] = useState([])
-  const [floorPlanUrl, setFloorPlanUrl] = useState(null)
+  const [canvas, setCanvas] = useState({ zones: [], tables: [] })
   const [loading, setLoading] = useState(true)
   const [showZoneModal, setShowZoneModal] = useState(false)
 
   useEffect(() => {
     Promise.all([
       api.get("/v1/dinein/zones"),
-      api.get("/v1/dinein/floor-plan"),
-    ]).then(([zRes, fpRes]) => {
-      setZones(zRes.data ?? [])
-      setFloorPlanUrl(fpRes.data?.floorPlanUrl ?? null)
-      setTables(fpRes.data?.tables ?? [])
+    ]).then(([zRes]) => {
+      setZones(zRes.data?.data ?? [])
     }).catch(() => { }).finally(() => setLoading(false))
   }, [])
 
@@ -642,20 +654,7 @@ export default function DineInDesignerPage() {
             <div className="lg:col-span-2">
               {tab === "floorplan" ? (
                 <div className="rounded-2xl p-6" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-                  <div className="flex items-start gap-3 mb-5 p-4 rounded-xl" style={{ background: `${ORANGE}08`, border: `1px solid ${ORANGE}20` }}>
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: ORANGE }} />
-                    <p className="text-xs leading-relaxed" style={{ color: TEXT_MUTED }}>
-                      Upload a bird's-eye photo of your restaurant (top-down view works best). Then click
-                      <strong style={{ color: TEXT }}> Add table</strong> and click on the floor plan to place tables exactly where they are in real life. Customers tap the table they want to sit at.
-                    </p>
-                  </div>
-                  <FloorPlanEditor
-                    floorPlanUrl={floorPlanUrl}
-                    tables={tables}
-                    zones={zones}
-                    onTablesChange={setTables}
-                    onFloorPlanChange={url => { setFloorPlanUrl(url); if (!url) setTables([]) }}
-                  />
+                  <KonvaEditor onCanvasChange={setCanvas} />
                 </div>
               ) : (
                 <div>
@@ -679,7 +678,7 @@ export default function DineInDesignerPage() {
                         <ZoneCard key={z.id} zone={z}
                           onUpdate={u => setZones(p => p.map(x => x.id === u.id ? u : x))}
                           onDelete={id => setZones(p => p.filter(x => x.id !== id))}
-                          onRefresh={() => api.get("/v1/dinein/zones").then(r => setZones(r.data ?? []))} />
+                          onRefresh={() => api.get("/v1/dinein/zones").then(r => setZones(r.data?.data ?? []))} />
                       ))}
                       <button onClick={() => setShowZoneModal(true)}
                         className="rounded-2xl border-2 border-dashed flex flex-col items-center justify-center py-10 gap-3 min-h-[220px]"
@@ -698,7 +697,7 @@ export default function DineInDesignerPage() {
             {/* Right: live preview */}
             <div className="lg:col-span-1">
               <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: TEXT_FAINT }}>Live preview</p>
-              <CustomerPreview zones={zones} floorPlanUrl={floorPlanUrl} tables={tables} />
+              <CustomerPreview zones={zones} canvas={canvas} />
               <div className="mt-4 rounded-xl px-4 py-3 text-xs leading-relaxed"
                 style={{ background: `${PINK}06`, border: `1px solid ${PINK}18`, color: TEXT_MUTED }}>
                 <strong style={{ color: PINK }}>How it flows:</strong> Floor plan → customer taps their table → agent books that specific table in Swiggy. Zone photos appear as the cinematic hero strip at the top of the booking page.

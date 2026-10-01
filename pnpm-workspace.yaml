@@ -1,0 +1,6 @@
+allowBuilds:
+  '@vaadin/vaadin-usage-statistics': true
+  msw: true
+  protobufjs: true
+  sharp: true
+  unrs-resolver: true
