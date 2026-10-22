@@ -5,14 +5,14 @@
 // Competitors: GET /v1/swiggy/competitors, POST /v1/swiggy/scan/trigger
 // Intelligence: GET /v1/swiggy/intelligence/pricing, GET /v1/swiggy/intelligence/ranking
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   Link2, Unlink, RefreshCw, TrendingUp, TrendingDown,
   Minus, Star, Search, Trash2, X, ShoppingBag,
   BarChart2, DollarSign, Hash, GitBranch, MapPin, Plus, Check,
-  Copy, ExternalLink, Palette, Globe, Pencil,
+  Copy, ExternalLink, Palette, Globe, Pencil, ChevronDown,
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { api } from "@/lib/api"
@@ -812,9 +812,91 @@ function BookingPagesSection({ branches }) {
   )
 }
 
+// Major Indian cities with coordinates for Swiggy location context
+const CITY_COORDS = [
+  { label: "Bangalore",   lat: 12.9716, lng: 77.5946 },
+  { label: "Mumbai",      lat: 19.0760, lng: 72.8777 },
+  { label: "Delhi",       lat: 28.6139, lng: 77.2090 },
+  { label: "Hyderabad",   lat: 17.3850, lng: 78.4867 },
+  { label: "Chennai",     lat: 13.0827, lng: 80.2707 },
+  { label: "Pune",        lat: 18.5204, lng: 73.8567 },
+  { label: "Kolkata",     lat: 22.5726, lng: 88.3639 },
+  { label: "Ahmedabad",   lat: 23.0225, lng: 72.5714 },
+  { label: "Jaipur",      lat: 26.9124, lng: 75.7873 },
+  { label: "Surat",       lat: 21.1702, lng: 72.8311 },
+  { label: "Lucknow",     lat: 26.8467, lng: 80.9462 },
+  { label: "Indore",      lat: 22.7196, lng: 75.8577 },
+  { label: "Chandigarh",  lat: 30.7333, lng: 76.7794 },
+  { label: "Bhopal",      lat: 23.2599, lng: 77.4126 },
+  { label: "Nagpur",      lat: 21.1458, lng: 79.0882 },
+  { label: "Vadodara",    lat: 22.3072, lng: 73.1812 },
+  { label: "Patna",       lat: 25.5941, lng: 85.1376 },
+  { label: "Kochi",       lat: 9.9312,  lng: 76.2673 },
+  { label: "Coimbatore",  lat: 11.0168, lng: 76.9558 },
+  { label: "Gurgaon",     lat: 28.4595, lng: 77.0266 },
+  { label: "Noida",       lat: 28.5355, lng: 77.3910 },
+  { label: "Vizag",       lat: 17.6868, lng: 83.2185 },
+]
+
+// ── City dropdown ─────────────────────────────────────────────────
+function CitySelect({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  const selected = CITY_COORDS.find(c => c.label === value)
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-left transition-all"
+        style={{ background: INPUT_BG, border: `1px solid ${open || selected ? ORANGE : INPUT_BORDER}`, color: TEXT }}
+      >
+        <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: selected ? ORANGE : TEXT_FAINT }} />
+        <span className="flex-1 truncate" style={{ color: selected ? TEXT : TEXT_FAINT }}>
+          {selected ? selected.label : "Select your city…"}
+        </span>
+        <ChevronDown
+          className="w-3.5 h-3.5 flex-shrink-0 transition-transform"
+          style={{ color: TEXT_FAINT, transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+      {open && (
+        <div
+          className="absolute z-50 mt-1.5 w-full rounded-xl overflow-y-auto shadow-lg"
+          style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, maxHeight: 220 }}
+        >
+          {CITY_COORDS.map(c => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => { onChange(c.label); setOpen(false) }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors hover:bg-[oklch(0.97_0.005_350)]"
+            >
+              <Check
+                className="w-3.5 h-3.5 flex-shrink-0"
+                style={{ color: ORANGE, opacity: c.label === value ? 1 : 0 }}
+              />
+              <span style={{ color: TEXT }}>{c.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Branches section ──────────────────────────────────────────────
 function BranchesSection({ branches, onRemove, onAdd }) {
   const [showAdd, setShowAdd] = useState(false)
+  const [city, setCity] = useState("")
   const [swiggyQuery, setSwiggyQuery] = useState("")
   const [swiggyResults, setSwiggyResults] = useState([])
   const [selectedSwiggy, setSelectedSwiggy] = useState(null)
@@ -823,6 +905,7 @@ function BranchesSection({ branches, onRemove, onAdd }) {
   const [error, setError] = useState("")
 
   const openAdd = () => {
+    setCity("")
     setSwiggyQuery("")
     setSwiggyResults([])
     setSelectedSwiggy(null)
@@ -830,11 +913,15 @@ function BranchesSection({ branches, onRemove, onAdd }) {
     setShowAdd(true)
   }
 
+  const selectedCity = CITY_COORDS.find(c => c.label === city)
+
   const handleSwiggySearch = async () => {
-    if (!swiggyQuery.trim()) return
+    if (!swiggyQuery.trim() || !selectedCity) return
     setSearchingSwiggy(true)
     try {
-      const res = await api.get(`/v1/swiggy/restaurants/search?q=${encodeURIComponent(swiggyQuery)}`)
+      const res = await api.get(
+        `/v1/swiggy/restaurants/search?q=${encodeURIComponent(swiggyQuery)}&lat=${selectedCity.lat}&lng=${selectedCity.lng}`
+      )
       setSwiggyResults(res.data?.data?.restaurants ?? [])
     } catch {
       setSwiggyResults([])
@@ -853,6 +940,13 @@ function BranchesSection({ branches, onRemove, onAdd }) {
         branchName:            selectedSwiggy.name,
         ownSwiggyRestaurantId: selectedSwiggy.restaurantId,
       })
+      // Persist city coords so scans never hit the "no location context" error
+      if (selectedCity) {
+        await api.patch("/v1/swiggy/auth/context", {
+          latitude:  selectedCity.lat,
+          longitude: selectedCity.lng,
+        }).catch(() => {})
+      }
       setShowAdd(false)
       onAdd()
     } catch (e) {
@@ -945,6 +1039,17 @@ function BranchesSection({ branches, onRemove, onAdd }) {
               Search by name and pick your outlet — this powers the booking page.
             </p>
 
+            {/* City picker */}
+            <div className="mb-3">
+              <label className="block text-[11px] font-medium mb-1" style={{ color: TEXT_MUTED }}>
+                Your city
+              </label>
+              <CitySelect
+                value={city}
+                onChange={v => { setCity(v); setSwiggyResults([]); setSelectedSwiggy(null) }}
+              />
+            </div>
+
             <div className="flex gap-2 mb-3">
               <input
                 value={swiggyQuery}
@@ -956,10 +1061,11 @@ function BranchesSection({ branches, onRemove, onAdd }) {
                 onFocus={e => e.target.style.borderColor = ORANGE}
                 onBlur={e => e.target.style.borderColor = INPUT_BORDER}
                 autoFocus
+                disabled={!selectedCity}
               />
               <button
                 onClick={handleSwiggySearch}
-                disabled={searchingSwiggy || !swiggyQuery.trim()}
+                disabled={searchingSwiggy || !swiggyQuery.trim() || !selectedCity}
                 className="px-4 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-50 flex items-center"
                 style={{ background: ORANGE }}
               >
