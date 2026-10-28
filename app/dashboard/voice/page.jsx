@@ -18,7 +18,6 @@ import { api } from "@/lib/api"
 import { AnimatedCard, AnimatedCardHeader, AnimatedCardTitle, AnimatedCardDescription, AnimatedCardContent } from "@/components/animated-card"
 import { AnimatedInput, AnimatedTextarea } from "@/components/animated-input"
 import { AnimatedButton } from "@/components/animated-button"
-import { AnimatedSelect, AnimatedSelectTrigger, AnimatedSelectValue, AnimatedSelectContent, AnimatedSelectItem } from "@/components/animated-select"
 
 const PINK = "oklch(0.58 0.24 350)"
 const BLUE = "oklch(0.52 0.20 255)"
@@ -164,23 +163,16 @@ function FieldLabel({ children }) {
 
 function CultSelect({ value, onChange, placeholder, options, disabled }) {
   return (
-    <AnimatedSelect
+    <select
       value={value}
-      onValueChange={(v) => onChange(String(v))}
-      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
+      className="w-full rounded-xl px-3 py-2.5 text-sm outline-none disabled:opacity-70"
+      style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
     >
-      <AnimatedSelectTrigger>
-        <AnimatedSelectValue />
-      </AnimatedSelectTrigger>
-      <AnimatedSelectContent>
-        {options.map((o, i) => (
-          <AnimatedSelectItem key={o.value} value={o.value} label={o.label} index={i}>
-            {o.label}
-          </AnimatedSelectItem>
-        ))}
-      </AnimatedSelectContent>
-    </AnimatedSelect>
+      {placeholder && !value && <option value="" disabled>{placeholder}</option>}
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
   )
 }
 
