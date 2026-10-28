@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  Phone, PhoneCall, PhoneMissed, Mic, MicOff, Plus, Trash2,
+  Phone, PhoneCall, PhoneMissed, Mic, MicOff, Plus, Trash2, Pencil,
   ChevronDown, X, Hash, BarChart2, Clock, TrendingUp,
   CheckCircle2, AlertCircle, Loader2, Radio,
 } from "lucide-react"
@@ -49,7 +49,7 @@ function StatTile({ icon: Icon, label, value, sub, accent = BLUE }) {
 }
 
 // ── Agent card ────────────────────────────────────────────────────
-function AgentCard({ agent, phoneNumber, onDelete }) {
+function AgentCard({ agent, phoneNumber, onDelete, onEdit }) {
   const [deleting, setDeleting] = useState(false)
 
   const handleDelete = async () => {
@@ -83,19 +83,29 @@ function AgentCard({ agent, phoneNumber, onDelete }) {
               {statusLabel}
             </span>
           </div>
-          <p className="text-xs font-mono" style={{ color: TEXT_FAINT }}>{agent.elevenlabs_agent_id}</p>
           <p className="text-[10px] mt-0.5" style={{ color: TEXT_FAINT }}>
             Lang: {agent.primary_language?.toUpperCase()} · Created {new Date(agent.created_at).toLocaleDateString()}
           </p>
         </div>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="p-1.5 rounded-lg transition-all hover:bg-red-50 disabled:opacity-50 flex-shrink-0"
-          style={{ color: TEXT_FAINT }}
-        >
-          {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => onEdit?.(agent)}
+            className="p-1.5 rounded-lg transition-all hover:bg-black/5"
+            style={{ color: TEXT_FAINT }}
+            title="Edit agent"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="p-1.5 rounded-lg transition-all hover:bg-red-50 disabled:opacity-50"
+            style={{ color: TEXT_FAINT }}
+            title="Delete agent"
+          >
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {phoneNumber && (
@@ -177,16 +187,17 @@ function CultSelect({ value, onChange, placeholder, options, disabled }) {
 }
 
 // ── Provision agent modal ─────────────────────────────────────────
-function ProvisionModal({ locations, onClose, onProvision }) {
+function ProvisionModal({ locations, agent, onClose, onProvision }) {
+  const isEdit = !!agent
   const [form, setForm] = useState({
-    locationId: locations[0]?.google_location_id ?? "",
-    restaurantName: "",
-    restaurantAddress: "",
-    restaurantHours: "",
-    restaurantCuisine: "",
+    locationId: agent?.location_id ?? locations[0]?.google_location_id ?? "",
+    restaurantName: agent?.restaurant_name ?? "",
+    restaurantAddress: agent?.restaurant_address ?? "",
+    restaurantHours: agent?.restaurant_hours ?? "",
+    restaurantCuisine: agent?.restaurant_cuisine ?? "",
     restaurantPhone: "",
-    primaryLanguage: "hi",
-    menuText: "",
+    primaryLanguage: agent?.primary_language ?? "hi",
+    menuText: agent?.menu_text ?? "",
   })
   // AI engine stack — only the wired providers are selectable (loaded from catalog).
   const [stack, setStack] = useState({ telephony: "plivo", stt: "aws", llm: "anthropic", tts: "polly" })
@@ -197,22 +208,22 @@ function ProvisionModal({ locations, onClose, onProvision }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const setEngine = (dim, v) => setStack(s => ({ ...s, [dim]: v }))
 
-  // Load the switchable (wired) providers + labels + defaults.
+  // Load the catalog (dropdown options) + the merchant's current engine selection.
   useEffect(() => {
     api.get("/v1/voice/providers/catalog")
+      .then(res => setCatalog(res.data?.data ?? res.data))
+      .catch(() => {}) // non-fatal: CultSelect falls back to the current value
+    api.get("/v1/voice/providers")
       .then(res => {
-        const cat = res.data?.data ?? res.data
-        setCatalog(cat)
-        if (cat?.defaults) {
-          setStack({
-            telephony: cat.defaults.telephony?.provider ?? "plivo",
-            stt: cat.defaults.stt?.provider ?? "aws",
-            llm: cat.defaults.llm?.provider ?? "anthropic",
-            tts: cat.defaults.tts?.provider ?? "polly",
-          })
-        }
+        const p = res.data?.data ?? res.data
+        if (p) setStack({
+          telephony: p.telephony?.provider ?? "plivo",
+          stt: p.stt?.provider ?? "aws",
+          llm: p.llm?.provider ?? "anthropic",
+          tts: p.tts?.provider ?? "polly",
+        })
       })
-      .catch(() => {}) // non-fatal: fall back to the hardcoded defaults above
+      .catch(() => {})
   }, [])
 
   const handleSubmit = async (e) => {
@@ -255,7 +266,7 @@ function ProvisionModal({ locations, onClose, onProvision }) {
       >
         <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
           <div>
-            <h2 className="text-base font-semibold" style={{ color: TEXT }}>Provision Voice Agent</h2>
+            <h2 className="text-base font-semibold" style={{ color: TEXT }}>{isEdit ? "Edit Voice Agent" : "Provision Voice Agent"}</h2>
             <p className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>Set up your AI receptionist and choose the engines it runs on</p>
           </div>
           <button onClick={onClose} style={{ color: TEXT_FAINT }}><X className="w-4 h-4" /></button>
@@ -360,8 +371,8 @@ function ProvisionModal({ locations, onClose, onProvision }) {
             Saves your agent config and engine stack — the number answers on the next call.
           </p>
 
-          <AnimatedButton type="submit" isLoading={provisioning} loadingText="Provisioning…" className="w-full">
-            Provision Agent
+          <AnimatedButton type="submit" isLoading={provisioning} loadingText={isEdit ? "Saving…" : "Provisioning…"} className="w-full">
+            {isEdit ? "Save changes" : "Provision Agent"}
           </AnimatedButton>
         </form>
       </div>
@@ -392,6 +403,7 @@ export default function VoicePage() {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   const [showProvision, setShowProvision] = useState(false)
+  const [editingAgent, setEditingAgent] = useState(null)
   const [callsLimit] = useState(20)
 
   useEffect(() => {
@@ -449,7 +461,7 @@ export default function VoicePage() {
             Get a number
           </button>
           <button
-            onClick={() => setShowProvision(true)}
+            onClick={() => { setEditingAgent(null); setShowProvision(true) }}
             disabled={locations.length === 0}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all disabled:opacity-40 hover:opacity-90"
             style={{ background: BLUE }}
@@ -497,7 +509,7 @@ export default function VoicePage() {
                     Provision an AI receptionist for your store — it answers calls 24/7, handles product queries, gives directions, and checks store hours.
                   </p>
                   <button
-                    onClick={() => setShowProvision(true)}
+                    onClick={() => { setEditingAgent(null); setShowProvision(true) }}
                     disabled={locations.length === 0}
                     className="px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
                     style={{ background: BLUE }}
@@ -516,6 +528,7 @@ export default function VoicePage() {
                       agent={agent}
                       phoneNumber={getPhoneForAgent(agent)}
                       onDelete={handleDeleteAgent}
+                      onEdit={(a) => { setEditingAgent(a); setShowProvision(true) }}
                     />
                   ))}
                 </div>
@@ -544,7 +557,8 @@ export default function VoicePage() {
       {showProvision && (
         <ProvisionModal
           locations={locations}
-          onClose={() => setShowProvision(false)}
+          agent={editingAgent}
+          onClose={() => { setShowProvision(false); setEditingAgent(null) }}
           onProvision={handleProvision}
         />
       )}
