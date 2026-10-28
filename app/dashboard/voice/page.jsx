@@ -15,6 +15,10 @@ import {
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { ModuleHelper } from "@/components/module-helper"
 import { api } from "@/lib/api"
+import { AnimatedCard, AnimatedCardHeader, AnimatedCardTitle, AnimatedCardDescription, AnimatedCardContent } from "@/components/animated-card"
+import { AnimatedInput, AnimatedTextarea } from "@/components/animated-input"
+import { AnimatedButton } from "@/components/animated-button"
+import { AnimatedSelect, AnimatedSelectTrigger, AnimatedSelectValue, AnimatedSelectContent, AnimatedSelectItem } from "@/components/animated-select"
 
 const PINK = "oklch(0.58 0.24 350)"
 const BLUE = "oklch(0.52 0.20 255)"
@@ -153,6 +157,33 @@ function CallRow({ call }) {
   )
 }
 
+// ── Small helpers (cult-ui) ───────────────────────────────────────
+function FieldLabel({ children }) {
+  return <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>{children}</label>
+}
+
+function CultSelect({ value, onChange, placeholder, options, disabled }) {
+  return (
+    <AnimatedSelect
+      value={value}
+      onValueChange={(v) => onChange(String(v))}
+      placeholder={placeholder}
+      disabled={disabled}
+    >
+      <AnimatedSelectTrigger>
+        <AnimatedSelectValue />
+      </AnimatedSelectTrigger>
+      <AnimatedSelectContent>
+        {options.map((o, i) => (
+          <AnimatedSelectItem key={o.value} value={o.value} label={o.label} index={i}>
+            {o.label}
+          </AnimatedSelectItem>
+        ))}
+      </AnimatedSelectContent>
+    </AnimatedSelect>
+  )
+}
+
 // ── Provision agent modal ─────────────────────────────────────────
 function ProvisionModal({ locations, onClose, onProvision }) {
   const [form, setForm] = useState({
@@ -165,17 +196,46 @@ function ProvisionModal({ locations, onClose, onProvision }) {
     primaryLanguage: "hi",
     menuText: "",
   })
+  // AI engine stack — only the wired providers are selectable (loaded from catalog).
+  const [stack, setStack] = useState({ telephony: "plivo", stt: "aws", llm: "anthropic", tts: "polly" })
+  const [catalog, setCatalog] = useState(null)
   const [provisioning, setProvisioning] = useState(false)
   const [error, setError] = useState("")
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setEngine = (dim, v) => setStack(s => ({ ...s, [dim]: v }))
+
+  // Load the switchable (wired) providers + labels + defaults.
+  useEffect(() => {
+    api.get("/v1/voice/providers/catalog")
+      .then(res => {
+        const cat = res.data?.data ?? res.data
+        setCatalog(cat)
+        if (cat?.defaults) {
+          setStack({
+            telephony: cat.defaults.telephony?.provider ?? "plivo",
+            stt: cat.defaults.stt?.provider ?? "aws",
+            llm: cat.defaults.llm?.provider ?? "anthropic",
+            tts: cat.defaults.tts?.provider ?? "polly",
+          })
+        }
+      })
+      .catch(() => {}) // non-fatal: fall back to the hardcoded defaults above
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setProvisioning(true)
     setError("")
     try {
-      await onProvision(form)
+      // Shape the flat stack into the { provider } objects the API expects.
+      const providers = {
+        telephony: { provider: stack.telephony },
+        stt: { provider: stack.stt },
+        llm: { provider: stack.llm },
+        tts: { provider: stack.tts },
+      }
+      await onProvision({ ...form, providers })
       onClose()
     } catch (err) {
       setError(err?.response?.data?.message ?? "Failed to provision agent")
@@ -183,6 +243,13 @@ function ProvisionModal({ locations, onClose, onProvision }) {
       setProvisioning(false)
     }
   }
+
+  const STACK_FIELDS = [
+    { dim: "telephony", label: "Telephony" },
+    { dim: "stt", label: "Speech → Text" },
+    { dim: "llm", label: "Brain (LLM)" },
+    { dim: "tts", label: "Voice (TTS)" },
+  ]
 
   const inputStyle = { background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }
   const focusStyle = { borderColor: BLUE }
@@ -197,120 +264,98 @@ function ProvisionModal({ locations, onClose, onProvision }) {
         <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
           <div>
             <h2 className="text-base font-semibold" style={{ color: TEXT }}>Provision Voice Agent</h2>
-            <p className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>Sets up an ElevenLabs AI receptionist for your store</p>
+            <p className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>Set up your AI receptionist and choose the engines it runs on</p>
           </div>
           <button onClick={onClose} style={{ color: TEXT_FAINT }}><X className="w-4 h-4" /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Location</label>
-            <select
-              value={form.locationId}
-              onChange={e => set("locationId", e.target.value)}
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-              style={inputStyle}
-            >
-              {locations.map(l => <option key={l.id} value={l.google_location_id}>{l.name ?? l.title}</option>)}
-            </select>
-          </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <AnimatedCard aria-label="Business profile">
+            <AnimatedCardHeader>
+              <AnimatedCardTitle>Business profile</AnimatedCardTitle>
+              <AnimatedCardDescription>Your AI receptionist answers callers with this info.</AnimatedCardDescription>
+            </AnimatedCardHeader>
+            <AnimatedCardContent className="space-y-4">
+              <div>
+                <FieldLabel>Location</FieldLabel>
+                <CultSelect
+                  value={form.locationId}
+                  onChange={(v) => set("locationId", v)}
+                  placeholder="Select a location"
+                  options={locations.map((l) => ({ value: l.google_location_id, label: l.name ?? l.title }))}
+                />
+              </div>
+              <div>
+                <FieldLabel>Store name *</FieldLabel>
+                <AnimatedInput required value={form.restaurantName} onChange={(e) => set("restaurantName", e.target.value)} placeholder="Reliance Digital – Koramangala" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel>Store category</FieldLabel>
+                  <AnimatedInput value={form.restaurantCuisine} onChange={(e) => set("restaurantCuisine", e.target.value)} placeholder="Electronics, Fashion…" />
+                </div>
+                <div>
+                  <FieldLabel>Phone</FieldLabel>
+                  <AnimatedInput value={form.restaurantPhone} onChange={(e) => set("restaurantPhone", e.target.value)} placeholder="+919876543210" />
+                </div>
+              </div>
+              <div>
+                <FieldLabel>Address</FieldLabel>
+                <AnimatedInput value={form.restaurantAddress} onChange={(e) => set("restaurantAddress", e.target.value)} placeholder="12, MG Road, Bengaluru" />
+              </div>
+              <div>
+                <FieldLabel>Hours</FieldLabel>
+                <AnimatedInput value={form.restaurantHours} onChange={(e) => set("restaurantHours", e.target.value)} placeholder="Mon–Sun 11am–11pm" />
+              </div>
+              <div>
+                <FieldLabel>Primary language</FieldLabel>
+                <CultSelect
+                  value={form.primaryLanguage}
+                  onChange={(v) => set("primaryLanguage", v)}
+                  placeholder="Select a language"
+                  options={[
+                    { value: "hi", label: "Hindi" },
+                    { value: "en", label: "English" },
+                    { value: "ta", label: "Tamil" },
+                    { value: "te", label: "Telugu" },
+                    { value: "kn", label: "Kannada" },
+                    { value: "mr", label: "Marathi" },
+                  ]}
+                />
+              </div>
+              <div>
+                <FieldLabel>Menu / catalogue (optional)</FieldLabel>
+                <AnimatedTextarea rows={4} value={form.menuText} onChange={(e) => set("menuText", e.target.value)} placeholder="Dishes, prices, return policy, FAQs…" />
+              </div>
+            </AnimatedCardContent>
+          </AnimatedCard>
 
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Store name *</label>
-            <input
-              required value={form.restaurantName}
-              onChange={e => set("restaurantName", e.target.value)}
-              placeholder="Reliance Digital – Koramangala"
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-              style={inputStyle}
-              onFocus={e => Object.assign(e.target.style, focusStyle)}
-              onBlur={e => e.target.style.borderColor = INPUT_BORDER}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Store category</label>
-              <input
-                value={form.restaurantCuisine}
-                onChange={e => set("restaurantCuisine", e.target.value)}
-                placeholder="Electronics, Fashion, Pharmacy…"
-                className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                style={inputStyle}
-                onFocus={e => Object.assign(e.target.style, focusStyle)}
-                onBlur={e => e.target.style.borderColor = INPUT_BORDER}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Phone</label>
-              <input
-                value={form.restaurantPhone}
-                onChange={e => set("restaurantPhone", e.target.value)}
-                placeholder="+919876543210"
-                className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                style={inputStyle}
-                onFocus={e => Object.assign(e.target.style, focusStyle)}
-                onBlur={e => e.target.style.borderColor = INPUT_BORDER}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Address</label>
-            <input
-              value={form.restaurantAddress}
-              onChange={e => set("restaurantAddress", e.target.value)}
-              placeholder="12, MG Road, Bengaluru"
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-              style={inputStyle}
-              onFocus={e => Object.assign(e.target.style, focusStyle)}
-              onBlur={e => e.target.style.borderColor = INPUT_BORDER}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Hours</label>
-            <input
-              value={form.restaurantHours}
-              onChange={e => set("restaurantHours", e.target.value)}
-              placeholder="Mon–Sun 11am–11pm"
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-              style={inputStyle}
-              onFocus={e => Object.assign(e.target.style, focusStyle)}
-              onBlur={e => e.target.style.borderColor = INPUT_BORDER}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Primary language</label>
-            <select
-              value={form.primaryLanguage}
-              onChange={e => set("primaryLanguage", e.target.value)}
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-              style={inputStyle}
-            >
-              <option value="hi">Hindi</option>
-              <option value="en">English</option>
-              <option value="ta">Tamil</option>
-              <option value="te">Telugu</option>
-              <option value="kn">Kannada</option>
-              <option value="mr">Marathi</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Product catalogue / FAQs (optional)</label>
-            <textarea
-              rows={4}
-              value={form.menuText}
-              onChange={e => set("menuText", e.target.value)}
-              placeholder="Samsung Galaxy S24 – ₹74,999&#10;Return policy: 7 days&#10;EMI available on all products&#10;…"
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
-              style={inputStyle}
-              onFocus={e => Object.assign(e.target.style, focusStyle)}
-              onBlur={e => e.target.style.borderColor = INPUT_BORDER}
-            />
-          </div>
+          <AnimatedCard aria-label="AI stack">
+            <AnimatedCardHeader>
+              <AnimatedCardTitle>AI stack</AnimatedCardTitle>
+              <AnimatedCardDescription>The engines your receptionist runs on — switchable per call, no redeploy.</AnimatedCardDescription>
+            </AnimatedCardHeader>
+            <AnimatedCardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {STACK_FIELDS.map(({ dim, label }) => {
+                  const wired = catalog?.wired?.[dim] ?? [stack[dim]]
+                  const labels = catalog?.labels?.[dim] ?? {}
+                  return (
+                    <div key={dim}>
+                      <FieldLabel>{label}</FieldLabel>
+                      <CultSelect
+                        value={stack[dim]}
+                        onChange={(v) => setEngine(dim, v)}
+                        placeholder={label}
+                        disabled={wired.length <= 1}
+                        options={wired.map((p) => ({ value: p, label: labels[p] ?? p }))}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </AnimatedCardContent>
+          </AnimatedCard>
 
           {error && (
             <div className="flex items-center gap-2 text-xs p-3 rounded-xl" style={{ background: `${RED}10`, color: RED }}>
@@ -320,17 +365,12 @@ function ProvisionModal({ locations, onClose, onProvision }) {
           )}
 
           <p className="text-[10px]" style={{ color: TEXT_FAINT }}>
-            Provisions an ElevenLabs AI agent and loads your knowledge base — takes 5–10 s. Don't close this dialog.
+            Saves your agent config and engine stack — the number answers on the next call.
           </p>
 
-          <button
-            type="submit"
-            disabled={provisioning}
-            className="w-full py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-60 hover:opacity-90 flex items-center justify-center gap-2"
-            style={{ background: BLUE }}
-          >
-            {provisioning ? <><Loader2 className="w-4 h-4 animate-spin" />Provisioning…</> : "Provision Agent"}
-          </button>
+          <AnimatedButton type="submit" isLoading={provisioning} loadingText="Provisioning…" className="w-full">
+            Provision Agent
+          </AnimatedButton>
         </form>
       </div>
     </div>
