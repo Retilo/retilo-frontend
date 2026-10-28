@@ -410,11 +410,13 @@ export default function VoicePage() {
         api.get("/v1/gmb/locations"),
       ])
 
-      if (agentRes.status === "fulfilled") setAgents(agentRes.value.data?.data?.agents ?? [])
-      if (numbersRes.status === "fulfilled") setNumbers(numbersRes.value.data?.data?.numbers ?? [])
-      if (callsRes.status === "fulfilled") setCalls(callsRes.value.data?.data?.calls ?? [])
-      if (analyticsRes.status === "fulfilled") setAnalytics(analyticsRes.value.data?.data)
-      if (locRes.status === "fulfilled") setLocations(locRes.value.data?.data ?? [])
+      // Voice controllers return raw ({ agents }), not the { code, data } envelope —
+      // read the raw shape first, fall back to the envelope for other endpoints.
+      if (agentRes.status === "fulfilled") setAgents(agentRes.value.data?.agents ?? agentRes.value.data?.data?.agents ?? [])
+      if (numbersRes.status === "fulfilled") setNumbers(numbersRes.value.data?.numbers ?? numbersRes.value.data?.data?.numbers ?? [])
+      if (callsRes.status === "fulfilled") setCalls(callsRes.value.data?.calls ?? callsRes.value.data?.data?.calls ?? [])
+      if (analyticsRes.status === "fulfilled") setAnalytics(analyticsRes.value.data?.data ?? analyticsRes.value.data ?? null)
+      if (locRes.status === "fulfilled") setLocations(locRes.value.data?.data ?? locRes.value.data ?? [])
     } catch {}
     finally { setLoading(false) }
   }
