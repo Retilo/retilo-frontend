@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { DashboardPageLayout } from "@/components/dashboard/page-layout"
 import { ModuleHelper } from "@/components/module-helper"
+import { VoiceDialer } from "@/components/dashboard/voice-dialer"
 import { api } from "@/lib/api"
 import { AnimatedCard, AnimatedCardHeader, AnimatedCardTitle, AnimatedCardDescription, AnimatedCardContent } from "@/components/animated-card"
 import { AnimatedInput, AnimatedTextarea } from "@/components/animated-input"
@@ -479,6 +480,16 @@ export default function VoicePage() {
           description="Provision a phone number for each location and the AI answers 100% of calls — handling menu questions, store hours, directions, and order placement. Missed calls become revenue."
           rimVariant="default"
         />
+        {/* Human dialer */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
+              Outbound Calls
+            </h2>
+          </div>
+          <VoiceDialer />
+        </div>
+
         {loading ? (
           <div className="space-y-4">
             {[...Array(4)].map((_, i) => (
