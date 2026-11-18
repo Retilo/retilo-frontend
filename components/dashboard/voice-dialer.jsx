@@ -1,29 +1,31 @@
 "use client"
 
 /**
- * VoiceDialer — web click-to-call component.
+ * VoiceDialer — web click-to-call with two modes:
  *
- * Flow: config check → dial (gets LiveKit token) → join room (WebRTC) →
- *       SIP participant connects (call answered) → hangup → complete report.
+ *  "app"    (Browser WebRTC) — this tab joins the LiveKit room as an audio
+ *           participant; Plivo dials the customer as a SIP leg.
  *
- * Mode "app": browser joins the LiveKit room as a WebRTC participant.
- * The SIP leg is dialed from the backend via Plivo Zentrunk.
+ *  "bridge" (PSTN bridge)   — LiveKit calls YOUR phone first (waitUntilAnswered),
+ *           then bridges the customer in. No browser audio needed; your physical
+ *           phone IS the agent leg. Browser just tracks status + offers hangup.
  */
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import { Phone, PhoneOff, Mic, MicOff, X, ChevronDown } from "lucide-react"
+import { Phone, PhoneOff, Mic, MicOff, X, Smartphone, Globe, ChevronDown } from "lucide-react"
 import { api } from "@/lib/api"
 
-const PINK  = "oklch(0.58 0.24 350)"
-const BLUE  = "oklch(0.52 0.20 255)"
-const GREEN = "oklch(0.50 0.18 145)"
-const RED   = "oklch(0.52 0.22 25)"
-const CARD_BG     = "oklch(1 0 0)"
+const PINK       = "oklch(0.58 0.24 350)"
+const BLUE       = "oklch(0.52 0.20 255)"
+const GREEN      = "oklch(0.50 0.18 145)"
+const RED        = "oklch(0.52 0.22 25)"
+const AMBER      = "oklch(0.72 0.14 65)"
+const CARD_BG    = "oklch(1 0 0)"
 const CARD_BORDER = "oklch(0.91 0.008 350)"
-const TEXT        = "oklch(0.14 0.008 270)"
-const TEXT_MUTED  = "oklch(0.55 0.008 270)"
-const TEXT_FAINT  = "oklch(0.65 0.008 270)"
-const INPUT_BG    = "oklch(0.96 0.005 350)"
+const TEXT       = "oklch(0.14 0.008 270)"
+const TEXT_MUTED = "oklch(0.55 0.008 270)"
+const TEXT_FAINT = "oklch(0.65 0.008 270)"
+const INPUT_BG   = "oklch(0.96 0.005 350)"
 const INPUT_BORDER = "oklch(0.90 0.008 350)"
 
 function fmtDuration(secs) {
@@ -32,23 +34,47 @@ function fmtDuration(secs) {
   return `${m}:${String(s).padStart(2, "0")}`
 }
 
+// ── Mode pill ─────────────────────────────────────────────────────────────────
+function ModePill({ active, icon: Icon, label, description, color, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-center transition-all"
+      style={{
+        background: active ? `${color}12` : "transparent",
+        border: `1px solid ${active ? color + "40" : CARD_BORDER}`,
+        color: active ? color : TEXT_FAINT,
+      }}
+    >
+      <Icon className="w-4 h-4" />
+      <span className="text-xs font-semibold">{label}</span>
+      <span className="text-[9px] leading-tight" style={{ color: active ? color : TEXT_FAINT, opacity: 0.8 }}>
+        {description}
+      </span>
+    </button>
+  )
+}
+
 export function VoiceDialer() {
   const [expanded, setExpanded]       = useState(false)
-  const [config, setConfig]           = useState(null)   // { ready, numbers }
+  const [mode, setMode]               = useState("app")       // "app" | "bridge"
+  const [config, setConfig]           = useState(null)
   const [toNumber, setToNumber]       = useState("")
   const [contactName, setContactName] = useState("")
   const [fromNumber, setFromNumber]   = useState("")
-  const [callState, setCallState]     = useState("idle") // idle|connecting|ringing|connected|ending|ended
-  const [callData, setCallData]       = useState(null)   // dial response
+  const [agentNumber, setAgentNumber] = useState("")           // bridge mode: your phone
+  const [callState, setCallState]     = useState("idle")       // idle|connecting|ringing|connected|ending|ended
+  const [callData, setCallData]       = useState(null)
   const [muted, setMuted]             = useState(false)
   const [duration, setDuration]       = useState(0)
   const [error, setError]             = useState("")
 
-  const roomRef        = useRef(null)
-  const timerRef       = useRef(null)
-  const durationRef    = useRef(0)      // tracks for complete() payload without stale closure
-  const callDataRef    = useRef(null)   // mirrors callData for event-listener closures
-  const finishedRef    = useRef(false)  // guard against double-finish
+  const roomRef      = useRef(null)
+  const timerRef     = useRef(null)
+  const pollRef      = useRef(null)
+  const durationRef  = useRef(0)
+  const callDataRef  = useRef(null)
+  const finishedRef  = useRef(false)
 
   // Load dialer config when panel opens
   useEffect(() => {
@@ -62,7 +88,7 @@ export function VoiceDialer() {
       .catch(() => setError("Could not load dialer config"))
   }, [expanded])
 
-  // Duration timer — start when connected, stop on call end
+  // Duration timer
   useEffect(() => {
     if (callState === "connected") {
       durationRef.current = 0
@@ -76,77 +102,19 @@ export function VoiceDialer() {
     return () => clearInterval(timerRef.current)
   }, [callState])
 
-  const handleDial = async () => {
-    if (!toNumber.trim()) return
-    setError("")
-    setCallState("connecting")
-    setDuration(0)
+  // Cleanup on unmount
+  useEffect(() => () => {
+    clearInterval(timerRef.current)
+    clearInterval(pollRef.current)
+    roomRef.current?.disconnect()
+  }, [])
 
-    try {
-      const res = await api.post("/v1/voice/dialer/dial", {
-        to: toNumber.trim(),
-        from: fromNumber || undefined,
-        contactName: contactName.trim() || undefined,
-        mode: "app",
-      })
-      const data = res.data?.data ?? res.data
-      setCallData(data)
-      callDataRef.current  = data
-      finishedRef.current  = false
-
-      // Dynamically import livekit-client (SSR-safe)
-      const { Room, RoomEvent, ConnectionState } = await import("livekit-client")
-      const room = new Room()
-      roomRef.current = room
-
-      setCallState("ringing")
-
-      room.on(RoomEvent.ParticipantConnected, (participant) => {
-        // SIP leg connected = customer picked up
-        if (participant.identity?.startsWith("phone-")) {
-          setCallState("connected")
-        }
-      })
-
-      room.on(RoomEvent.ParticipantDisconnected, (participant) => {
-        if (participant.identity?.startsWith("phone-")) {
-          finishCall({ answered: true })
-        }
-      })
-
-      room.on(RoomEvent.Disconnected, () => {
-        finishCall({ answered: callState === "connected" || durationRef.current > 0 })
-      })
-
-      room.on(RoomEvent.ConnectionStateChanged, (state) => {
-        if (state === ConnectionState.Disconnected) {
-          finishCall({ answered: durationRef.current > 0 })
-        }
-      })
-
-      await room.connect(data.livekitUrl, data.token)
-      await room.localParticipant.setMicrophoneEnabled(true)
-
-      // If SIP participant already in room (fast answer), set connected immediately
-      const sipParticipant = [...room.remoteParticipants.values()].find(p =>
-        p.identity?.startsWith("phone-")
-      )
-      if (sipParticipant) setCallState("connected")
-
-    } catch (err) {
-      setCallState("idle")
-      setError(err?.response?.data?.message ?? err?.message ?? "Failed to place call")
-      roomRef.current = null
-      setCallData(null)
-    }
-  }
-
-  // Uses refs so room event listeners never go stale.
   const finishCall = useCallback(async ({ answered = false } = {}) => {
     if (finishedRef.current) return
     finishedRef.current = true
     setCallState("ending")
     clearInterval(timerRef.current)
+    clearInterval(pollRef.current)
     const dur = durationRef.current
 
     try {
@@ -166,12 +134,107 @@ export function VoiceDialer() {
         callDataRef.current = null
         setDuration(0)
         setMuted(false)
+        finishedRef.current = false
         roomRef.current = null
-      }, 2000)
+      }, 2500)
     }
-  }, []) // stable — only uses refs
+  }, [])
+
+  // ── Bridge mode: poll active calls to detect when call connects / ends ───────
+  const startBridgePoll = useCallback((callId) => {
+    let consecutiveMissed = 0
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await api.get("/v1/voice/dialer/active")
+        const calls = res.data?.data?.calls ?? res.data?.calls ?? []
+        const live = calls.find(c => c.callId === callId)
+        if (live) {
+          consecutiveMissed = 0
+          // If we're still in ringing/connecting and there's a live call, it means
+          // at least the agent leg is up — treat as connected.
+          setCallState(s => (s === "ringing" || s === "connecting") ? "connected" : s)
+        } else {
+          consecutiveMissed++
+          // Call disappeared — both legs hung up.
+          if (consecutiveMissed >= 2) finishCall({ answered: durationRef.current > 0 })
+        }
+      } catch (_) {}
+    }, 3000)
+  }, [finishCall])
+
+  // ── App mode (browser WebRTC) ─────────────────────────────────────────────
+  const dialAppMode = useCallback(async (data) => {
+    const { Room, RoomEvent, ConnectionState } = await import("livekit-client")
+    const room = new Room()
+    roomRef.current = room
+
+    room.on(RoomEvent.ParticipantConnected, (participant) => {
+      if (participant.identity?.startsWith("phone-")) setCallState("connected")
+    })
+    room.on(RoomEvent.ParticipantDisconnected, (participant) => {
+      if (participant.identity?.startsWith("phone-")) finishCall({ answered: true })
+    })
+    room.on(RoomEvent.Disconnected, () => {
+      finishCall({ answered: durationRef.current > 0 })
+    })
+    room.on(RoomEvent.ConnectionStateChanged, (state) => {
+      if (state === ConnectionState.Disconnected) finishCall({ answered: durationRef.current > 0 })
+    })
+
+    await room.connect(data.livekitUrl, data.token)
+    await room.localParticipant.setMicrophoneEnabled(true)
+
+    // Check if SIP participant already in room (fast answer)
+    const sipAlready = [...room.remoteParticipants.values()].find(p =>
+      p.identity?.startsWith("phone-")
+    )
+    if (sipAlready) setCallState("connected")
+    else setCallState("ringing")
+  }, [finishCall])
+
+  const handleDial = async () => {
+    if (!toNumber.trim()) return
+    if (mode === "bridge" && !agentNumber.trim()) {
+      setError("Enter your phone number to bridge to")
+      return
+    }
+    setError("")
+    setCallState("connecting")
+    setDuration(0)
+    finishedRef.current = false
+
+    try {
+      const body = {
+        to: toNumber.trim(),
+        from: fromNumber || undefined,
+        contactName: contactName.trim() || undefined,
+        mode,
+        ...(mode === "bridge" ? { agentNumber: agentNumber.trim() } : {}),
+      }
+      const res = await api.post("/v1/voice/dialer/dial", body)
+      const data = res.data?.data ?? res.data
+      setCallData(data)
+      callDataRef.current = data
+
+      if (mode === "app") {
+        await dialAppMode(data)
+      } else {
+        // Bridge mode: LiveKit will call agentNumber first; just track via polling.
+        setCallState("ringing")
+        startBridgePoll(data.callId)
+      }
+    } catch (err) {
+      setCallState("idle")
+      setError(err?.response?.data?.message ?? err?.message ?? "Failed to place call")
+      roomRef.current = null
+      setCallData(null)
+      callDataRef.current = null
+      finishedRef.current = false
+    }
+  }
 
   const handleHangup = async () => {
+    clearInterval(pollRef.current)
     const id = callDataRef.current?.callId
     if (id) await api.post(`/v1/voice/dialer/${id}/hangup`).catch(() => {})
     roomRef.current?.disconnect()
@@ -189,7 +252,7 @@ export function VoiceDialer() {
   const isInCall    = ["connecting", "ringing", "connected", "ending"].includes(callState)
   const displayName = callData?.contactName || callData?.to || toNumber
 
-  // ── Collapsed button ──────────────────────────────────────────────
+  // ── Collapsed button ──────────────────────────────────────────────────────
   if (!expanded) {
     return (
       <button
@@ -203,7 +266,7 @@ export function VoiceDialer() {
     )
   }
 
-  // ── Expanded panel ────────────────────────────────────────────────
+  // ── Expanded panel ────────────────────────────────────────────────────────
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
       {/* Header */}
@@ -215,7 +278,9 @@ export function VoiceDialer() {
           <span className="text-sm font-semibold" style={{ color: TEXT }}>Dial</span>
           {config && !config.ready && (
             <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: `${RED}12`, color: RED }}>
-              {!config.livekitConfigured ? "LiveKit not configured" : !config.numbers?.length ? "No DID number provisioned" : "Not ready"}
+              {!config.livekitConfigured ? "LiveKit not configured"
+                : !config.numbers?.length ? "No DID number provisioned"
+                : "Not ready"}
             </span>
           )}
         </div>
@@ -239,37 +304,45 @@ export function VoiceDialer() {
               <div className="text-sm font-semibold" style={{ color: TEXT }}>{displayName}</div>
               <div className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>
                 {callState === "connecting" && "Connecting…"}
-                {callState === "ringing"    && "Ringing…"}
-                {callState === "connected"  && fmtDuration(duration)}
-                {callState === "ending"     && "Ending…"}
+                {callState === "ringing" && mode === "bridge" && "Your phone will ring soon…"}
+                {callState === "ringing" && mode === "app"    && "Ringing customer…"}
+                {callState === "connected" && fmtDuration(duration)}
+                {callState === "ending" && "Ending…"}
               </div>
+              {callState === "ringing" && mode === "bridge" && (
+                <div className="text-[10px] mt-1" style={{ color: TEXT_FAINT }}>
+                  Pick up — customer connects once you answer
+                </div>
+              )}
             </div>
 
-            {/* Animated ring for ringing state */}
+            {/* Animated ring */}
             {callState === "ringing" && (
               <div className="flex justify-center">
                 <span
                   className="w-3 h-3 rounded-full animate-ping"
-                  style={{ background: GREEN, opacity: 0.6 }}
+                  style={{ background: callState === "ringing" ? AMBER : GREEN, opacity: 0.6 }}
                 />
               </div>
             )}
 
             {/* Call controls */}
             <div className="flex items-center justify-center gap-4">
-              {/* Mute */}
-              <button
-                onClick={toggleMute}
-                disabled={callState !== "connected"}
-                className="w-11 h-11 rounded-full flex items-center justify-center transition-all disabled:opacity-40"
-                style={{
-                  background: muted ? `${RED}15` : `${BLUE}12`,
-                  color: muted ? RED : BLUE,
-                  border: `1px solid ${muted ? RED : BLUE}30`,
-                }}
-              >
-                {muted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </button>
+              {/* Mute — only in app mode (browser has the mic) */}
+              {mode === "app" && (
+                <button
+                  onClick={toggleMute}
+                  disabled={callState !== "connected"}
+                  className="w-11 h-11 rounded-full flex items-center justify-center transition-all disabled:opacity-40"
+                  style={{
+                    background: muted ? `${RED}15` : `${BLUE}12`,
+                    color: muted ? RED : BLUE,
+                    border: `1px solid ${muted ? RED : BLUE}30`,
+                  }}
+                >
+                  {muted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+              )}
 
               {/* Hangup */}
               <button
@@ -280,6 +353,13 @@ export function VoiceDialer() {
                 <PhoneOff className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Bridge mode info */}
+            {mode === "bridge" && callState === "connected" && (
+              <p className="text-[10px]" style={{ color: TEXT_FAINT }}>
+                Call is live on your phone — hang up from here or from your phone
+              </p>
+            )}
           </div>
         ) : callState === "ended" ? (
           <div className="text-center py-4">
@@ -289,10 +369,30 @@ export function VoiceDialer() {
         ) : (
           /* Idle form */
           <div className="space-y-4">
+            {/* Mode selector */}
+            <div className="flex gap-2">
+              <ModePill
+                active={mode === "app"}
+                icon={Globe}
+                label="Browser"
+                description="Talk from this tab (WebRTC)"
+                color={BLUE}
+                onClick={() => setMode("app")}
+              />
+              <ModePill
+                active={mode === "bridge"}
+                icon={Smartphone}
+                label="PSTN Bridge"
+                description="LiveKit calls your phone, bridges customer"
+                color={AMBER}
+                onClick={() => setMode("bridge")}
+              />
+            </div>
+
             {/* From number selector */}
             {config?.numbers?.length > 1 && (
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>From</label>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Caller ID</label>
                 <select
                   value={fromNumber}
                   onChange={e => setFromNumber(e.target.value)}
@@ -306,9 +406,27 @@ export function VoiceDialer() {
               </div>
             )}
 
-            {/* To number */}
+            {/* Bridge: your phone number */}
+            {mode === "bridge" && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
+                  Your phone *
+                  <span className="ml-1 font-normal" style={{ color: TEXT_FAINT }}>(LiveKit calls this first)</span>
+                </label>
+                <input
+                  type="tel"
+                  value={agentNumber}
+                  onChange={e => setAgentNumber(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                  style={{ background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, color: TEXT }}
+                />
+              </div>
+            )}
+
+            {/* Customer number */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>To *</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>Customer *</label>
               <input
                 type="tel"
                 value={toNumber}
@@ -342,10 +460,10 @@ export function VoiceDialer() {
               onClick={handleDial}
               disabled={!toNumber.trim() || !config?.ready}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-              style={{ background: GREEN }}
+              style={{ background: mode === "bridge" ? AMBER : GREEN }}
             >
               <Phone className="w-4 h-4" />
-              Call
+              {mode === "bridge" ? "Call via your phone" : "Call from browser"}
             </button>
 
             {config && !config.ready && (
