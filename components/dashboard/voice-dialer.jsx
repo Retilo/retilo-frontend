@@ -31,10 +31,10 @@ function fmtDuration(secs) {
   return `${m}:${String(s).padStart(2, "0")}`
 }
 
-export function VoiceDialer() {
+export function VoiceDialer({ initialNumber = "" }) {
   const [mode, setMode]               = useState("bridge")
   const [config, setConfig]           = useState(null)
-  const [display, setDisplay]         = useState("")
+  const [display, setDisplay]         = useState(initialNumber)
   const [agentNumber, setAgentNumber] = useState("")
   const [fromNumber, setFromNumber]   = useState("")
   const [callState, setCallState]     = useState("idle")
@@ -50,6 +50,11 @@ export function VoiceDialer() {
   const durationRef  = useRef(0)
   const callDataRef  = useRef(null)
   const finishedRef  = useRef(false)
+
+  // Sync display when parent pre-fills from "Call Back"
+  useEffect(() => {
+    if (initialNumber) setDisplay(initialNumber)
+  }, [initialNumber])
 
   useEffect(() => {
     api.get("/v1/voice/dialer/config")
