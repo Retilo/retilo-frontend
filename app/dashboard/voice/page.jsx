@@ -36,7 +36,7 @@ const RED = "oklch(0.52 0.22 25)"
 // ── Stat tile ─────────────────────────────────────────────────────
 function StatTile({ icon: Icon, label, value, sub, accent = BLUE }) {
   return (
-    <div className="rounded-2xl p-5 flex items-start gap-4" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+    <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${accent}12`, color: accent }}>
         <Icon className="w-5 h-5" />
       </div>
@@ -385,7 +385,7 @@ function ProvisionModal({ locations, agent, onClose, onProvision }) {
 function AnalyticsBar({ analytics }) {
   if (!analytics) return null
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 gap-3">
       <StatTile icon={PhoneCall} label="Total calls" value={analytics.totalCalls} accent={BLUE} />
       <StatTile icon={TrendingUp} label="Answer rate" value={`${analytics.answerRate}%`} sub={`${analytics.missedCalls} missed`} accent={GREEN} />
       <StatTile icon={Hash} label="Enquiries resolved" value={analytics.ordersPlaced} accent="oklch(0.62 0.20 50)" />
@@ -449,8 +449,8 @@ export default function VoicePage() {
 
   return (
     <DashboardPageLayout
-      title="Voice AI"
-      subtitle="AI phone receptionist for your stores — handles product queries, hours, directions and stock checks"
+      title="Voice Intelligence"
+      subtitle="Every call answered. Every missed call recovered. Orders placed in Hindi, Telugu, Tamil and more."
       actions={
         <div className="flex items-center gap-2">
           <button
@@ -473,95 +473,105 @@ export default function VoicePage() {
         </div>
       }
     >
-      <div className="max-w-3xl mx-auto px-8 py-6 space-y-8">
+      <div className="max-w-3xl mx-auto px-8 py-6 space-y-6">
         <ModuleHelper
           moduleKey="voice-ai-v1"
-          title="AI Phone Receptionist — getting started"
-          description="Provision a phone number for each location and the AI answers 100% of calls — handling menu questions, store hours, directions, and order placement. Missed calls become revenue."
+          title="Voice Intelligence — getting started"
+          description="Provision a number for each location. The AI answers every call in Hindi, English, Telugu, Tamil, Kannada. Missed calls become bookings. Outbound dialer for follow-ups — right here."
           rimVariant="default"
         />
-        {/* Human dialer */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
-              Outbound Calls
-            </h2>
-          </div>
-          <VoiceDialer />
-        </div>
 
         {loading ? (
-          <div className="space-y-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }} />
-            ))}
+          <div className="grid grid-cols-5 gap-4">
+            <div className="col-span-3 space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }} />
+              ))}
+            </div>
+            <div className="col-span-2">
+              <div className="h-96 rounded-2xl animate-pulse" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }} />
+            </div>
           </div>
         ) : (
-          <>
-            {/* Analytics summary */}
-            <AnalyticsBar analytics={analytics} />
+          <div className="grid grid-cols-5 gap-4 items-start">
+            {/* ── Left column: stats + agents + calls ── */}
+            <div className="col-span-3 space-y-5">
 
-            {/* Agents */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
-                  Voice Agents
-                </h2>
-                <span className="text-xs" style={{ color: TEXT_FAINT }}>{agents.length} active</span>
+              {/* Stats */}
+              <AnalyticsBar analytics={analytics} />
+
+              {/* AI Agents */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
+                    AI Receptionist
+                  </h2>
+                  <span className="text-xs" style={{ color: TEXT_FAINT }}>{agents.length} active</span>
+                </div>
+
+                {agents.length === 0 ? (
+                  <div className="text-center py-10 rounded-2xl" style={{ border: `1px dashed ${CARD_BORDER}` }}>
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: `${BLUE}12` }}>
+                      <Mic className="w-6 h-6" style={{ color: BLUE }} />
+                    </div>
+                    <h3 className="text-sm font-semibold mb-1.5" style={{ color: TEXT }}>No AI agent yet</h3>
+                    <p className="text-xs mb-5 max-w-xs mx-auto" style={{ color: TEXT_MUTED }}>
+                      Answers every call 24/7 — menu, hours, directions, table booking. In Hindi, English, and 4 more Indian languages.
+                    </p>
+                    <button
+                      onClick={() => { setEditingAgent(null); setShowProvision(true) }}
+                      disabled={locations.length === 0}
+                      className="px-4 py-2 rounded-xl text-white text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-40"
+                      style={{ background: BLUE }}
+                    >
+                      Provision first agent
+                    </button>
+                    {locations.length === 0 && (
+                      <p className="mt-2.5 text-[11px]" style={{ color: TEXT_FAINT }}>Connect a GMB location first</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {agents.map(agent => (
+                      <AgentCard
+                        key={agent.id}
+                        agent={agent}
+                        phoneNumber={getPhoneForAgent(agent)}
+                        onDelete={handleDeleteAgent}
+                        onEdit={(a) => { setEditingAgent(a); setShowProvision(true) }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {agents.length === 0 ? (
-                <div className="text-center py-14 rounded-2xl" style={{ border: `1px dashed ${CARD_BORDER}` }}>
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: `${BLUE}12` }}>
-                    <Mic className="w-7 h-7" style={{ color: BLUE }} />
+              {/* Recent calls */}
+              {calls.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
+                      Recent Calls
+                    </h2>
                   </div>
-                  <h3 className="text-sm font-semibold mb-2" style={{ color: TEXT }}>No voice agents yet</h3>
-                  <p className="text-xs mb-6 max-w-xs mx-auto" style={{ color: TEXT_MUTED }}>
-                    Provision an AI receptionist for your store — it answers calls 24/7, handles product queries, gives directions, and checks store hours.
-                  </p>
-                  <button
-                    onClick={() => { setEditingAgent(null); setShowProvision(true) }}
-                    disabled={locations.length === 0}
-                    className="px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-                    style={{ background: BLUE }}
-                  >
-                    Provision first agent
-                  </button>
-                  {locations.length === 0 && (
-                    <p className="mt-3 text-xs" style={{ color: TEXT_FAINT }}>Connect a GMB location first</p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {agents.map(agent => (
-                    <AgentCard
-                      key={agent.id}
-                      agent={agent}
-                      phoneNumber={getPhoneForAgent(agent)}
-                      onDelete={handleDeleteAgent}
-                      onEdit={(a) => { setEditingAgent(a); setShowProvision(true) }}
-                    />
-                  ))}
+                  <div className="rounded-2xl overflow-hidden" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+                    {calls.map(call => (
+                      <CallRow key={call.id} call={call} />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Call history */}
-            {calls.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
-                    Recent Calls
-                  </h2>
-                </div>
-                <div className="rounded-2xl overflow-hidden" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-                  {calls.map(call => (
-                    <CallRow key={call.id} call={call} />
-                  ))}
-                </div>
+            {/* ── Right column: Dialer ── */}
+            <div className="col-span-2">
+              <div className="mb-3">
+                <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: TEXT_FAINT }}>
+                  Outbound Dialer
+                </h2>
               </div>
-            )}
-          </>
+              <VoiceDialer />
+            </div>
+          </div>
         )}
       </div>
 
