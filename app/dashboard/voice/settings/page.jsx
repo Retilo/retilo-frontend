@@ -14,6 +14,8 @@ import {
   PhoneCall,
   Sparkles,
   ArrowRight,
+  ShoppingBag,
+  CheckCircle2,
 } from "lucide-react"
 
 import { api } from "@/lib/api"
@@ -36,18 +38,18 @@ const TEXT_FAINT = "oklch(0.60 0.008 270)"
 const INPUT_BG = "oklch(0.97 0.004 270)"
 const INPUT_BORDER = "oklch(0.90 0.006 270)"
 
-// Hindi + English run on AWS Polly today. The rest arrive with Sarvam (Indic
-// STT+TTS) — selectable once that provider is wired.
+// All Indic languages are live via Sarvam STT+TTS. Hindi & English also run on AWS.
 const LANGUAGES = [
-  { code: "hi-IN", label: "Hindi · हिन्दी", active: true },
-  { code: "en-IN", label: "English", active: true },
-  { code: "ta-IN", label: "Tamil · தமிழ்", active: false },
-  { code: "te-IN", label: "Telugu · తెలుగు", active: false },
-  { code: "kn-IN", label: "Kannada · ಕನ್ನಡ", active: false },
-  { code: "ml-IN", label: "Malayalam · മലയാളം", active: false },
-  { code: "bn-IN", label: "Bengali · বাংলা", active: false },
-  { code: "mr-IN", label: "Marathi · मराठी", active: false },
-  { code: "gu-IN", label: "Gujarati · ગુજરાતી", active: false },
+  { code: "hi-IN", label: "Hindi · हिन्दी" },
+  { code: "en-IN", label: "English" },
+  { code: "ta-IN", label: "Tamil · தமிழ்" },
+  { code: "te-IN", label: "Telugu · తెలుగు" },
+  { code: "kn-IN", label: "Kannada · ಕನ್ನಡ" },
+  { code: "ml-IN", label: "Malayalam · മലയാളം" },
+  { code: "bn-IN", label: "Bengali · বাংলা" },
+  { code: "mr-IN", label: "Marathi · मराठी" },
+  { code: "gu-IN", label: "Gujarati · ગુજરાતી" },
+  { code: "pa-IN", label: "Punjabi · ਪੰਜਾਬੀ" },
 ]
 
 const EMPTY = {
@@ -80,6 +82,7 @@ export default function VoiceCallSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [numbers, setNumbers] = useState([])
   const [providers, setProviders] = useState(null)
+  const [branches, setBranches] = useState([])
   const [form, setForm] = useState(EMPTY)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -87,10 +90,11 @@ export default function VoiceCallSettingsPage() {
     let alive = true
     ;(async () => {
       try {
-        const [numRes, agentRes, provRes] = await Promise.allSettled([
+        const [numRes, agentRes, provRes, branchRes] = await Promise.allSettled([
           api.get("/v1/voice/numbers"),
           api.get("/v1/voice/agents"),
           api.get("/v1/voice/providers"),
+          api.get("/v1/swiggy/branches"),
         ])
 
         if (!alive) return
@@ -127,6 +131,11 @@ export default function VoiceCallSettingsPage() {
 
         if (provRes.status === "fulfilled") {
           setProviders(provRes.value.data?.data ?? null)
+        }
+
+        if (branchRes.status === "fulfilled") {
+          const raw = branchRes.value.data?.data?.branches ?? branchRes.value.data?.data ?? []
+          setBranches(Array.isArray(raw) ? raw : [])
         }
       } catch {
         /* individual failures already handled above */
@@ -280,15 +289,13 @@ export default function VoiceCallSettingsPage() {
                   style={inputStyle}
                 >
                   {LANGUAGES.map((l) => (
-                    <option key={l.code} value={l.code} disabled={!l.active}>
+                    <option key={l.code} value={l.code}>
                       {l.label}
-                      {l.active ? "" : "  (Sarvam — soon)"}
                     </option>
                   ))}
                 </select>
                 <p className="mt-1.5 text-xs" style={{ color: TEXT_FAINT }}>
-                  Hindi & English are live now. More Indian languages arrive with
-                  Sarvam.
+                  All Indian languages are live via Sarvam AI.
                 </p>
               </Field>
 
@@ -357,6 +364,63 @@ export default function VoiceCallSettingsPage() {
               >
                 “{greetingPreview(form.restaurantName, form.primaryLanguage)}”
               </p>
+            </TextureCardContent>
+          </TextureCard>
+
+          {/* Swiggy restaurants */}
+          <TextureCard>
+            <TextureCardHeader className="px-5 pt-5">
+              <TextureCardTitle>Swiggy restaurants on this number</TextureCardTitle>
+              <TextureCardDescription>
+                The AI knows about these branches and can tell callers which locations are available.
+              </TextureCardDescription>
+            </TextureCardHeader>
+            <TextureSeparator />
+            <TextureCardContent className="p-5">
+              {branches.length === 0 ? (
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm" style={{ color: TEXT_FAINT }}>
+                    No Swiggy branches linked yet. Connect your Swiggy account to link restaurants.
+                  </p>
+                  <Link
+                    href="/dashboard/swiggy"
+                    className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium flex-shrink-0"
+                    style={{ background: `${BLUE}12`, color: BLUE }}
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    Swiggy
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {branches.map((b) => (
+                    <div
+                      key={b.location_id ?? b.id}
+                      className="flex items-center gap-3 rounded-xl px-4 py-2.5"
+                      style={{ background: INPUT_BG }}
+                    >
+                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: GREEN }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate" style={{ color: TEXT }}>
+                          {b.branch_name || `Branch ${b.location_id}`}
+                        </div>
+                        {b.own_swiggy_restaurant_id && (
+                          <div className="text-xs" style={{ color: TEXT_FAINT }}>
+                            Menu + booking available
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs mt-1" style={{ color: TEXT_FAINT }}>
+                    Manage branches in{" "}
+                    <Link href="/dashboard/swiggy" style={{ color: BLUE }}>
+                      Swiggy settings
+                    </Link>
+                    .
+                  </p>
+                </div>
+              )}
             </TextureCardContent>
           </TextureCard>
 
