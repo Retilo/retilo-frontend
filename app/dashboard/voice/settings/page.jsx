@@ -282,7 +282,7 @@ export default function VoiceCallSettingsPage() {
                 />
               </Field>
 
-              <Field icon={Languages} label="Language the AI speaks">
+              <Field icon={Languages} label="Default language">
                 <select
                   value={form.primaryLanguage}
                   onChange={(e) => set("primaryLanguage", e.target.value)}
@@ -295,7 +295,7 @@ export default function VoiceCallSettingsPage() {
                   ))}
                 </select>
                 <p className="mt-1.5 text-xs" style={{ color: TEXT_FAINT }}>
-                  All Indian languages are live via Sarvam AI.
+                  The AI starts in this language and follows the caller if they switch mid-call. All Indian languages via Sarvam AI.
                 </p>
               </Field>
 
