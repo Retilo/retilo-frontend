@@ -269,7 +269,7 @@ export function SwiggyDineoutSection() {
               transition={{ duration: 0.4, delay: 0.7 }}
               className="mt-4 text-xs text-gray-400"
             >
-              Retilo is an official Swiggy Builders Club integration partner.
+              Retilo is an official Swiggy integration partner.
             </motion.p>
           </div>
         </div>
