@@ -6,6 +6,7 @@ import { BrandVisibilitySection } from "./brand-visibility-section"
 import { StorySection } from "./story/story-section"
 import { VoiceSection } from "./voice-section"
 import { GlobeStatsSection } from "./globe-stats-section"
+import { SwiggyDineoutSection } from "./swiggy-dineout-section"
 import { AnalyticsSection } from "./analytics-section"
 import { CtaSection } from "./cta-cosmic-section"
 import { LandingFooter } from "./footer"
@@ -41,8 +42,14 @@ export default function LandingPage() {
         {/* ── 05 · Scale ───────────────────────────────────────── */}
         <GlobeStatsSection />
 
+        {/* ── 05b · Swiggy Dineout partnership ─────────────────── */}
+        <SectionDivider n="02" label="Swiggy Partnership" />
+        <div id="swiggy-dineout">
+          <SwiggyDineoutSection />
+        </div>
+
         {/* ── 06 · The Results ─────────────────────────────────── */}
-        <SectionDivider n="02" label="The Results" />
+        <SectionDivider n="03" label="The Results" />
         <AnalyticsSection />
 
         {/* ── 07 · Action ──────────────────────────────────────── */}

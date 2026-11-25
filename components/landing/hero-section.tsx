@@ -10,6 +10,7 @@ import { OrganicButton } from "@/components/organic-button"
 const CALENDLY = "https://calendly.com/satwikloka321/retilo?month=2026-03"
 
 const PLATFORMS = [
+  { name: "Swiggy Dineout",  color: "#FC8019" },
   { name: "Google Business", color: "#4285F4" },
   { name: "ChatGPT",         color: "#10a37f" },
   { name: "WhatsApp",        color: "#25d366" },
