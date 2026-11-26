@@ -1,6 +1,3 @@
-// Zustand store for the GMB Workflow Editor
-// Follows the same pattern as the workflow-editor-pro-example.zip
-
 import { create } from "zustand"
 import {
   addEdge,
@@ -13,6 +10,7 @@ import {
   type NodeChange,
   type XYPosition,
 } from "@xyflow/react"
+import { api } from "@/lib/api"
 
 // ── Node type registry ────────────────────────────────────────
 export type GmbNodeType =
@@ -66,6 +64,11 @@ interface WorkflowStore {
   selectedNodeId: string | null
   workflowName: string
   isRunning: boolean
+  canvasId: string
+  savedWorkflowIds: string[]
+  saveStatus: "idle" | "saving" | "saved" | "error"
+  saveError: string | null
+  lastRunResults: Array<{ type: string; nodeId: string | null; result: unknown }> | null
 
   // React Flow handlers
   onNodesChange: (changes: NodeChange[]) => void
@@ -80,7 +83,8 @@ interface WorkflowStore {
 
   // Workflow actions
   setWorkflowName: (name: string) => void
-  runWorkflow: () => void
+  saveWorkflow: () => Promise<string[]>
+  runWorkflow: () => Promise<void>
   stopWorkflow: () => void
   clearWorkflow: () => void
 }
@@ -213,6 +217,11 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   selectedNodeId: null,
   workflowName: "Restaurant AI — Swiggy + Reviews + Missed Calls",
   isRunning: false,
+  canvasId: typeof crypto !== "undefined" ? crypto.randomUUID() : `canvas-${Date.now()}`,
+  savedWorkflowIds: [],
+  saveStatus: "idle",
+  saveError: null,
+  lastRunResults: null,
 
   onNodesChange: (changes) =>
     set((s) => ({ nodes: applyNodeChanges(changes, s.nodes) as AppNode[] })),
@@ -246,33 +255,76 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
 
   setWorkflowName: (name) => set({ workflowName: name }),
 
-  runWorkflow: () => {
-    // Simulate workflow execution — set all nodes to running then success
-    set({ isRunning: true })
-    const { nodes } = get()
-    nodes.forEach((node, i) => {
-      setTimeout(() => {
-        set((s) => ({
-          nodes: s.nodes.map((n) =>
-            n.id === node.id ? { ...n, data: { ...n.data, status: "running" } } : n
-          ),
-        }))
-        setTimeout(() => {
-          set((s) => ({
-            nodes: s.nodes.map((n) =>
-              n.id === node.id ? { ...n, data: { ...n.data, status: "success" } } : n
-            ),
-          }))
-        }, 600)
-      }, i * 400)
-    })
-    setTimeout(() => set({ isRunning: false }), nodes.length * 400 + 800)
+  saveWorkflow: async () => {
+    const { nodes, edges, workflowName, canvasId } = get()
+    set({ saveStatus: "saving", saveError: null })
+    try {
+      const res = await api.post("/v1/workflows/canvas", { name: workflowName, canvasId, nodes, edges })
+      const { workflowIds } = res.data.data
+      set({ saveStatus: "saved", savedWorkflowIds: workflowIds })
+      setTimeout(() => set({ saveStatus: "idle" }), 2500)
+      return workflowIds
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Save failed"
+      set({ saveStatus: "error", saveError: msg })
+      setTimeout(() => set({ saveStatus: "idle", saveError: null }), 4000)
+      throw err
+    }
+  },
+
+  runWorkflow: async () => {
+    const { nodes, saveWorkflow } = get()
+    set({ isRunning: true, lastRunResults: null })
+
+    // Mark all nodes running
+    set((s) => ({
+      nodes: s.nodes.map((n) => ({ ...n, data: { ...n.data, status: "running" as const } })),
+    }))
+
+    try {
+      // 1. Save canvas to backend, get workflow IDs
+      let workflowIds = get().savedWorkflowIds
+      if (!workflowIds.length) {
+        workflowIds = await saveWorkflow()
+      }
+
+      // 2. Test-run first workflow (the primary trigger flow)
+      const res = await api.post(`/v1/workflows/${workflowIds[0]}/test`, {})
+      const results: Array<{ type: string; nodeId: string | null; result: unknown }> = res.data.data?.results ?? []
+      set({ lastRunResults: results })
+
+      // 3. Map step results back to node statuses
+      const nodeStatusMap = new Map<string, "success" | "error">()
+      results.forEach((r) => {
+        if (r.nodeId) nodeStatusMap.set(r.nodeId, "success")
+      })
+
+      set((s) => ({
+        isRunning: false,
+        nodes: s.nodes.map((n) => ({
+          ...n,
+          data: {
+            ...n.data,
+            status: nodeStatusMap.has(n.id)
+              ? nodeStatusMap.get(n.id)!
+              : n.data.type?.startsWith("trigger-")
+              ? ("success" as const)
+              : ("idle" as const),
+          },
+        })),
+      }))
+    } catch {
+      set((s) => ({
+        isRunning: false,
+        nodes: s.nodes.map((n) => ({ ...n, data: { ...n.data, status: "error" as const } })),
+      }))
+    }
   },
 
   stopWorkflow: () => {
     set((s) => ({
       isRunning: false,
-      nodes: s.nodes.map((n) => ({ ...n, data: { ...n.data, status: "idle" } })),
+      nodes: s.nodes.map((n) => ({ ...n, data: { ...n.data, status: "idle" as const } })),
     }))
   },
 

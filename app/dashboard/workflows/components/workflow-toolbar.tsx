@@ -2,7 +2,7 @@
 
 // Top toolbar: run / save / status bar
 
-import { Play, Square, Save, Trash2, LayoutDashboard } from "lucide-react"
+import { Play, Square, Save, Trash2, LayoutDashboard, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 import { useCallback, useState } from "react"
 import { useReactFlow } from "@xyflow/react"
 import { useWorkflowStore } from "../store/workflow-store"
@@ -16,7 +16,7 @@ const TEXT_FAINT = "oklch(0.65 0.008 270)"
 const BTN_BG = "oklch(0.975 0.004 350)"
 
 export function WorkflowToolbar() {
-  const { isRunning, runWorkflow, stopWorkflow, clearWorkflow, nodes, edges } = useWorkflowStore()
+  const { isRunning, runWorkflow, stopWorkflow, clearWorkflow, nodes, edges, saveWorkflow, saveStatus, saveError } = useWorkflowStore()
   const { setNodes, fitView } = useReactFlow()
   const [laying, setLaying] = useState(false)
 
@@ -79,12 +79,26 @@ export function WorkflowToolbar() {
         </button>
 
         <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:opacity-75"
-          style={{ border: `1px solid ${BORDER}`, background: BTN_BG, color: TEXT_MUTED }}
-          title="Save workflow"
+          onClick={() => saveWorkflow().catch(() => {})}
+          disabled={saveStatus === "saving" || nodes.length === 0}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:opacity-75 disabled:opacity-40"
+          style={{
+            border: `1px solid ${saveStatus === "error" ? "#ef444440" : saveStatus === "saved" ? "#10b98140" : BORDER}`,
+            background: BTN_BG,
+            color: saveStatus === "error" ? "#ef4444" : saveStatus === "saved" ? "#10b981" : TEXT_MUTED,
+          }}
+          title={saveError ?? "Save workflow to backend"}
         >
-          <Save className="w-3.5 h-3.5" />
-          Save
+          {saveStatus === "saving" ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : saveStatus === "saved" ? (
+            <CheckCircle2 className="w-3.5 h-3.5" />
+          ) : saveStatus === "error" ? (
+            <AlertCircle className="w-3.5 h-3.5" />
+          ) : (
+            <Save className="w-3.5 h-3.5" />
+          )}
+          {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error" : "Save"}
         </button>
 
         {isRunning ? (
