@@ -1,6 +1,5 @@
 // ELK auto-layout — adapted from xyflow pro-ai-workflow-editor
 import { type Edge, type Node } from "@xyflow/react"
-// @ts-expect-error elkjs has no bundled types
 import ELK from "elkjs/lib/elk.bundled.js"
 
 const elk = new ELK()
