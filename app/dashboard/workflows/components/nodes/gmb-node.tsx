@@ -7,32 +7,55 @@ import { Handle, Position, type NodeProps } from "@xyflow/react"
 import {
   Star, Clock, Filter, SlidersHorizontal,
   Sparkles, Send, Bell, GitBranch, Timer, CheckCircle2, Trash2,
+  ShoppingBag, Phone, MessageSquare, PhoneMissed, PhoneIncoming,
+  XCircle, FileText,
 } from "lucide-react"
 import { type AppNode, type GmbNodeType, useWorkflowStore } from "../../store/workflow-store"
+import { NodeStatusIndicator } from "../node-status-indicator"
 
-const PINK = "oklch(0.58 0.24 350)"
-const CARD_BG = "oklch(1 0 0)"
+const PINK   = "oklch(0.58 0.24 350)"
+const ORANGE = "#FC8019"
+const GREEN  = "#25d366"
+const VIOLET = "#6366f1"
+const CARD_BG     = "oklch(1 0 0)"
 const CARD_BORDER = "oklch(0.91 0.008 350)"
-const TEXT = "oklch(0.14 0.008 270)"
-const TEXT_MUTED = "oklch(0.55 0.008 270)"
-const TEXT_FAINT = "oklch(0.65 0.008 270)"
+const TEXT        = "oklch(0.14 0.008 270)"
+const TEXT_MUTED  = "oklch(0.55 0.008 270)"
+const TEXT_FAINT  = "oklch(0.65 0.008 270)"
 
-// ── Style map ──────────────────────────────────────────────────
-const NODE_STYLE: Record<GmbNodeType, {
+type NodeStyle = {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
   color: string
   category: "trigger" | "logic" | "action" | "output"
-}> = {
-  "trigger-new-review":   { icon: Star,              color: PINK,                      category: "trigger" },
-  "trigger-schedule":     { icon: Clock,             color: "oklch(0.58 0.20 55)",     category: "trigger" },
-  "filter-rating":        { icon: Filter,            color: "oklch(0.55 0.20 310)",    category: "logic"   },
-  "filter-keyword":       { icon: SlidersHorizontal, color: "oklch(0.55 0.20 310)",    category: "logic"   },
-  "ai-draft-reply":       { icon: Sparkles,          color: PINK,                      category: "action"  },
-  "post-reply":           { icon: Send,              color: "oklch(0.52 0.18 160)",    category: "action"  },
-  "send-notification":    { icon: Bell,              color: "oklch(0.58 0.20 55)",     category: "action"  },
-  "branch":               { icon: GitBranch,         color: "oklch(0.55 0.22 280)",    category: "logic"   },
-  "delay":                { icon: Timer,             color: "oklch(0.55 0.22 280)",    category: "logic"   },
-  "output":               { icon: CheckCircle2,      color: "oklch(0.52 0.18 160)",    category: "output"  },
+  connector?: string
+}
+
+const NODE_STYLE: Record<GmbNodeType, NodeStyle> = {
+  // Google
+  "trigger-new-review":        { icon: Star,             color: PINK,                     category: "trigger",  connector: "Google" },
+  "trigger-schedule":          { icon: Clock,            color: "oklch(0.58 0.20 55)",    category: "trigger"   },
+  "ai-draft-reply":            { icon: Sparkles,         color: PINK,                     category: "action",   connector: "Google" },
+  "post-reply":                { icon: Send,             color: "oklch(0.52 0.18 160)",   category: "action",   connector: "Google" },
+  "action-gmb-post":           { icon: FileText,         color: "oklch(0.52 0.18 160)",   category: "action",   connector: "Google" },
+  // Swiggy
+  "trigger-swiggy-booking":    { icon: ShoppingBag,      color: ORANGE,                   category: "trigger",  connector: "Swiggy" },
+  "trigger-swiggy-cancelled":  { icon: XCircle,          color: ORANGE,                   category: "trigger",  connector: "Swiggy" },
+  "action-swiggy-confirm":     { icon: CheckCircle2,     color: ORANGE,                   category: "action",   connector: "Swiggy" },
+  "action-swiggy-reject":      { icon: XCircle,          color: ORANGE,                   category: "action",   connector: "Swiggy" },
+  // Voice
+  "trigger-voice-inbound":     { icon: PhoneIncoming,    color: VIOLET,                   category: "trigger",  connector: "Voice" },
+  "trigger-voice-missed":      { icon: PhoneMissed,      color: VIOLET,                   category: "trigger",  connector: "Voice" },
+  "action-voice-callback":     { icon: Phone,            color: VIOLET,                   category: "action",   connector: "Voice" },
+  // WhatsApp
+  "trigger-whatsapp-message":  { icon: MessageSquare,    color: GREEN,                    category: "trigger",  connector: "WhatsApp" },
+  "action-send-whatsapp":      { icon: Send,             color: GREEN,                    category: "action",   connector: "WhatsApp" },
+  // Logic
+  "filter-rating":             { icon: Filter,           color: "oklch(0.55 0.20 310)",   category: "logic"   },
+  "filter-keyword":            { icon: SlidersHorizontal,color: "oklch(0.55 0.20 310)",   category: "logic"   },
+  "branch":                    { icon: GitBranch,        color: "oklch(0.55 0.22 280)",   category: "logic"   },
+  "delay":                     { icon: Timer,            color: "oklch(0.55 0.22 280)",   category: "logic"   },
+  "send-notification":         { icon: Bell,             color: "oklch(0.58 0.20 55)",    category: "action"  },
+  "output":                    { icon: CheckCircle2,     color: "oklch(0.52 0.18 160)",   category: "output"  },
 }
 
 const STATUS_DOT: Record<string, string> = {
@@ -62,10 +85,13 @@ function GmbNodeComponent({ id, data, selected }: NodeProps<AppNode>) {
   const isTrigger = style.category === "trigger"
   const isOutput = style.category === "output"
 
+  const statusForIndicator = data.status === "running" ? "running" : data.status === "success" ? "success" : data.status === "error" ? "error" : undefined
+
   return (
+    <NodeStatusIndicator status={statusForIndicator}>
     <div
       onClick={() => selectNode(id)}
-      className="relative w-[220px] rounded-2xl transition-all duration-200 cursor-pointer select-none"
+      className="group relative w-[220px] rounded-2xl transition-all duration-200 cursor-pointer select-none"
       style={{
         background: CARD_BG,
         border: `1px solid ${selected ? style.color : CARD_BORDER}`,
@@ -163,20 +189,31 @@ function GmbNodeComponent({ id, data, selected }: NodeProps<AppNode>) {
         />
       )}
     </div>
+    </NodeStatusIndicator>
   )
 }
 
 export const GmbNode = memo(GmbNodeComponent)
 
 export const nodeTypes = {
-  "trigger-new-review":   GmbNode,
-  "trigger-schedule":     GmbNode,
-  "filter-rating":        GmbNode,
-  "filter-keyword":       GmbNode,
-  "ai-draft-reply":       GmbNode,
-  "post-reply":           GmbNode,
-  "send-notification":    GmbNode,
-  "branch":               GmbNode,
-  "delay":                GmbNode,
-  "output":               GmbNode,
+  "trigger-new-review":        GmbNode,
+  "trigger-schedule":          GmbNode,
+  "trigger-swiggy-booking":    GmbNode,
+  "trigger-swiggy-cancelled":  GmbNode,
+  "trigger-voice-inbound":     GmbNode,
+  "trigger-voice-missed":      GmbNode,
+  "trigger-whatsapp-message":  GmbNode,
+  "filter-rating":             GmbNode,
+  "filter-keyword":            GmbNode,
+  "action-swiggy-confirm":     GmbNode,
+  "action-swiggy-reject":      GmbNode,
+  "action-send-whatsapp":      GmbNode,
+  "action-voice-callback":     GmbNode,
+  "action-gmb-post":           GmbNode,
+  "ai-draft-reply":            GmbNode,
+  "post-reply":                GmbNode,
+  "send-notification":         GmbNode,
+  "branch":                    GmbNode,
+  "delay":                     GmbNode,
+  "output":                    GmbNode,
 }

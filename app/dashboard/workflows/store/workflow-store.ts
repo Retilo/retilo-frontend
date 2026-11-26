@@ -16,15 +16,36 @@ import {
 
 // ── Node type registry ────────────────────────────────────────
 export type GmbNodeType =
+  // Triggers — Google
   | "trigger-new-review"
   | "trigger-schedule"
+  // Triggers — Swiggy
+  | "trigger-swiggy-booking"
+  | "trigger-swiggy-cancelled"
+  // Triggers — Voice
+  | "trigger-voice-inbound"
+  | "trigger-voice-missed"
+  // Triggers — WhatsApp
+  | "trigger-whatsapp-message"
+  // Logic
   | "filter-rating"
   | "filter-keyword"
-  | "ai-draft-reply"
-  | "post-reply"
-  | "send-notification"
   | "branch"
   | "delay"
+  // Actions — Swiggy
+  | "action-swiggy-confirm"
+  | "action-swiggy-reject"
+  // Actions — WhatsApp
+  | "action-send-whatsapp"
+  // Actions — Voice
+  | "action-voice-callback"
+  // Actions — Google
+  | "ai-draft-reply"
+  | "post-reply"
+  | "action-gmb-post"
+  // Actions — Notifications
+  | "send-notification"
+  // Terminal
   | "output"
 
 export interface GmbNodeData extends Record<string, unknown> {
@@ -68,16 +89,37 @@ let nodeCounter = 1
 
 function createNode(type: GmbNodeType, position: XYPosition): AppNode {
   const NODE_META: Record<GmbNodeType, { label: string; description: string }> = {
-    "trigger-new-review":   { label: "New Review",        description: "Triggers when a new Google review is received" },
-    "trigger-schedule":     { label: "Schedule",          description: "Triggers on a time schedule (daily, weekly)" },
-    "filter-rating":        { label: "Filter by Rating",  description: "Continue only if rating meets condition" },
-    "filter-keyword":       { label: "Filter by Keyword", description: "Continue only if review contains keyword" },
-    "ai-draft-reply":       { label: "AI Draft Reply",    description: "Generate an AI reply with configurable tone" },
-    "post-reply":           { label: "Post Reply",        description: "Post the reply to Google Business" },
-    "send-notification":    { label: "Send Notification", description: "Notify via Slack, email, or in-app" },
-    "branch":               { label: "Branch",            description: "Split workflow based on a condition" },
-    "delay":                { label: "Delay",             description: "Wait before proceeding to next step" },
-    "output":               { label: "End",               description: "Workflow complete" },
+    // Google triggers
+    "trigger-new-review":      { label: "New Review",           description: "Triggers when a new Google review arrives" },
+    "trigger-schedule":        { label: "Schedule",             description: "Cron / time-based trigger" },
+    // Swiggy triggers
+    "trigger-swiggy-booking":  { label: "Swiggy Booking",       description: "New table booking request via Swiggy Dineout" },
+    "trigger-swiggy-cancelled":{ label: "Booking Cancelled",    description: "Guest cancelled a Swiggy Dineout booking" },
+    // Voice triggers
+    "trigger-voice-inbound":   { label: "Incoming Call",        description: "AI receptionist picked up an inbound call" },
+    "trigger-voice-missed":    { label: "Missed Call",          description: "Call not answered — trigger follow-up" },
+    // WhatsApp triggers
+    "trigger-whatsapp-message":{ label: "WhatsApp Message",     description: "New message in the WhatsApp inbox" },
+    // Logic
+    "filter-rating":           { label: "Filter Rating",        description: "Continue only if rating meets condition" },
+    "filter-keyword":          { label: "Filter Keyword",       description: "Match text in review or message" },
+    "branch":                  { label: "Branch",               description: "Conditional split on a value" },
+    "delay":                   { label: "Delay",                description: "Wait X minutes before next step" },
+    // Swiggy actions
+    "action-swiggy-confirm":   { label: "Confirm Booking",      description: "Confirm the Swiggy Dineout reservation" },
+    "action-swiggy-reject":    { label: "Reject Booking",       description: "Decline with an optional reason" },
+    // WhatsApp actions
+    "action-send-whatsapp":    { label: "Send WhatsApp",        description: "Send a message to the guest's number" },
+    // Voice actions
+    "action-voice-callback":   { label: "Voice Callback",       description: "Trigger outbound call to the guest" },
+    // Google actions
+    "ai-draft-reply":          { label: "AI Draft Reply",       description: "Generate AI reply to a review" },
+    "post-reply":              { label: "Post GMB Reply",       description: "Publish reply to Google Business" },
+    "action-gmb-post":         { label: "GMB Post",             description: "Create a Google Business update post" },
+    // Notifications
+    "send-notification":       { label: "Send Notification",    description: "Notify via email, Slack, or in-app" },
+    // Terminal
+    "output":                  { label: "Done",                 description: "Workflow complete" },
   }
 
   const meta = NODE_META[type]
@@ -95,60 +137,81 @@ function createNode(type: GmbNodeType, position: XYPosition): AppNode {
   }
 }
 
-// Default workflow: auto-reply to low-rated reviews
+// Default workflow: Swiggy booking → AI confirmation → WhatsApp guest
+// This is the entry-point funnel — "Claude for restaurants"
 const DEFAULT_NODES: AppNode[] = [
   {
-    id: "node_start",
+    id: "n1",
+    type: "trigger-swiggy-booking",
+    position: { x: 60, y: 60 },
+    data: { type: "trigger-swiggy-booking", label: "Swiggy Booking", description: "New table booking via Swiggy Dineout", config: {}, status: "idle" },
+  },
+  {
+    id: "n2",
+    type: "action-swiggy-confirm",
+    position: { x: 340, y: 60 },
+    data: { type: "action-swiggy-confirm", label: "Confirm Booking", description: "Auto-confirm within 30 seconds", config: { autoConfirm: true }, status: "idle" },
+  },
+  {
+    id: "n3",
+    type: "action-send-whatsapp",
+    position: { x: 620, y: 60 },
+    data: { type: "action-send-whatsapp", label: "Send WhatsApp", description: "Confirmation + directions to guest", config: { template: "booking_confirmed" }, status: "idle" },
+  },
+  {
+    id: "n4",
+    type: "trigger-voice-missed",
+    position: { x: 60, y: 240 },
+    data: { type: "trigger-voice-missed", label: "Missed Call", description: "AI receptionist missed call", config: {}, status: "idle" },
+  },
+  {
+    id: "n5",
+    type: "action-send-whatsapp",
+    position: { x: 340, y: 240 },
+    data: { type: "action-send-whatsapp", label: "Send WhatsApp", description: "\"Sorry we missed you — book a table here\"", config: { template: "missed_call" }, status: "idle" },
+  },
+  {
+    id: "n6",
     type: "trigger-new-review",
-    position: { x: 300, y: 80 },
-    data: { type: "trigger-new-review", label: "New Review", description: "Triggers on new Google review", config: {}, status: "idle" },
+    position: { x: 60, y: 420 },
+    data: { type: "trigger-new-review", label: "New Review", description: "New Google review received", config: {}, status: "idle" },
   },
   {
-    id: "node_filter",
+    id: "n7",
     type: "filter-rating",
-    position: { x: 300, y: 220 },
-    data: { type: "filter-rating", label: "Filter by Rating", description: "Only ≤ 2 stars", config: { operator: "lte", value: 2 }, status: "idle" },
+    position: { x: 340, y: 420 },
+    data: { type: "filter-rating", label: "Filter Rating", description: "Only 4★ and above", config: { operator: "gte", value: 4 }, status: "idle" },
   },
   {
-    id: "node_ai",
+    id: "n8",
     type: "ai-draft-reply",
-    position: { x: 300, y: 360 },
-    data: { type: "ai-draft-reply", label: "AI Draft Reply", description: "Empathetic tone", config: { tone: "empathetic", autoPost: false }, status: "idle" },
+    position: { x: 620, y: 420 },
+    data: { type: "ai-draft-reply", label: "AI Reply", description: "Warm, brand-voice reply", config: { tone: "warm", autoPost: true }, status: "idle" },
   },
   {
-    id: "node_notify",
-    type: "send-notification",
-    position: { x: 100, y: 500 },
-    data: { type: "send-notification", label: "Send Notification", description: "Notify manager", config: { channel: "slack" }, status: "idle" },
-  },
-  {
-    id: "node_post",
-    type: "post-reply",
-    position: { x: 500, y: 500 },
-    data: { type: "post-reply", label: "Post Reply", description: "Post to Google", config: { requireApproval: false }, status: "idle" },
-  },
-  {
-    id: "node_end",
+    id: "n9",
     type: "output",
-    position: { x: 300, y: 640 },
-    data: { type: "output", label: "End", description: "Workflow complete", config: {}, status: "idle" },
+    position: { x: 900, y: 180 },
+    data: { type: "output", label: "Done", description: "Agent handled it", config: {}, status: "idle" },
   },
 ]
 
 const DEFAULT_EDGES: Edge[] = [
-  { id: "e1", source: "node_start",  target: "node_filter", type: "default" },
-  { id: "e2", source: "node_filter", target: "node_ai",     type: "default" },
-  { id: "e3", source: "node_ai",     target: "node_notify", type: "default" },
-  { id: "e4", source: "node_ai",     target: "node_post",   type: "default" },
-  { id: "e5", source: "node_notify", target: "node_end",    type: "default" },
-  { id: "e6", source: "node_post",   target: "node_end",    type: "default" },
+  { id: "e1", source: "n1", target: "n2",  animated: true },
+  { id: "e2", source: "n2", target: "n3",  animated: true },
+  { id: "e3", source: "n3", target: "n9",  animated: true },
+  { id: "e4", source: "n4", target: "n5",  animated: true },
+  { id: "e5", source: "n5", target: "n9",  animated: true },
+  { id: "e6", source: "n6", target: "n7",  animated: true },
+  { id: "e7", source: "n7", target: "n8",  animated: true },
+  { id: "e8", source: "n8", target: "n9",  animated: true },
 ]
 
 export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   nodes: DEFAULT_NODES,
   edges: DEFAULT_EDGES,
   selectedNodeId: null,
-  workflowName: "Auto-reply negative reviews",
+  workflowName: "Restaurant AI — Swiggy + Reviews + Missed Calls",
   isRunning: false,
 
   onNodesChange: (changes) =>

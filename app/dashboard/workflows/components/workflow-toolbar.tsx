@@ -2,8 +2,11 @@
 
 // Top toolbar: run / save / status bar
 
-import { Play, Square, Save, Trash2 } from "lucide-react"
+import { Play, Square, Save, Trash2, LayoutDashboard } from "lucide-react"
+import { useCallback, useState } from "react"
+import { useReactFlow } from "@xyflow/react"
 import { useWorkflowStore } from "../store/workflow-store"
+import { layoutGraph } from "../utils/layout-helper"
 
 const PINK = "oklch(0.58 0.24 350)"
 const BORDER = "oklch(0.91 0.008 350)"
@@ -14,6 +17,19 @@ const BTN_BG = "oklch(0.975 0.004 350)"
 
 export function WorkflowToolbar() {
   const { isRunning, runWorkflow, stopWorkflow, clearWorkflow, nodes, edges } = useWorkflowStore()
+  const { setNodes, fitView } = useReactFlow()
+  const [laying, setLaying] = useState(false)
+
+  const autoLayout = useCallback(async () => {
+    setLaying(true)
+    try {
+      const laid = await layoutGraph(nodes, edges)
+      setNodes(laid)
+      setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 50)
+    } finally {
+      setLaying(false)
+    }
+  }, [nodes, edges, setNodes, fitView])
 
   return (
     <div
@@ -42,6 +58,16 @@ export function WorkflowToolbar() {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={autoLayout}
+          disabled={laying || nodes.length < 2}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:opacity-75 disabled:opacity-40"
+          style={{ border: `1px solid ${BORDER}`, background: BTN_BG, color: TEXT_MUTED }}
+          title="Auto-layout (ELK)"
+        >
+          <LayoutDashboard className="w-3.5 h-3.5" />
+          {laying ? "Laying out…" : "Auto-layout"}
+        </button>
         <button
           onClick={clearWorkflow}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:opacity-75"

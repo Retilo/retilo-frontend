@@ -7,17 +7,21 @@ import { useReactFlow } from "@xyflow/react"
 import {
   Star, Clock, Filter, SlidersHorizontal,
   Sparkles, Send, Bell, GitBranch, Timer, CheckCircle2,
-  GripVertical, Plus, ChevronRight,
+  GripVertical, Plus, ChevronRight, ShoppingBag, Phone, MessageSquare,
+  PhoneMissed, PhoneIncoming, XCircle, FileText,
 } from "lucide-react"
 import { type GmbNodeType, useWorkflowStore } from "../store/workflow-store"
 
-const PINK = "oklch(0.58 0.24 350)"
-const BORDER = "oklch(0.91 0.008 350)"
-const TEXT = "oklch(0.14 0.008 270)"
-const TEXT_MUTED = "oklch(0.55 0.008 270)"
-const TEXT_FAINT = "oklch(0.65 0.008 270)"
-const SIDEBAR_BG = "oklch(0.99 0.005 350)"
-const ITEM_BG = "oklch(1 0 0)"
+const PINK    = "oklch(0.58 0.24 350)"
+const ORANGE  = "#FC8019"
+const GREEN   = "#25d366"
+const VIOLET  = "#6366f1"
+const BORDER  = "oklch(0.91 0.008 350)"
+const TEXT    = "oklch(0.14 0.008 270)"
+const TEXT_MUTED  = "oklch(0.55 0.008 270)"
+const TEXT_FAINT  = "oklch(0.65 0.008 270)"
+const SIDEBAR_BG  = "oklch(0.99 0.005 350)"
+const ITEM_BG     = "oklch(1 0 0)"
 const ITEM_BORDER = "oklch(0.92 0.007 350)"
 
 interface NodeDef {
@@ -26,26 +30,44 @@ interface NodeDef {
   description: string
   icon: React.ComponentType<{ className?: string }>
   color: string
-  category: "Triggers" | "Logic" | "Actions"
+  category: "Swiggy" | "Voice" | "WhatsApp" | "Google" | "Logic"
 }
 
 const NODE_PALETTE: NodeDef[] = [
-  // Triggers
-  { type: "trigger-new-review",   label: "New Review",        description: "On any new GMB review",      icon: Star,              color: PINK,                      category: "Triggers" },
-  { type: "trigger-schedule",     label: "Schedule",          description: "Cron / time-based trigger",   icon: Clock,             color: "oklch(0.58 0.20 55)",     category: "Triggers" },
-  // Logic
-  { type: "filter-rating",        label: "Filter Rating",     description: "By star rating threshold",    icon: Filter,            color: "oklch(0.55 0.20 310)",    category: "Logic" },
-  { type: "filter-keyword",       label: "Filter Keyword",    description: "By keyword in review text",   icon: SlidersHorizontal, color: "oklch(0.55 0.20 310)",    category: "Logic" },
-  { type: "branch",               label: "Branch",            description: "Conditional split",           icon: GitBranch,         color: "oklch(0.55 0.22 280)",    category: "Logic" },
-  { type: "delay",                label: "Delay",             description: "Wait X minutes/hours",        icon: Timer,             color: "oklch(0.55 0.22 280)",    category: "Logic" },
-  // Actions
-  { type: "ai-draft-reply",       label: "AI Draft Reply",    description: "Generate AI reply text",      icon: Sparkles,          color: PINK,                      category: "Actions" },
-  { type: "post-reply",           label: "Post Reply",        description: "Publish reply to Google",     icon: Send,              color: "oklch(0.52 0.18 160)",    category: "Actions" },
-  { type: "send-notification",    label: "Send Notification", description: "Slack / email alert",         icon: Bell,              color: "oklch(0.58 0.20 55)",     category: "Actions" },
-  { type: "output",               label: "End",               description: "Workflow end",                icon: CheckCircle2,      color: "oklch(0.52 0.18 160)",    category: "Actions" },
+  // ── Swiggy ───────────────────────────────────────────────────
+  { type: "trigger-swiggy-booking",   label: "Swiggy Booking",    description: "New booking via Dineout",         icon: ShoppingBag,     color: ORANGE,                   category: "Swiggy" },
+  { type: "trigger-swiggy-cancelled", label: "Booking Cancelled",  description: "Guest cancelled a reservation",   icon: XCircle,         color: ORANGE,                   category: "Swiggy" },
+  { type: "action-swiggy-confirm",    label: "Confirm Booking",    description: "Auto-confirm on Swiggy",          icon: CheckCircle2,    color: ORANGE,                   category: "Swiggy" },
+  { type: "action-swiggy-reject",     label: "Reject Booking",     description: "Decline with reason",             icon: XCircle,         color: ORANGE,                   category: "Swiggy" },
+  // ── Voice ────────────────────────────────────────────────────
+  { type: "trigger-voice-inbound",    label: "Incoming Call",      description: "AI receptionist answered",        icon: PhoneIncoming,   color: VIOLET,                   category: "Voice" },
+  { type: "trigger-voice-missed",     label: "Missed Call",        description: "Unanswered — trigger follow-up",  icon: PhoneMissed,     color: VIOLET,                   category: "Voice" },
+  { type: "action-voice-callback",    label: "Outbound Call",      description: "AI calls the guest back",         icon: Phone,           color: VIOLET,                   category: "Voice" },
+  // ── WhatsApp ─────────────────────────────────────────────────
+  { type: "trigger-whatsapp-message", label: "WhatsApp Message",   description: "New message in inbox",            icon: MessageSquare,   color: GREEN,                    category: "WhatsApp" },
+  { type: "action-send-whatsapp",     label: "Send WhatsApp",      description: "Message / template to guest",     icon: Send,            color: GREEN,                    category: "WhatsApp" },
+  // ── Google ───────────────────────────────────────────────────
+  { type: "trigger-new-review",       label: "New Review",         description: "New Google Business review",      icon: Star,            color: PINK,                     category: "Google" },
+  { type: "trigger-schedule",         label: "Schedule",           description: "Cron / time-based trigger",       icon: Clock,           color: "oklch(0.58 0.20 55)",   category: "Google" },
+  { type: "ai-draft-reply",           label: "AI Reply",           description: "Draft reply with brand voice",    icon: Sparkles,        color: PINK,                     category: "Google" },
+  { type: "post-reply",               label: "Post GMB Reply",     description: "Publish to Google Business",      icon: Send,            color: "oklch(0.52 0.18 160)",  category: "Google" },
+  { type: "action-gmb-post",          label: "GMB Update Post",    description: "Create a Google post",            icon: FileText,        color: "oklch(0.52 0.18 160)",  category: "Google" },
+  // ── Logic ────────────────────────────────────────────────────
+  { type: "filter-rating",            label: "Filter Rating",      description: "By star rating",                  icon: Filter,          color: "oklch(0.55 0.20 310)",  category: "Logic" },
+  { type: "filter-keyword",           label: "Filter Keyword",     description: "Match text in content",           icon: SlidersHorizontal,color:"oklch(0.55 0.20 310)", category: "Logic" },
+  { type: "branch",                   label: "Branch",             description: "Conditional split",               icon: GitBranch,       color: "oklch(0.55 0.22 280)",  category: "Logic" },
+  { type: "delay",                    label: "Delay",              description: "Wait X minutes",                  icon: Timer,           color: "oklch(0.55 0.22 280)",  category: "Logic" },
+  { type: "send-notification",        label: "Notify Team",        description: "Email / Slack / in-app",          icon: Bell,            color: "oklch(0.58 0.20 55)",   category: "Logic" },
+  { type: "output",                   label: "Done",               description: "Agent handled it",                icon: CheckCircle2,    color: "oklch(0.52 0.18 160)",  category: "Logic" },
 ]
 
-const CATEGORIES: NodeDef["category"][] = ["Triggers", "Logic", "Actions"]
+const CATEGORIES: { id: NodeDef["category"]; emoji: string }[] = [
+  { id: "Swiggy",   emoji: "🛵" },
+  { id: "Voice",    emoji: "🎙" },
+  { id: "WhatsApp", emoji: "💬" },
+  { id: "Google",   emoji: "⭐" },
+  { id: "Logic",    emoji: "⚙️" },
+]
 
 function NodePaletteItem({ node }: { node: NodeDef }) {
   const { screenToFlowPosition } = useReactFlow()
@@ -88,7 +110,7 @@ function NodePaletteItem({ node }: { node: NodeDef }) {
 
 export function WorkflowSidebar() {
   const [openCategories, setOpenCategories] = useState<Set<string>>(
-    new Set(["Triggers", "Logic", "Actions"])
+    new Set(["Swiggy", "Voice", "WhatsApp"])
   )
   const workflowName = useWorkflowStore((s) => s.workflowName)
   const setWorkflowName = useWorkflowStore((s) => s.setWorkflowName)
@@ -146,7 +168,7 @@ export function WorkflowSidebar() {
           Drag nodes onto canvas
         </div>
 
-        {CATEGORIES.map((cat) => {
+        {CATEGORIES.map(({ id: cat, emoji }) => {
           const nodes = NODE_PALETTE.filter((n) => n.category === cat)
           const isOpen = openCategories.has(cat)
           return (
@@ -159,6 +181,7 @@ export function WorkflowSidebar() {
                 <ChevronRight
                   className={`w-3 h-3 transition-transform ${isOpen ? "rotate-90" : ""}`}
                 />
+                <span>{emoji}</span>
                 {cat}
               </button>
               {isOpen && (
