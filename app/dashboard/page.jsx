@@ -3,169 +3,283 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { motion } from "motion/react"
+import { motion, AnimatePresence } from "motion/react"
 import { AppSidebar } from "@/components/dashboard/sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import {
-  Star, BarChart3, MapPin, TrendingUp, TrendingDown,
-  ArrowRight, Zap, Activity, Globe, Mail, RefreshCw, ChevronRight,
+  Star, BarChart3, MapPin, ArrowRight, Zap, Globe,
+  Phone, ShoppingBag, CheckCircle2, Circle, ChevronRight,
+  TrendingUp, MessageSquare, Workflow, CalendarCheck,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { LocationsMap } from "@/components/locations-map"
 
-// ── Endpoint health card ──────────────────────────────────────────────────────
+// ── Setup checklist ───────────────────────────────────────────────
 
-function EndpointCard({ icon: Icon, name, status, meta, href, accent, pulse }) {
-  const statusColor = status === "live" ? "#22c55e" : status === "error" ? "#ef4444" : "#f59e0b"
-  const statusLabel = status === "live" ? "Live" : status === "error" ? "Error" : "Degraded"
+const SETUP_STEPS = [
+  {
+    id:    "google",
+    icon:  MapPin,
+    title: "Connect Google Business",
+    desc:  "Sync your locations, reviews and analytics",
+    href:  "/dashboard/locations",
+    color: "#4285F4",
+  },
+  {
+    id:    "voice",
+    icon:  Phone,
+    title: "Set up Voice Agent",
+    desc:  "AI receptionist — answers calls in Hindi & English",
+    href:  "/dashboard/voice",
+    color: "oklch(0.58 0.24 350)",
+  },
+  {
+    id:    "workflow",
+    icon:  Workflow,
+    title: "Build your first workflow",
+    desc:  "Visual agent builder — bookings, replies, follow-ups",
+    href:  "/dashboard/workflows",
+    color: "#6366f1",
+  },
+  {
+    id:    "swiggy",
+    icon:  ShoppingBag,
+    title: "Connect Swiggy Dineout",
+    desc:  "AI booking layer on India's #1 dining platform",
+    href:  "/dashboard/swiggy",
+    color: "#FC8019",
+  },
+]
+
+function SetupChecklist({ locations, voiceAgents }) {
+  const done = {
+    google:   locations.length > 0,
+    voice:    voiceAgents.length > 0,
+    workflow: false,
+    swiggy:   false,
+  }
+  const totalDone = Object.values(done).filter(Boolean).length
+  const allDone   = totalDone === SETUP_STEPS.length
+
+  if (allDone) return null
+
   return (
-    <Link
-      href={href}
-      className="group flex items-center gap-3 rounded-xl border px-4 py-3 transition-all hover:shadow-sm hover:-translate-y-px"
-      style={{ background: "white", borderColor: `${accent}18` }}
-    >
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${accent}12`, color: accent }}>
-        <Icon className="w-4.5 h-4.5" style={{ width: 18, height: 18 }} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold text-gray-800 truncate">{name}</div>
-        <div className="text-xs text-gray-400 truncate">{meta}</div>
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor, boxShadow: pulse ? `0 0 4px ${statusColor}` : "none", animation: pulse ? "pulse 2s infinite" : "none" }} />
-          <span className="text-xs font-medium" style={{ color: statusColor }}>{statusLabel}</span>
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-800">Get started</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{totalDone} of {SETUP_STEPS.length} steps complete</p>
         </div>
-        <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all" />
+        <div className="flex gap-1">
+          {SETUP_STEPS.map((s) => (
+            <div
+              key={s.id}
+              className="h-1.5 w-8 rounded-full transition-all"
+              style={{ background: done[s.id] ? "oklch(0.58 0.24 350)" : "oklch(0.91 0.008 350)" }}
+            />
+          ))}
+        </div>
       </div>
-    </Link>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {SETUP_STEPS.map((step, i) => {
+          const isDone = done[step.id]
+          return (
+            <motion.div
+              key={step.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
+            >
+              <Link
+                href={step.href}
+                className="group flex items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all hover:shadow-sm hover:-translate-y-px"
+                style={{
+                  background:   isDone ? `${step.color}08` : "white",
+                  borderColor:  isDone ? `${step.color}30` : "oklch(0.91 0.008 350)",
+                  opacity:      isDone ? 0.6 : 1,
+                }}
+              >
+                <div
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: `${step.color}15` }}
+                >
+                  {isDone
+                    ? <CheckCircle2 className="size-4" style={{ color: step.color }} />
+                    : <step.icon className="size-4" style={{ color: step.color }} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 leading-none mb-1">{step.title}</p>
+                  <p className="text-xs text-gray-400 leading-snug">{step.desc}</p>
+                </div>
+                {!isDone && (
+                  <ChevronRight className="size-4 text-gray-300 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                )}
+              </Link>
+            </motion.div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
-// ── Activity feed item ────────────────────────────────────────────────────────
+// ── Today strip ───────────────────────────────────────────────────
 
-const FEED_ICONS = {
-  review: Star,
-  reply: Zap,
-  rank: TrendingUp,
-  campaign: Mail,
-  sync: RefreshCw,
-}
+function TodayStrip({ locations }) {
+  const totalReviews  = locations.reduce((s, l) => s + (l.total_review_count ?? 0), 0)
+  const avgRating     = locations.length
+    ? (locations.reduce((s, l) => s + (l.average_rating ?? 0), 0) / locations.length).toFixed(1)
+    : null
 
-function FeedItem({ event }) {
-  const Icon = FEED_ICONS[event.type] ?? Activity
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="flex items-start gap-3 py-2.5"
-    >
-      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${event.color}15`, color: event.color }}>
-        <Icon className="w-3.5 h-3.5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-700 leading-relaxed">{event.label}</p>
-        <span className="text-[10px] text-gray-400">{event.time}</span>
-      </div>
-      {event.delta && (
-        <span className={`text-[10px] font-bold flex-shrink-0 ${event.delta > 0 ? "text-emerald-500" : "text-red-400"}`}>
-          {event.delta > 0 ? "+" : ""}{event.delta}
-        </span>
-      )}
-    </motion.div>
-  )
-}
+  if (!locations.length) return null
 
-// ── Stat card ─────────────────────────────────────────────────────────────────
-
-function StatCard({ label, value, sub, trend, accent = "oklch(0.58 0.24 350)" }) {
   return (
     <div
-      className="rounded-2xl border p-5 relative overflow-hidden group transition-all hover:shadow-sm"
+      className="flex items-center gap-6 flex-wrap rounded-2xl px-5 py-3.5"
+      style={{ background: "white", border: "1px solid oklch(0.91 0.008 350)" }}
+    >
+      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300">Live</span>
+      <div className="flex items-center gap-1.5">
+        <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-sm font-bold text-gray-800">{locations.length}</span>
+        <span className="text-xs text-gray-400">location{locations.length !== 1 ? "s" : ""}</span>
+      </div>
+      {avgRating && (
+        <div className="flex items-center gap-1.5">
+          <Star className="size-3.5 text-amber-500 fill-amber-500" />
+          <span className="text-sm font-bold text-gray-800">{avgRating}</span>
+          <span className="text-xs text-gray-400">avg rating</span>
+        </div>
+      )}
+      {totalReviews > 0 && (
+        <div className="flex items-center gap-1.5">
+          <MessageSquare className="size-3.5 text-blue-500" />
+          <span className="text-sm font-bold text-gray-800">{totalReviews.toLocaleString()}</span>
+          <span className="text-xs text-gray-400">reviews</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Quick actions ─────────────────────────────────────────────────
+
+const QUICK_ACTIONS = [
+  {
+    icon:  Star,
+    label: "Reply to reviews",
+    desc:  "AI-drafted replies waiting",
+    href:  "/dashboard/reviews",
+    color: "#f59e0b",
+  },
+  {
+    icon:  Workflow,
+    label: "Build a workflow",
+    desc:  "Visual agent builder",
+    href:  "/dashboard/workflows",
+    color: "#6366f1",
+  },
+  {
+    icon:  CalendarCheck,
+    label: "Share booking link",
+    desc:  "Get table reservations",
+    href:  "/dashboard/booking-page",
+    color: "#FC8019",
+  },
+  {
+    icon:  Globe,
+    label: "Run AI visibility scan",
+    desc:  "See how AI finds you",
+    href:  "/visibility",
+    color: "#FD5BFF",
+  },
+]
+
+function QuickActions() {
+  return (
+    <section>
+      <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Quick actions</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {QUICK_ACTIONS.map((a, i) => (
+          <motion.div
+            key={a.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 + i * 0.05 }}
+          >
+            <Link
+              href={a.href}
+              className="group flex flex-col gap-2.5 rounded-2xl border p-4 transition-all hover:shadow-sm hover:-translate-y-px"
+              style={{ background: "white", borderColor: `${a.color}18` }}
+            >
+              <div
+                className="flex size-9 items-center justify-center rounded-xl"
+                style={{ background: `${a.color}12` }}
+              >
+                <a.icon className="size-4" style={{ color: a.color }} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800 leading-none mb-1">{a.label}</p>
+                <p className="text-xs text-gray-400">{a.desc}</p>
+              </div>
+              <ArrowRight className="size-3.5 text-gray-300 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all self-end" />
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ── Stat cards ────────────────────────────────────────────────────
+
+function StatCard({ label, value, sub, accent = "oklch(0.58 0.24 350)" }) {
+  return (
+    <div
+      className="rounded-2xl border p-4 relative overflow-hidden group transition-all hover:shadow-sm"
       style={{ background: "white", borderColor: `${accent}20` }}
     >
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl" style={{ background: `radial-gradient(ellipse 80% 60% at 50% 120%, ${accent}08 0%, transparent 70%)` }} />
-      <div className="text-xs font-medium text-gray-500 mb-2">{label}</div>
-      <div className="text-3xl font-bold mb-1 text-gray-900">{value}</div>
-      {sub && <div className="text-xs text-gray-400">{sub}</div>}
-      {trend && (
-        <div className={`flex items-center gap-1 text-xs mt-1 ${trend.dir === "up" ? "text-emerald-600" : "text-red-500"}`}>
-          {trend.dir === "up" ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-          {trend.label}
-        </div>
-      )}
+      <div className="text-xs font-medium text-gray-400 mb-1.5">{label}</div>
+      <div className="text-2xl font-bold text-gray-900">{value}</div>
+      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
     </div>
   )
 }
 
-// ── Connect Google Business prompt ────────────────────────────────────────────
-
-function ConnectGooglePrompt() {
-  return (
-    <div
-      className="w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 py-14"
-      style={{ borderColor: "oklch(0.58 0.24 350 / 30%)", background: "oklch(0.58 0.24 350 / 4%)" }}
-    >
-      <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center"
-        style={{ background: "oklch(0.58 0.24 350 / 12%)" }}
-      >
-        <MapPin className="w-7 h-7" style={{ color: "oklch(0.48 0.22 350)" }} />
-      </div>
-      <div className="text-center">
-        <h3 className="text-base font-semibold text-gray-800 mb-1">Connect your Google Business locations</h3>
-        <p className="text-sm text-gray-400 max-w-xs mx-auto">
-          Your locations will appear on this map once you connect Google Business. Reviews, analytics and AI replies activate automatically.
-        </p>
-      </div>
-      <Link
-        href="/dashboard/locations"
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:opacity-90 hover:shadow-md"
-        style={{ background: "oklch(0.58 0.24 350)" }}
-      >
-        Connect Google Business <ArrowRight className="w-4 h-4" />
-      </Link>
-    </div>
-  )
-}
-
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Main page ─────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [locations, setLocations] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [merchant, setMerchant] = useState(null)
+  const [locations,   setLocations]   = useState([])
+  const [voiceAgents, setVoiceAgents] = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [merchant,    setMerchant]    = useState(null)
 
   useEffect(() => {
     const token = localStorage.getItem("retilo_token")
     if (!token) { router.replace("/auth"); return }
     const m = JSON.parse(localStorage.getItem("retilo_merchant") ?? "null")
     setMerchant(m)
-    api.get("/v1/gmb/locations")
-      .then(res => setLocations(res.data.data ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+
+    Promise.all([
+      api.get("/v1/gmb/locations").then(r => r.data.data ?? []).catch(() => []),
+      api.get("/v1/voice/agents").then(r => r.data.agents ?? r.data ?? []).catch(() => []),
+    ]).then(([locs, agents]) => {
+      setLocations(locs)
+      setVoiceAgents(agents)
+    }).finally(() => setLoading(false))
   }, [router])
 
-  const totalReviews = locations.reduce((s, l) => s + (l.total_review_count ?? 0), 0)
-  const avgRating = locations.length ? (locations.reduce((s, l) => s + (l.average_rating ?? 0), 0) / locations.length).toFixed(1) : "—"
-  const avgResponseRate = locations.length ? Math.round(locations.reduce((s, l) => s + (l.response_rate ?? 0), 0) / locations.length) : 0
+  const totalReviews     = locations.reduce((s, l) => s + (l.total_review_count ?? 0), 0)
+  const avgRating        = locations.length
+    ? (locations.reduce((s, l) => s + (l.average_rating ?? 0), 0) / locations.length).toFixed(1)
+    : "—"
+  const avgResponseRate  = locations.length
+    ? Math.round(locations.reduce((s, l) => s + (l.response_rate ?? 0), 0) / locations.length)
+    : 0
 
-  const STATS = [
-    { label: "Locations",     value: loading ? "…" : locations.length || "0",      sub: "connected to Google",  accent: "oklch(0.58 0.24 350)" },
-    { label: "Avg Rating",    value: loading ? "…" : avgRating,                     sub: "across all locations", trend: locations.length ? { dir: "up", label: "+0.2 this month" } : null, accent: "oklch(0.55 0.22 55)" },
-    { label: "Total Reviews", value: loading ? "…" : totalReviews.toLocaleString(), sub: "all time",             accent: "oklch(0.52 0.20 160)" },
-    { label: "Response Rate", value: loading ? "…" : `${avgResponseRate}%`,         sub: "of reviews replied",   accent: "oklch(0.55 0.22 280)" },
-  ]
-
-  const ENDPOINTS = [
-    { icon: MapPin,    name: "Google Business", status: locations.length > 0 ? "live" : "error",  meta: `${locations.length} location${locations.length !== 1 ? "s" : ""} synced`, href: "/dashboard/locations", accent: "#4285F4", pulse: locations.length > 0 },
-    { icon: Star,      name: "Review Engine",   status: locations.length > 0 ? "live" : "degraded", meta: locations.length > 0 ? "AI replies active" : "Connect Google to activate", href: "/dashboard/reviews",   accent: "#f59e0b", pulse: locations.length > 0 },
-    { icon: BarChart3, name: "Analytics",       status: locations.length > 0 ? "live" : "degraded", meta: locations.length > 0 ? "Real-time data" : "No data yet",                href: "/dashboard/analytics", accent: "#22c55e", pulse: false },
-    { icon: Globe,     name: "AI Visibility",   status: "degraded", meta: "Not yet scanned",                                                                                        href: "/visibility",          accent: "#FD5BFF", pulse: false },
-    { icon: Mail,      name: "Email Agent",     status: "live",     meta: "Campaign queue ready",                                                                                   href: "/email/agent",         accent: "#7c3aed", pulse: false },
-  ]
+  const firstName = merchant?.name?.split(" ")[0] ?? null
 
   return (
     <SidebarProvider className="h-svh overflow-hidden">
@@ -174,113 +288,109 @@ export default function DashboardPage() {
         <div className="flex flex-col h-full">
 
           {/* Top bar */}
-          <div className="flex items-center justify-between px-8 py-4 sticky top-0 z-10 backdrop-blur-sm" style={{ background: "oklch(0.985 0.003 350 / 85%)", borderBottom: "1px solid oklch(0.91 0.008 350)" }}>
+          <div
+            className="flex items-center justify-between px-6 py-3.5 sticky top-0 z-10 backdrop-blur-sm"
+            style={{ background: "oklch(0.985 0.003 350 / 85%)", borderBottom: "1px solid oklch(0.91 0.008 350)" }}
+          >
             <div>
-              <h1 className="text-base font-semibold text-gray-800">
-                {merchant?.name ? `Welcome back, ${merchant.name.split(" ")[0]}` : "Control Center"}
+              <h1 className="text-sm font-semibold text-gray-800">
+                {firstName ? `Hey ${firstName} 👋` : "Overview"}
               </h1>
               <p className="text-xs text-gray-400 mt-0.5">
                 {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
-                {locations.length > 0 ? ` · ${locations.length} location${locations.length > 1 ? "s" : ""} active` : ""}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <Link href="/visibility" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90" style={{ background: "rgba(253,91,255,0.12)", color: "#FD5BFF", border: "1px solid rgba(253,91,255,0.25)" }}>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/visibility"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                style={{ background: "rgba(253,91,255,0.10)", color: "#FD5BFF", border: "1px solid rgba(253,91,255,0.20)" }}
+              >
                 <Globe className="w-3 h-3" />
                 AI Scan
               </Link>
-              {locations.length > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <div className="size-2 animate-pulse rounded-full bg-emerald-500" />
-                  <span className="text-xs font-medium text-gray-400">Live</span>
-                </div>
-              )}
+              <Link
+                href="/dashboard/workflows"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                style={{ background: "rgba(99,102,241,0.10)", color: "#6366f1", border: "1px solid rgba(99,102,241,0.20)" }}
+              >
+                <Workflow className="w-3 h-3" />
+                Workflow Builder
+              </Link>
             </div>
           </div>
 
-          {/* Content */}
+          {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-5xl mx-auto px-8 py-8 space-y-8">
-
-              {/* ── Map section — hero at the top ─────────────────────────── */}
-              <section>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Your Locations</h2>
-                  {locations.length > 0 && (
-                    <Link href="/dashboard/locations" className="text-xs font-medium transition-colors hover:opacity-75" style={{ color: "oklch(0.48 0.22 350)" }}>
-                      Manage →
-                    </Link>
-                  )}
-                </div>
-
-                {loading ? (
-                  <div className="h-72 rounded-2xl animate-pulse" style={{ background: "oklch(0.93 0.005 350)" }} />
-                ) : locations.length > 0 ? (
-                  <div className="h-72">
-                    <LocationsMap
-                      locations={locations}
-                      onSelect={() => router.push("/dashboard/locations")}
-                    />
-                  </div>
-                ) : (
-                  <ConnectGooglePrompt />
-                )}
-              </section>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {STATS.map((s) => <StatCard key={s.label} {...s} />)}
+            {loading ? (
+              <div className="max-w-4xl mx-auto px-6 py-8 space-y-4">
+                {[72, 160, 120].map((h, i) => (
+                  <div key={i} className="rounded-2xl animate-pulse" style={{ height: h, background: "oklch(0.93 0.005 350)" }} />
+                ))}
               </div>
+            ) : (
+              <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
 
-              {/* Endpoint grid + Location list */}
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Setup checklist — shown until all done */}
+                <SetupChecklist locations={locations} voiceAgents={voiceAgents} />
 
-                {/* Endpoints */}
-                <div className="lg:col-span-3">
+                {/* Live strip */}
+                <TodayStrip locations={locations} />
+
+                {/* Quick actions */}
+                <QuickActions />
+
+                {/* Stats — only meaningful once Google is connected */}
+                {locations.length > 0 && (
+                  <section>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">At a glance</h2>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      <StatCard label="Locations"     value={locations.length}              sub="on Google Business"      accent="oklch(0.58 0.24 350)" />
+                      <StatCard label="Avg Rating"    value={avgRating}                     sub="across all locations"    accent="oklch(0.55 0.22 55)"  />
+                      <StatCard label="Total Reviews" value={totalReviews.toLocaleString()} sub="all time"                accent="oklch(0.52 0.20 160)" />
+                      <StatCard label="Response Rate" value={`${avgResponseRate}%`}          sub="of reviews replied"      accent="oklch(0.55 0.22 280)" />
+                    </div>
+                  </section>
+                )}
+
+                {/* Map — hero only after setup */}
+                <section>
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Services</h2>
-                    <span className="text-xs text-gray-300 font-medium">{ENDPOINTS.filter(e => e.status === "live").length}/{ENDPOINTS.length} live</span>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Your locations</h2>
+                    {locations.length > 0 && (
+                      <Link href="/dashboard/locations" className="text-xs font-medium hover:opacity-75 transition-opacity" style={{ color: "oklch(0.48 0.22 350)" }}>
+                        Manage →
+                      </Link>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    {ENDPOINTS.map((ep) => <EndpointCard key={ep.name} {...ep} />)}
-                  </div>
-                </div>
 
-                {/* Location cards */}
-                <div className="lg:col-span-2">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Locations</h2>
-                  </div>
-                  {locations.length === 0 ? (
-                    <div className="rounded-2xl border p-6 text-center" style={{ background: "white", borderColor: "rgba(0,0,0,0.07)" }}>
-                      <p className="text-xs text-gray-400">No locations yet</p>
+                  {locations.length > 0 ? (
+                    <div className="h-64 rounded-2xl overflow-hidden border" style={{ borderColor: "oklch(0.91 0.008 350)" }}>
+                      <LocationsMap
+                        locations={locations}
+                        onSelect={() => router.push("/dashboard/locations")}
+                      />
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {locations.slice(0, 5).map((loc) => (
-                        <div key={loc.id} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all hover:shadow-sm" style={{ background: "white", border: "1px solid oklch(0.91 0.008 350)" }}>
-                          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "oklch(0.58 0.24 350 / 10%)" }}>
-                            <MapPin className="w-3.5 h-3.5" style={{ color: "oklch(0.48 0.22 350)" }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-gray-800 truncate">{loc.title}</div>
-                            <div className="text-[10px] text-gray-400 truncate">{loc.address ?? loc.email}</div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <div className="text-right">
-                              <div className="text-xs font-semibold text-gray-800">{loc.average_rating?.toFixed(1) ?? "—"}</div>
-                              <div className="text-[10px] text-gray-400">{loc.total_review_count ?? 0} rev</div>
-                            </div>
-                            <div className={`w-1.5 h-1.5 rounded-full ${loc.status ? "bg-emerald-500" : "bg-gray-200"}`} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <Link
+                      href="/dashboard/locations"
+                      className="group flex items-center gap-4 rounded-2xl border-2 border-dashed px-6 py-8 transition-all hover:border-opacity-60"
+                      style={{ borderColor: "oklch(0.58 0.24 350 / 25%)", background: "oklch(0.58 0.24 350 / 3%)" }}
+                    >
+                      <div className="flex size-12 items-center justify-center rounded-2xl" style={{ background: "oklch(0.58 0.24 350 / 10%)" }}>
+                        <MapPin className="size-6" style={{ color: "oklch(0.48 0.22 350)" }} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Connect Google Business</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Your locations will appear here — reviews, analytics and AI replies activate automatically</p>
+                      </div>
+                      <ArrowRight className="ml-auto size-4 text-gray-300 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                    </Link>
                   )}
-                </div>
-              </div>
+                </section>
 
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </SidebarInset>
